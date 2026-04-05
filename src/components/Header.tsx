@@ -12,7 +12,7 @@ export default function Header() {
         <div className="header__links">
           <Link to="/events" className="header__link">події</Link>
           <Link to="/lectures" className="header__link">лекції</Link>
-          <Link to="/#about" className="header__link">про нас</Link>
+          <Link to="/about-us" className="header__link">про нас</Link>
         </div>
       </nav>
 

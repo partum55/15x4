@@ -8,6 +8,7 @@ import EventsPage from './pages/EventsPage'
 import LecturesPage from './pages/LecturesPage'
 import LectureDetailPage from './pages/LectureDetailPage'
 import EventDetailPage from './pages/EventDetailPage'
+import AboutPage from './pages/AboutPage'
 
 function HomePage() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
       <Route path="/events/:id" element={<EventDetailPage />} />
       <Route path="/lectures" element={<LecturesPage />} />
       <Route path="/lectures/:id" element={<LectureDetailPage />} />
+      <Route path="/about-us" element={<AboutPage />} />
     </Routes>
   )
 }
