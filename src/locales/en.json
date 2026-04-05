@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "logo": "15x4",
+    "events": "events",
+    "lectures": "lectures",
+    "about": "about us"
+  },
+  "header": {
+    "title": "15x4",
+    "subtitle": " – SHARE YOUR KNOWLEDGE",
+    "tagline": "[open science-popular lecture hall]",
+    "description": "Anyone can be a part of it — speak, share what excites you. This is a space for young scientists and those who simply can't live without learning."
+  },
+  "upcomingEvents": {
+    "title": "// UPCOMING EVENTS"
+  },
+  "popularLectures": {
+    "title": "// POPULAR LECTURES",
+    "viewMore": "view more"
+  },
+  "join": {
+    "prefix": "//",
+    "title": "join us",
+    "speaker": {
+      "title": "BECOME A SPEAKER",
+      "description": "Have a topic that excites you? Share your knowledge in 15 minutes — this is your stage for science!"
+    },
+    "organizer": {
+      "title": "BECOME AN ORGANIZER",
+      "description": "Want to bring science closer to people? Join the team and help create events that inspire."
+    },
+    "button": "fill out form"
+  },
+  "footer": {
+    "social": "social media",
+    "copyright": "© 2024 15x4. All rights reserved."
+  },
+  "events": {
+    "pageTitle": "// EVENTS",
+    "sortBy": "sort by",
+    "city": "city",
+    "time": "time",
+    "details": "details",
+    "register": "register"
+  },
+  "lectures": {
+    "pageTitle": "// LECTURES",
+    "archive": "lecture archive",
+    "sortBy": "sort by",
+    "category": "category",
+    "duration": "duration"
+  },
+  "about": {
+    "pageTitle": "ABOUT US",
+    "whoWeAre": {
+      "title": "who we are?",
+      "note": "[must watch!]",
+      "description": "The <bold>15x4</bold> project was born in Kharkiv and launched a wave of decentralized movement of young scientists and science enthusiasts. It's a Ukrainian adaptation of the short TED Talks format that quickly spread to other cities in Ukraine and Eastern European countries.",
+      "missionLabel": "mission",
+      "mission": "We promote science popularization by making knowledge accessible to everyone through short, dynamic lectures."
+    },
+    "format": {
+      "title": "Format",
+      "description1": "4 lectures of 15 minutes each + Q&A. <italic>[Offline]</italic> with registration or <italic>[online]</italic> streaming.",
+      "description2": "Each event consists of 4 topics that create a <italic>balance of different fields</italic> of science:"
+    },
+    "categories": {
+      "technical": {
+        "title": "Technical",
+        "description": "How do algorithms manage finances or houses become smarter?"
+      },
+      "natural": {
+        "title": "Natural Science",
+        "description": "From climate chaos to neural connections in the brain."
+      },
+      "humanities": {
+        "title": "Humanities",
+        "description": "Why languages evolve or migration changes societies — stories about ourselves."
+      },
+      "wildcard": {
+        "title": "Wild card",
+        "description": "From microplastics in oceans to psychological illusions."
+      }
+    }
+  },
+  "language": {
+    "uk": "UA",
+    "en": "EN"
+  }
+}
