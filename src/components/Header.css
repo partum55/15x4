@@ -1,0 +1,133 @@
+.header {
+  position: relative;
+  width: 100%;
+  height: clamp(480px, 65vw, 982px);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: var(--color-white);
+}
+
+/* ── Navigation ── */
+.header__nav {
+  position: absolute;
+  top: clamp(20px, 2.6vw, 40px);
+  left: clamp(16px, 3.2vw, 48px);
+  right: clamp(16px, 3.2vw, 48px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header__logo {
+  font-size: clamp(18px, 1.6vw, 24px);
+  font-weight: 700;
+  font-style: italic;
+  color: var(--color-white);
+  text-decoration: none;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Links wrapper — Figma: 690px wide on 1416px nav = ~48.7%
+   Use space-between so the 3 links are evenly distributed */
+.header__links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(690px, 46%);
+}
+
+.header__link {
+  font-size: clamp(14px, 1.6vw, 24px);
+  font-weight: 400;
+  color: var(--color-white);
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.header__link:hover {
+  text-decoration: underline;
+}
+
+/* ── Hero title ── */
+.header__title {
+  position: absolute;
+  /* Figma: top=389 / height=982 ≈ 39.6% */
+  top: 39.6%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: clamp(28px, 5.3vw, 80px);
+  font-weight: 400;
+  line-height: 1.225;
+  letter-spacing: clamp(-0.8px, -0.21vw, -3.2px);
+  color: var(--color-white);
+  padding: 0 clamp(16px, 3.2vw, 48px);
+}
+
+.header__title-bold {
+  font-weight: 700;
+  font-style: italic;
+}
+
+.header__title-light {
+  font-weight: 300;
+  text-transform: uppercase;
+}
+
+/* ── Description block ──
+   Figma: left=381, width=750 → center = 756 = 50% of 1512
+   Use centering via left:50% transform so it stays centered at any width */
+.header__description {
+  position: absolute;
+  /* Figma: top=807 / height=982 ≈ 82.2% */
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(750px, 80%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header__tagline {
+  font-size: clamp(14px, 1.6vw, 24px);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--color-white);
+  line-height: 1.2;
+}
+
+.header__desc-text {
+  font-size: clamp(14px, 1.6vw, 24px);
+  font-weight: 400;
+  color: var(--color-white);
+  line-height: 1.2;
+}
+
+/* ── Tablet ── */
+@media (max-width: 1199px) {
+  .header__links {
+    width: min(500px, 55%);
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .header {
+    height: clamp(360px, 80vw, 520px);
+  }
+
+  .header__links {
+    width: auto;
+    gap: 16px;
+  }
+
+  .header__description {
+    width: 90%;
+    bottom: 5%;
+  }
+}
