@@ -12,6 +12,11 @@
 }
 
 /* Base overrides */
+html,
+body {
+  min-height: 100%;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-white);
@@ -19,12 +24,20 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  min-height: 100dvh;
 }
 
 /* Shared layout utilities */
 .page {
   width: 100%;
+  min-height: 100dvh;
   background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+}
+
+.page > footer {
+  margin-top: auto;
 }
 
 .inner-nav {

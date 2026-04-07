@@ -21,7 +21,9 @@ export default function Navbar({ variant = 'light' }: NavbarProps) {
   ]
 
   return (
-    <nav className={`flex items-center justify-between py-[clamp(20px,2.6vw,40px)] px-[clamp(16px,3.2vw,48px)] ${variant === 'dark' ? 'text-white' : 'text-black'}`}>
+    <nav
+      className={`sticky top-0 z-50 flex items-center justify-between py-[clamp(20px,2.6vw,40px)] px-[clamp(16px,3.2vw,48px)] ${variant === 'dark' ? 'text-white bg-black' : 'text-black bg-[var(--color-white)] border-b border-black/10'}`}
+    >
       <Link
         href="/"
         className="text-[clamp(18px,1.6vw,24px)] font-bold italic leading-none whitespace-nowrap no-underline text-inherit"

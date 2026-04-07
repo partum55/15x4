@@ -199,63 +199,96 @@ export default function LecturesPage() {
     ...categories.map((c) => ({ value: c, label: c })),
   ]
 
+  const renderTwoColumnRows = (items: Lecture[], keyPrefix: string) => {
+    const rows: React.ReactNode[] = []
+
+    for (let i = 0; i < items.length; i += 2) {
+      const left = items[i]
+      const right = items[i + 1]
+
+      rows.push(
+        <div key={`${keyPrefix}-${i}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
+          <ArchiveLectureCard {...left} variant="horizontal" />
+          {right && (
+            <>
+              <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+              <ArchiveLectureCard {...right} variant="horizontal" />
+            </>
+          )}
+        </div>,
+      )
+    }
+
+    return rows
+  }
+
   /* Default fancy layout matching Figma */
   const renderDefaultGrid = () => {
     if (lectures.length === 0) return null
     const rows: React.ReactNode[] = []
     let idx = 0
-    const get = (i: number): Lecture => lectures[i % lectures.length]
 
-    // Row 1: Two horizontal
-    rows.push(
-      <div key="row-1" className="flex items-stretch border-b border-black max-[767px]:flex-col">
-        <ArchiveLectureCard {...get(idx++)} variant="horizontal" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(idx++)} variant="horizontal" />
-      </div>,
-    )
+    while (idx < lectures.length) {
+      if (idx + 2 > lectures.length) break
+      rows.push(
+        <div key={`row-horizontal-a-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
+          <ArchiveLectureCard {...lectures[idx]} variant="horizontal" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 1]} variant="horizontal" />
+        </div>,
+      )
+      idx += 2
 
-    // Row 2: Two compact
-    rows.push(
-      <div key="row-2" className="flex items-stretch border-b border-black max-[767px]:flex-col">
-        <ArchiveLectureCard {...get(idx++)} variant="compact" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(idx++)} variant="compact" />
-      </div>,
-    )
+      if (idx + 2 > lectures.length) break
+      rows.push(
+        <div key={`row-compact-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
+          <ArchiveLectureCard {...lectures[idx]} variant="compact" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 1]} variant="compact" />
+        </div>,
+      )
+      idx += 2
 
-    // Row 3: Two horizontal
-    rows.push(
-      <div key="row-3" className="flex items-stretch border-b border-black max-[767px]:flex-col">
-        <ArchiveLectureCard {...get(idx++)} variant="horizontal" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(idx++)} variant="horizontal" />
-      </div>,
-    )
+      if (idx + 2 > lectures.length) break
+      rows.push(
+        <div key={`row-horizontal-b-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
+          <ArchiveLectureCard {...lectures[idx]} variant="horizontal" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 1]} variant="horizontal" />
+        </div>,
+      )
+      idx += 2
 
-    // Row 4: vertical + featured + vertical
-    rows.push(
-      <div key="row-4" className="flex items-stretch border-b border-black max-[767px]:flex-col">
-        <ArchiveLectureCard {...get(idx++)} variant="vertical" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(2)} variant="featured" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(idx++)} variant="vertical" />
-      </div>,
-    )
+      if (idx + 3 > lectures.length) break
+      rows.push(
+        <div key={`row-featured-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
+          <ArchiveLectureCard {...lectures[idx]} variant="vertical" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 1]} variant="featured" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 2]} variant="vertical" />
+        </div>,
+      )
+      idx += 3
 
-    // Row 5: Four compact
-    rows.push(
-      <div key="row-5" className="flex border-b border-black max-[767px]:flex-col">
-        <ArchiveLectureCard {...get(idx++)} variant="compact" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(idx++)} variant="compact" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(idx++)} variant="compact" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <ArchiveLectureCard {...get(idx++)} variant="compact" />
-      </div>,
-    )
+      if (idx + 4 > lectures.length) break
+      rows.push(
+        <div key={`row-compact-quad-${idx}`} className="flex border-b border-black max-[767px]:flex-col">
+          <ArchiveLectureCard {...lectures[idx]} variant="compact" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 1]} variant="compact" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 2]} variant="compact" />
+          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+          <ArchiveLectureCard {...lectures[idx + 3]} variant="compact" />
+        </div>,
+      )
+      idx += 4
+    }
+
+    if (idx < lectures.length) {
+      rows.push(...renderTwoColumnRows(lectures.slice(idx), `row-rest-${idx}`))
+    }
 
     return rows
   }
@@ -268,23 +301,7 @@ export default function LecturesPage() {
       )
     }
 
-    const rows: React.ReactNode[] = []
-    for (let i = 0; i < filteredLectures.length; i += 2) {
-      const left = filteredLectures[i]
-      const right = filteredLectures[i + 1]
-      rows.push(
-        <div key={`filtered-${i}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <ArchiveLectureCard {...left} variant="horizontal" />
-          {right && (
-            <>
-              <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-              <ArchiveLectureCard {...right} variant="horizontal" />
-            </>
-          )}
-        </div>,
-      )
-    }
-    return rows
+    return renderTwoColumnRows(filteredLectures, 'filtered')
   }
 
   return (
