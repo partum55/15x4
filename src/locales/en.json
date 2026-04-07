@@ -121,6 +121,8 @@
       "passwordLabel": "password",
       "passwordConfirmLabel": "confirm password",
       "submitBtn": "create account",
+      "checkEmail": "// CHECK YOUR EMAIL",
+      "confirmationSent": "We've sent a confirmation email. Please check your inbox.",
       "hasAccount": "already have an account?",
       "loginLink": "log in",
       "errorEmailTaken": "this email is already registered",
