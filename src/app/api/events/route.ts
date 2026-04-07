@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 function attachEventLectures(
   events: Array<Record<string, unknown>>,
@@ -65,9 +66,25 @@ export async function POST(req: NextRequest) {
       .from('profiles')
       .select('status')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (profile?.status !== 'approved') {
+    let profileStatus = profile?.status ?? null
+
+    if (!profileStatus) {
+      const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
+        .from('profiles')
+        .select('status')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (adminProfileError) {
+        return NextResponse.json({ error: 'Failed to verify account status' }, { status: 500 })
+      }
+
+      profileStatus = adminProfile?.status ?? null
+    }
+
+    if (profileStatus !== 'approved') {
       return NextResponse.json({ error: 'Account not approved' }, { status: 403 })
     }
 

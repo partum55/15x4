@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET() {
   try {
@@ -41,14 +42,30 @@ export async function POST(req: NextRequest) {
     
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Check if user is approved
+    // Check if user is approved. Fall back to admin lookup if RLS hides the row.
     const { data: profile } = await supabase
       .from('profiles')
       .select('status')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (profile?.status !== 'approved') {
+    let profileStatus = profile?.status ?? null
+
+    if (!profileStatus) {
+      const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
+        .from('profiles')
+        .select('status')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (adminProfileError) {
+        return NextResponse.json({ error: 'Failed to verify account status' }, { status: 500 })
+      }
+
+      profileStatus = adminProfile?.status ?? null
+    }
+
+    if (profileStatus !== 'approved') {
       return NextResponse.json({ error: 'Account not approved' }, { status: 403 })
     }
 
