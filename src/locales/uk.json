@@ -121,6 +121,8 @@
       "passwordLabel": "пароль",
       "passwordConfirmLabel": "підтвердити пароль",
       "submitBtn": "створити акаунт",
+      "checkEmail": "// ПЕРЕВІРТЕ ПОШТУ",
+      "confirmationSent": "Ми надіслали лист для підтвердження. Перевірте пошту.",
       "hasAccount": "вже є акаунт?",
       "loginLink": "увійти",
       "errorEmailTaken": "ця пошта вже зареєстрована",
