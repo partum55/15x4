@@ -24,7 +24,7 @@ export default function AdminUsersPage() {
   const [loadingUsers, setLoadingUsers] = useState(true)
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!loading && (!user || user?.profile?.role !== 'admin')) {
       router.push('/')
     }
   }, [user, loading, router])
@@ -63,7 +63,7 @@ export default function AdminUsersPage() {
     setUsers(prev => prev.filter(u => u.id !== userId))
   }
 
-  if (loading || !user || user.role !== 'admin') {
+  if (loading || !user || user?.profile?.role !== 'admin') {
     return null
   }
 

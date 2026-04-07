@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect } from 'react'
-import type { Event } from '../data/events'
+import type { Event } from '@/lib/api'
 import ArrowIcon from '../components/ArrowIcon'
 import AccountMenu from '../components/AccountMenu'
 import Footer from '../components/Footer'
@@ -82,7 +82,7 @@ export default function EventDetailPage() {
               <span className="text-red">{'//'}</span> {t('eventDetail.talks')}
             </h2>
             <div>
-              {event.lectures.map((lecture, i) => (
+              {event.lectures?.map((lecture, i) => (
                 <div key={i} className="pt-5">
                   <div className="w-full h-px bg-black mb-5" />
                   <p className="text-[clamp(14px,1.4vw,20px)] font-medium mb-1.5">{lecture.title}</p>

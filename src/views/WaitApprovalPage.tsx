@@ -8,10 +8,10 @@ import { useAuth } from '../context/AuthContext'
 export default function WaitApprovalPage() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { logout } = useAuth()
+  const { signOut } = useAuth()
 
   async function handleLogout() {
-    await logout()
+    await signOut()
     router.push('/')
   }
 

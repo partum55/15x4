@@ -21,7 +21,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null)
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!loading && (!user || user?.profile?.role !== 'admin')) {
       router.push('/')
     }
   }, [user, loading, router])
@@ -34,7 +34,7 @@ export default function AdminDashboard() {
       })
   }, [])
 
-  if (loading || !user || user.role !== 'admin') {
+  if (loading || !user || user?.profile?.role !== 'admin') {
     return null
   }
 

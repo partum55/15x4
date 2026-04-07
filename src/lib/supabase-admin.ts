@@ -1,29 +1,19 @@
-import { createClient } from '@supabase/supabase-js'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 let cachedClient: SupabaseClient | null = null
 
-function getSupabaseAdminClient() {
-  if (cachedClient) {
-    return cachedClient
+function getSupabaseAdminClient(): SupabaseClient {
+  if (cachedClient) return cachedClient
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !serviceKey) {
+    throw new Error('Missing SUPABASE_URL or SERVICE_ROLE_KEY')
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is required')
-  }
-
-  if (!supabaseServiceRoleKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required')
-  }
-
-  cachedClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+  cachedClient = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
   })
 
   return cachedClient

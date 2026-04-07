@@ -19,14 +19,18 @@ export async function GET() {
     }
 
     const userIds = [...new Set(lectures.map((lecture) => lecture.userId).filter(Boolean))]
-    const { data: users } = userIds.length
-      ? await supabaseAdmin.from('User').select('id, name, email').in('id', userIds)
-      : { data: [] as Array<{ id: string; name: string; email: string }> }
+    const { data: profiles } = userIds.length
+      ? await supabaseAdmin.from('profiles').select('id, name').in('id', userIds)
+      : { data: [] as Array<{ id: string; name: string }> }
 
-    const usersById = new Map((users ?? []).map((user) => [user.id, user]))
+    // Get emails from auth
+    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers()
+    const emailMap = new Map(authUsers.map(u => [u.id, u.email]))
+
+    const profilesById = new Map((profiles ?? []).map((p) => [p.id, { ...p, email: emailMap.get(p.id) ?? '' }]))
     const response = lectures.map((lecture) => ({
       ...lecture,
-      user: lecture.userId ? usersById.get(lecture.userId) ?? null : null,
+      user: lecture.userId ? profilesById.get(lecture.userId) ?? null : null,
     }))
 
     return NextResponse.json(response)

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@/lib/supabase/server'
 
 function attachEventLectures(
   events: Array<Record<string, unknown>>,
@@ -22,12 +21,16 @@ function attachEventLectures(
 
 export async function GET() {
   try {
-    const session = await getSession()
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    const baseQuery = supabaseAdmin.from('Event').select('*').order('createdAt', { ascending: false })
-    const query = session
-      ? baseQuery.or(`isPublic.eq.true,userId.eq.${session.userId}`)
-      : baseQuery.eq('isPublic', true)
+    let query = supabase.from('Event').select('*').order('createdAt', { ascending: false })
+    
+    if (user) {
+      query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
+    } else {
+      query = query.eq('isPublic', true)
+    }
 
     const { data: events, error } = await query
     if (error || !events) {
@@ -36,7 +39,7 @@ export async function GET() {
 
     const eventIds = events.map((event) => event.id)
     const { data: lectures, error: lecturesError } = eventIds.length
-      ? await supabaseAdmin.from('EventLecture').select('*').in('eventId', eventIds)
+      ? await supabase.from('EventLecture').select('*').in('eventId', eventIds)
       : { data: [] as Array<Record<string, unknown>>, error: null }
 
     if (lecturesError) {
@@ -53,9 +56,20 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (session.status !== 'approved') return NextResponse.json({ error: 'Account not approved' }, { status: 403 })
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('status')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.status !== 'approved') {
+      return NextResponse.json({ error: 'Account not approved' }, { status: 403 })
+    }
 
     const body = await req.json()
     const { city, date, location, time, image, registrationUrl, lectures } = body
@@ -64,7 +78,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { data: event, error: eventError } = await supabaseAdmin
+    const { data: event, error: eventError } = await supabase
       .from('Event')
       .insert({
         city,
@@ -74,7 +88,7 @@ export async function POST(req: NextRequest) {
         image,
         registrationUrl: registrationUrl ?? null,
         isPublic: false,
-        userId: session.userId,
+        userId: user.id,
       })
       .select('*')
       .single()
@@ -105,7 +119,7 @@ export async function POST(req: NextRequest) {
     )
 
     const { data: createdLectures, error: lecturesError } = eventLectures.length
-      ? await supabaseAdmin.from('EventLecture').insert(eventLectures).select('*')
+      ? await supabase.from('EventLecture').insert(eventLectures).select('*')
       : { data: [], error: null }
 
     if (lecturesError) {

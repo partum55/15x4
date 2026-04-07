@@ -9,16 +9,31 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { data: users, error } = await supabaseAdmin
-      .from('User')
-      .select('id, name, email, status, role, createdAt')
-      .order('createdAt', { ascending: false })
+    // Get profiles with user emails from auth.users
+    const { data: profiles, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, name, status, role, created_at')
+      .order('created_at', { ascending: false })
 
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    return NextResponse.json(users ?? [])
+    // Fetch emails from auth.users for each profile
+    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers()
+    
+    const emailMap = new Map(authUsers.map(u => [u.id, u.email]))
+    
+    const users = (profiles ?? []).map(p => ({
+      id: p.id,
+      name: p.name,
+      email: emailMap.get(p.id) ?? '',
+      status: p.status,
+      role: p.role,
+      createdAt: p.created_at,
+    }))
+
+    return NextResponse.json(users)
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

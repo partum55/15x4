@@ -1,15 +1,16 @@
-import { getSession } from '@/lib/session'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function requireAdminSession() {
-  const session = await getSession()
-  if (!session) return null
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return null
 
-  const { data: user } = await supabaseAdmin
-    .from('User')
+  const { data: profile } = await supabase
+    .from('profiles')
     .select('role')
-    .eq('id', session.userId)
-    .maybeSingle()
+    .eq('id', user.id)
+    .single()
 
-  return user?.role === 'admin' ? session : null
+  return profile?.role === 'admin' ? { userId: user.id, email: user.email } : null
 }

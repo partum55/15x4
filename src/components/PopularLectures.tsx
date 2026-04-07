@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import type { Lecture } from '../data/lectures'
+import type { Lecture } from '@/lib/api'
 import { api } from '../lib/api'
 import { CATEGORY_COLOR_VAR } from '../constants/colors'
 
-export function LectureCard({ id, category, categoryColor, author, image, title, summary }: Lecture) {
+function LectureCard({ id, category, categoryColor, author, image, title, summary }: Lecture) {
   const [hovered, setHovered] = useState(false)
 
   const bgColor = CATEGORY_COLOR_VAR[categoryColor] || 'var(--color-red)'

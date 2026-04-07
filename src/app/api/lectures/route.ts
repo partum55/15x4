@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
-    const session = await getSession()
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    const baseQuery = supabaseAdmin
+    let query = supabase
       .from('Lecture')
       .select('*')
       .order('createdAt', { ascending: false })
 
-    const query = session
-      ? baseQuery.or(`isPublic.eq.true,userId.eq.${session.userId}`)
-      : baseQuery.eq('isPublic', true)
+    if (user) {
+      query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
+    } else {
+      query = query.eq('isPublic', true)
+    }
 
     const { data: lectures, error } = await query
     if (error) {
@@ -34,9 +36,21 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (session.status !== 'approved') return NextResponse.json({ error: 'Account not approved' }, { status: 403 })
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Check if user is approved
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('status')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.status !== 'approved') {
+      return NextResponse.json({ error: 'Account not approved' }, { status: 403 })
+    }
 
     const body = await req.json()
     const { category, categoryColor, author, image, title, summary, duration, videoUrl, authorBio, sources, socialLinks, eventCity, eventDate, eventPhotosUrl } = body
@@ -45,7 +59,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { data: lecture, error } = await supabaseAdmin
+    const { data: lecture, error } = await supabase
       .from('Lecture')
       .insert({
         category,
@@ -63,7 +77,7 @@ export async function POST(req: NextRequest) {
         sources: sources ? JSON.stringify(sources) : null,
         socialLinks: socialLinks ? JSON.stringify(socialLinks) : null,
         isPublic: false,
-        userId: session.userId,
+        userId: user.id,
       })
       .select('*')
       .single()

@@ -1,5 +1,51 @@
-import type { Event } from '../data/events'
-import type { Lecture } from '../data/lectures'
+export type Lecture = {
+  id: string
+  category: string
+  categoryColor: 'orange' | 'green' | 'blue' | 'red'
+  author: string
+  image: string
+  title: string
+  summary: string
+  duration?: string
+  videoUrl?: string
+  authorBio?: string
+  eventCity?: string
+  eventDate?: string
+  eventPhotosUrl?: string
+  sources?: { name: string; url: string }[] | null
+  socialLinks?: { type: string; url: string }[] | null
+  isPublic: boolean
+  userId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type EventLecture = {
+  id: string
+  title: string
+  author: string
+  category: string
+  categoryColor: 'orange' | 'green' | 'blue' | 'red'
+  image: string
+  summary: string
+  lectureId?: string
+  eventId: string
+}
+
+export type Event = {
+  id: string
+  city: string
+  date: string
+  location: string
+  time: string
+  image: string
+  registrationUrl?: string
+  isPublic: boolean
+  userId?: string
+  createdAt: string
+  updatedAt: string
+  lectures?: EventLecture[]
+}
 
 const json = (res: Response) => res.json()
 const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
@@ -13,13 +59,8 @@ const del = (url: string) =>
   fetch(url, { method: 'DELETE' }).then(json)
 
 export const api = {
-  // Auth
-  register: (body: { name: string; email: string; password: string }) => post('/api/auth/register', body),
-  login: (body: { email: string; password: string }) => post('/api/auth/login', body),
-  logout: () => post('/api/auth/logout'),
-  confirmEmail: () => post('/api/auth/confirm-email'),
-  getMe: () => fetch('/api/auth/me').then(json),
-  updateAccount: (body: { name?: string; email?: string; password?: string }) => patch('/api/auth/update', body),
+  // Profile
+  updateProfile: (body: { name?: string }) => patch('/api/profile', body),
 
   // Lectures
   getLectures: () => fetch('/api/lectures').then(json).then((data) => asArray<Lecture>(data)),
@@ -34,4 +75,16 @@ export const api = {
   createEvent: (body: object) => post('/api/events', body),
   updateEvent: (id: string, body: object) => put(`/api/events/${id}`, body),
   deleteEvent: (id: string) => del(`/api/events/${id}`),
+
+  // Admin
+  admin: {
+    getUsers: () => fetch('/api/admin/users').then(json),
+    updateUser: (id: string, body: { status?: string; role?: string }) => patch(`/api/admin/users/${id}`, body),
+    deleteUser: (id: string) => del(`/api/admin/users/${id}`),
+    getLectures: () => fetch('/api/admin/lectures').then(json),
+    deleteLecture: (id: string) => del(`/api/admin/lectures/${id}`),
+    getEvents: () => fetch('/api/admin/events').then(json),
+    deleteEvent: (id: string) => del(`/api/admin/events/${id}`),
+    getStats: () => fetch('/api/admin/stats').then(json),
+  },
 }

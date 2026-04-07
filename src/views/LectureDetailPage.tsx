@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect } from 'react'
-import type { Lecture } from '../data/lectures'
+import type { Lecture } from '@/lib/api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { api } from '../lib/api'
@@ -102,15 +102,15 @@ export default function LectureDetailPage() {
                   {lecture.author.toUpperCase()}
                 </p>
                 {lecture.socialLinks?.map((s) => (
-                  <div key={s.platform} className="flex items-baseline gap-2">
-                    <span className="text-[clamp(11px,1.1vw,15px)] text-black whitespace-nowrap">[{s.platform}]</span>
+                  <div key={s.type} className="flex items-baseline gap-2">
+                    <span className="text-[clamp(11px,1.1vw,15px)] text-black whitespace-nowrap">[{s.type}]</span>
                     <a
                       href={s.url}
                       className="text-[clamp(11px,1.1vw,15px)] text-orange no-underline hover:underline"
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {s.handle}
+                      {s.url}
                     </a>
                   </div>
                 ))}
@@ -136,8 +136,8 @@ export default function LectureDetailPage() {
                     <span className="flex-shrink-0">{i + 1}.</span>
                     {s.url ? (
                       <>
-                        {s.label.split('–')[0]}
-                        {s.label.includes('–') && '– '}
+                        {s.name.split('–')[0]}
+                        {s.name.includes('–') && '– '}
                         <a
                           href={s.url}
                           className="text-orange no-underline hover:underline"
@@ -148,7 +148,7 @@ export default function LectureDetailPage() {
                         </a>
                       </>
                     ) : (
-                      s.label
+                      s.name
                     )}
                   </li>
                 ))}
@@ -158,7 +158,7 @@ export default function LectureDetailPage() {
         </div>
 
         {/* About event */}
-        {lecture.event && (
+        {(lecture.eventCity || lecture.eventDate) && (
           <>
             <div className="w-full h-px bg-black my-[clamp(32px,4vw,56px)]" />
             <section>
@@ -166,11 +166,15 @@ export default function LectureDetailPage() {
                 <span className="text-red">{'//'}</span> {t('lectureDetail.aboutEvent')}
               </h2>
               <div className="flex items-baseline gap-[clamp(16px,3vw,48px)] mb-[clamp(24px,3vw,40px)] max-[767px]:flex-wrap max-[767px]:gap-2">
-                <span className="text-[clamp(13px,1.3vw,18px)] font-normal tracking-[0.05em]">{lecture.event.city.toUpperCase()}</span>
-                <span className="text-[clamp(13px,1.3vw,18px)]">[{lecture.event.date}]</span>
-                {lecture.event.photosUrl && (
+                {lecture.eventCity && (
+                  <span className="text-[clamp(13px,1.3vw,18px)] font-normal tracking-[0.05em]">{lecture.eventCity.toUpperCase()}</span>
+                )}
+                {lecture.eventDate && (
+                  <span className="text-[clamp(13px,1.3vw,18px)]">[{lecture.eventDate}]</span>
+                )}
+                {lecture.eventPhotosUrl && (
                   <a
-                    href={lecture.event.photosUrl}
+                    href={lecture.eventPhotosUrl}
                     className="ml-auto text-[clamp(12px,1.2vw,17px)] text-orange no-underline flex items-baseline gap-1 hover:underline max-[767px]:ml-0 max-[767px]:w-full"
                     target="_blank"
                     rel="noreferrer"
