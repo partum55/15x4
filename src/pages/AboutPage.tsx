@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom'
 import { useTranslation, Trans } from 'react-i18next'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import Navbar from '../components/Navbar'
 import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'
 import './AboutPage.css'
@@ -31,40 +30,15 @@ export default function AboutPage() {
   const { t } = useTranslation()
 
   const categories: CategoryProps[] = [
-    {
-      title: t('about.categories.technical.title'),
-      description: t('about.categories.technical.description'),
-      color: 'blue',
-    },
-    {
-      title: t('about.categories.natural.title'),
-      description: t('about.categories.natural.description'),
-      color: 'green',
-    },
-    {
-      title: t('about.categories.humanities.title'),
-      description: t('about.categories.humanities.description'),
-      color: 'red',
-    },
-    {
-      title: t('about.categories.wildcard.title'),
-      description: t('about.categories.wildcard.description'),
-      color: 'orange',
-    },
+    { title: t('about.categories.technical.title'), description: t('about.categories.technical.description'), color: 'blue' },
+    { title: t('about.categories.natural.title'), description: t('about.categories.natural.description'), color: 'green' },
+    { title: t('about.categories.humanities.title'), description: t('about.categories.humanities.description'), color: 'red' },
+    { title: t('about.categories.wildcard.title'), description: t('about.categories.wildcard.description'), color: 'orange' },
   ]
 
   return (
     <div className="page about-page">
-      {/* Navigation Header */}
-      <nav className="about-nav">
-        <Link to="/" className="about-nav__logo">{t('nav.logo')}</Link>
-        <div className="about-nav__links">
-          <Link to="/events" className="about-nav__link">{t('nav.events')}</Link>
-          <Link to="/lectures" className="about-nav__link">{t('nav.lectures')}</Link>
-          <Link to="/about-us" className="about-nav__link about-nav__link--active">{t('nav.about')}</Link>
-          <LanguageSwitcher />
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Page Header */}
       <div className="about-header">
@@ -84,18 +58,15 @@ export default function AboutPage() {
         <div className="about-who__content">
           <div className="about-who__text">
             <p className="about-who__description">
-              <Trans i18nKey="about.whoWeAre.description">
-                Проєкт <span className="about-who__description-bold">15х4</span> народився в Харкові...
-              </Trans>
+              <Trans
+                i18nKey="about.whoWeAre.description"
+                components={{ bold: <span className="about-who__description-bold" /> }}
+              />
             </p>
             <p className="about-who__mission-label">{t('about.whoWeAre.missionLabel')}</p>
             <p className="about-who__mission">{t('about.whoWeAre.mission')}</p>
           </div>
-          <img 
-            src={introImage} 
-            alt="15x4" 
-            className="about-who__image"
-          />
+          <img src={introImage} alt="15x4" className="about-who__image" />
         </div>
       </section>
 
@@ -107,14 +78,16 @@ export default function AboutPage() {
         </div>
 
         <p className="about-format__description">
-          <Trans i18nKey="about.format.description1">
-            4 лекції по 15 хвилин + Q&A. <span className="about-format__description-italic">[Офлайн]</span> з реєстрацією або <span className="about-format__description-italic">[онлайн]</span>-трансляція.
-          </Trans>
+          <Trans
+            i18nKey="about.format.description1"
+            components={{ italic: <span className="about-format__description-italic" /> }}
+          />
         </p>
         <p className="about-format__description">
-          <Trans i18nKey="about.format.description2">
-            Кожна подія — це 4 теми, які складають <span className="about-format__description-italic">баланс різних напрямків</span> науки:
-          </Trans>
+          <Trans
+            i18nKey="about.format.description2"
+            components={{ italic: <span className="about-format__description-italic" /> }}
+          />
         </p>
 
         <div className="about-categories">

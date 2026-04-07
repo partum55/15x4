@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { events, type EventLecture, type Event } from '../data/events'
+import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
+import ChevronIcon from '../components/ChevronIcon'
+import FilterDropdown from '../components/FilterDropdown'
 import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'
 import './EventsPage.css'
@@ -10,19 +14,13 @@ type EventLectureCardProps = EventLecture & {
   isHovered?: boolean
 }
 
-function EventLectureCard({ 
-  id, 
-  title, 
-  author, 
-  category, 
-  categoryColor, 
-  image, 
-  summary,
-  isHovered = false
+function EventLectureCard({
+  id, title, author, category, categoryColor, image, summary,
+  isHovered = false,
 }: EventLectureCardProps) {
   const [hovered, setHovered] = useState(false)
   const showHoverState = isHovered || hovered
-  
+
   const colorMap: Record<string, string> = {
     orange: 'var(--color-orange)',
     green: 'var(--color-green)',
@@ -33,8 +31,8 @@ function EventLectureCard({
   const hasImage = image && image.length > 0
 
   return (
-    <Link 
-      to={`/lectures/${id}`} 
+    <Link
+      to={`/lectures/${id}`}
       className={`event-lecture-card ${showHoverState ? 'event-lecture-card--hovered' : ''}`}
       style={showHoverState ? { backgroundColor: bgColor } : undefined}
       onMouseEnter={() => setHovered(true)}
@@ -42,22 +40,18 @@ function EventLectureCard({
     >
       <div className="event-lecture-card__thumbnail-container">
         {hasImage ? (
-          <img 
-            src={image} 
-            alt={title} 
-            className="event-lecture-card__thumbnail"
-          />
+          <img src={image} alt={title} className="event-lecture-card__thumbnail" />
         ) : (
-          <div 
+          <div
             className="event-lecture-card__thumbnail event-lecture-card__thumbnail--solid"
             style={{ backgroundColor: bgColor }}
           />
         )}
-        <span 
+        <span
           className={`event-lecture-card__badge ${showHoverState ? 'event-lecture-card__badge--filled' : ''}`}
-          style={{ 
+          style={{
             borderColor: bgColor,
-            backgroundColor: showHoverState ? bgColor : 'var(--color-white)'
+            backgroundColor: showHoverState ? bgColor : 'var(--color-white)',
           }}
         >
           {category}
@@ -74,33 +68,19 @@ function EventLectureCard({
   )
 }
 
-function ChevronIcon({ direction = 'down' }: { direction?: 'down' | 'up' }) {
-  return (
-    <svg 
-      width="12" 
-      height="8" 
-      viewBox="0 0 12 8" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ transform: direction === 'up' ? 'rotate(180deg)' : undefined }}
-    >
-      <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
 type EventSectionProps = {
   event: Event
   isExpanded: boolean
   onToggle: () => void
+  detailsLabel: string
+  registerLabel: string
 }
 
-function EventSection({ event, isExpanded, onToggle }: EventSectionProps) {
+function EventSection({ event, isExpanded, onToggle, detailsLabel, registerLabel }: EventSectionProps) {
   return (
     <div className="event-section">
       <div className="event-section__divider" />
-      
-      {/* Event Header Row */}
+
       <div className="event-section__header">
         <div className="event-section__info">
           <div className="event-section__meta">
@@ -109,23 +89,19 @@ function EventSection({ event, isExpanded, onToggle }: EventSectionProps) {
           </div>
           <p className="event-section__location">{event.location}</p>
         </div>
-        
+
         <div className="event-section__actions">
-          <button 
-            className="event-section__details-btn"
-            onClick={onToggle}
-          >
-            <span>детальніше</span>
+          <button className="event-section__details-btn" onClick={onToggle}>
+            <span>{detailsLabel}</span>
             <ChevronIcon direction={isExpanded ? 'up' : 'down'} />
           </button>
           <Link to={`/events/${event.id}`} className="event-section__register-btn">
-            <span>реєстрація</span>
+            <span>{registerLabel}</span>
             <ArrowIcon />
           </Link>
         </div>
       </div>
 
-      {/* Lectures Grid */}
       {isExpanded && (
         <div className="event-section__lectures">
           {event.lectures.map((lecture) => (
@@ -138,10 +114,43 @@ function EventSection({ event, isExpanded, onToggle }: EventSectionProps) {
 }
 
 export default function EventsPage() {
+  const { t } = useTranslation()
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set(['lviv-2024-05']))
+  const [sortOrder, setSortOrder] = useState('')
+  const [cityFilter, setCityFilter] = useState('')
+  const [timeFilter, setTimeFilter] = useState('')
+
+  const cities = useMemo(() => [...new Set(events.map((e) => e.city))], [])
+  const times = useMemo(() => [...new Set(events.map((e) => e.time))].sort(), [])
+
+  const filteredEvents = useMemo(() => {
+    let result = [...events]
+
+    if (cityFilter) {
+      result = result.filter((e) => e.city === cityFilter)
+    }
+    if (timeFilter) {
+      result = result.filter((e) => e.time === timeFilter)
+    }
+    if (sortOrder === 'dateAsc') {
+      result.sort((a, b) => {
+        const [da, ma] = a.date.split('/').map(Number)
+        const [db, mb] = b.date.split('/').map(Number)
+        return ma * 100 + da - (mb * 100 + db)
+      })
+    } else if (sortOrder === 'dateDesc') {
+      result.sort((a, b) => {
+        const [da, ma] = a.date.split('/').map(Number)
+        const [db, mb] = b.date.split('/').map(Number)
+        return mb * 100 + db - (ma * 100 + da)
+      })
+    }
+
+    return result
+  }, [cityFilter, timeFilter, sortOrder])
 
   const toggleEvent = (eventId: string) => {
-    setExpandedEvents(prev => {
+    setExpandedEvents((prev) => {
       const next = new Set(prev)
       if (next.has(eventId)) {
         next.delete(eventId)
@@ -152,45 +161,46 @@ export default function EventsPage() {
     })
   }
 
+  const sortOptions = [
+    { value: '', label: t('events.sortBy') },
+    { value: 'dateDesc', label: t('events.dateDesc') },
+    { value: 'dateAsc', label: t('events.dateAsc') },
+  ]
+
+  const cityOptions = [
+    { value: '', label: t('events.allCities') },
+    ...cities.map((c) => ({ value: c, label: c })),
+  ]
+
+  const timeOptions = [
+    { value: '', label: t('events.time') },
+    ...times.map((time) => ({ value: time, label: time })),
+  ]
+
   return (
     <div className="page events-page">
-      {/* Navigation Header */}
-      <nav className="events-nav">
-        <Link to="/" className="events-nav__logo">15x4</Link>
-        <div className="events-nav__links">
-          <Link to="/events" className="events-nav__link events-nav__link--active">події</Link>
-          <Link to="/lectures" className="events-nav__link">лекції</Link>
-          <Link to="/#about" className="events-nav__link">про нас</Link>
-        </div>
-      </nav>
+      <Navbar />
 
-      {/* Page Header with Filters */}
       <div className="events-header">
-        <h1 className="events-header__title">// ПОДІЇ</h1>
+        <h1 className="events-header__title">
+          <span className="events-header__title-accent">//</span> {t('events.pageTitle')}
+        </h1>
         <div className="events-header__filters">
-          <button className="events-filter">
-            <span>сортувати за</span>
-            <ChevronIcon />
-          </button>
-          <button className="events-filter">
-            <span>місто</span>
-            <ChevronIcon />
-          </button>
-          <button className="events-filter">
-            <span>час</span>
-            <ChevronIcon />
-          </button>
+          <FilterDropdown label={t('events.sortBy')} options={sortOptions} value={sortOrder} onChange={setSortOrder} />
+          <FilterDropdown label={t('events.city')} options={cityOptions} value={cityFilter} onChange={setCityFilter} />
+          <FilterDropdown label={t('events.time')} options={timeOptions} value={timeFilter} onChange={setTimeFilter} />
         </div>
       </div>
 
-      {/* Events List */}
       <main className="events-content">
-        {events.map((event) => (
-          <EventSection 
-            key={event.id} 
+        {filteredEvents.map((event) => (
+          <EventSection
+            key={event.id}
             event={event}
             isExpanded={expandedEvents.has(event.id)}
             onToggle={() => toggleEvent(event.id)}
+            detailsLabel={t('events.details')}
+            registerLabel={t('events.register')}
           />
         ))}
         <div className="event-section__divider" />

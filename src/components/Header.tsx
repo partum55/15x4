@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from './LanguageSwitcher'
+import Navbar from './Navbar'
 import './Header.css'
 
 export default function Header() {
@@ -11,15 +10,7 @@ export default function Header() {
       className="header"
       style={{ backgroundImage: `url(/images/header-image.png)` }}
     >
-      <nav className="header__nav">
-        <Link to="/" className="header__logo">{t('nav.logo')}</Link>
-        <div className="header__links">
-          <Link to="/events" className="header__link">{t('nav.events')}</Link>
-          <Link to="/lectures" className="header__link">{t('nav.lectures')}</Link>
-          <Link to="/about-us" className="header__link">{t('nav.about')}</Link>
-          <LanguageSwitcher />
-        </div>
-      </nav>
+      <Navbar variant="dark" />
 
       <h1 className="header__title">
         <span className="header__title-bold">{t('header.title')}</span>

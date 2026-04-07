@@ -8,37 +8,6 @@
   font-size: 24px;
 }
 
-/* ── Nav ── */
-.ld-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: clamp(20px, 2.6vw, 36px) clamp(16px, 3.2vw, 48px);
-}
-
-.ld-nav__logo {
-  font-size: clamp(18px, 2vw, 28px);
-  font-weight: 700;
-  text-decoration: none;
-  color: var(--color-black);
-  letter-spacing: 0.02em;
-}
-
-.ld-nav__links {
-  display: flex;
-  gap: clamp(24px, 4vw, 64px);
-}
-
-.ld-nav__link {
-  font-size: clamp(13px, 1.3vw, 18px);
-  text-decoration: none;
-  color: var(--color-black);
-}
-
-.ld-nav__link:hover {
-  opacity: 0.6;
-}
-
 /* ── Main content ── */
 .ld-main {
   padding: 0 clamp(16px, 3.2vw, 48px) clamp(48px, 6vw, 96px);
@@ -91,7 +60,7 @@
 .ld-hero__play svg {
   width: clamp(48px, 7vw, 96px);
   height: clamp(48px, 7vw, 96px);
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
 }
 
 .ld-hero__play:hover {
@@ -126,6 +95,7 @@
 .ld-badge--orange { border-color: var(--color-orange); }
 .ld-badge--green  { border-color: var(--color-green); }
 .ld-badge--blue   { border-color: var(--color-blue); }
+.ld-badge--red    { border-color: var(--color-red); }
 
 .ld-hero__duration {
   font-size: clamp(12px, 1.2vw, 18px);
@@ -153,6 +123,10 @@
   text-transform: uppercase;
   margin-bottom: clamp(20px, 2.4vw, 36px);
   letter-spacing: 0.02em;
+}
+
+.ld-section-heading__accent {
+  color: var(--color-red);
 }
 
 /* ── Info grid (author + sources) ── */
@@ -302,10 +276,6 @@
   border-right: none;
 }
 
-.ld-related__card:not(:first-child) {
-  padding-left: 0;
-}
-
 .ld-related__img-wrap {
   position: relative;
   margin-bottom: 12px;
@@ -332,6 +302,7 @@
 .ld-related__badge--orange { border-color: var(--color-orange); }
 .ld-related__badge--green  { border-color: var(--color-green); }
 .ld-related__badge--blue   { border-color: var(--color-blue); }
+.ld-related__badge--red    { border-color: var(--color-red); }
 
 .ld-related__title {
   font-size: clamp(11px, 1.1vw, 15px);
@@ -385,10 +356,6 @@
 
 /* ── Mobile ── */
 @media (max-width: 767px) {
-  .ld-nav__links {
-    gap: 20px;
-  }
-
   .ld-author__body {
     grid-template-columns: 1fr;
     gap: 20px;

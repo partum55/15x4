@@ -1,9 +1,12 @@
 import { useParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { lectures } from '../data/lectures'
+import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import './LectureDetailPage.css'
 
 export default function LectureDetailPage() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const lecture = lectures.find((l) => l.id === id)
   const related = lectures.filter((l) => l.id !== id).slice(0, 4)
@@ -11,15 +14,15 @@ export default function LectureDetailPage() {
   if (!lecture) {
     return (
       <div className="page ld-page">
-        <LDNav />
-        <div className="ld-not-found">Лекцію не знайдено</div>
+        <Navbar />
+        <div className="ld-not-found">{t('lectureDetail.notFound')}</div>
       </div>
     )
   }
 
   return (
     <div className="page ld-page">
-      <LDNav />
+      <Navbar />
 
       <main className="ld-main">
         {/* Title */}
@@ -29,7 +32,7 @@ export default function LectureDetailPage() {
         <div className="ld-hero">
           <div className="ld-hero__media">
             <img src={lecture.image} alt={lecture.title} className="ld-hero__img" />
-            <button className="ld-hero__play" aria-label="Відтворити лекцію">
+            <button className="ld-hero__play" aria-label={t('lectureDetail.play')}>
               <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <polygon points="16,10 40,24 16,38" fill="white" />
               </svg>
@@ -54,7 +57,9 @@ export default function LectureDetailPage() {
         {/* About author + sources */}
         <div className="ld-info-grid">
           <section className="ld-author">
-            <h2 className="ld-section-heading">// ПРО АВТОРА</h2>
+            <h2 className="ld-section-heading">
+              <span className="ld-section-heading__accent">//</span> {t('lectureDetail.aboutAuthor')}
+            </h2>
             <div className="ld-author__body">
               <div className="ld-author__left">
                 <p className="ld-author__name">{lecture.author.toUpperCase()}</p>
@@ -75,7 +80,9 @@ export default function LectureDetailPage() {
 
           {lecture.sources && lecture.sources.length > 0 && (
             <section className="ld-sources">
-              <h2 className="ld-section-heading">// ДОДАТКОВІ ДЖЕРЕЛА</h2>
+              <h2 className="ld-section-heading">
+                <span className="ld-section-heading__accent">//</span> {t('lectureDetail.additionalSources')}
+              </h2>
               <ol className="ld-sources__list">
                 {lecture.sources.map((s, i) => (
                   <li key={i} className="ld-sources__item">
@@ -83,11 +90,9 @@ export default function LectureDetailPage() {
                       <>
                         {s.label.split('–')[0]}
                         {s.label.includes('–') && '– '}
-                        {s.url && (
-                          <a href={s.url} className="ld-sources__link" target="_blank" rel="noreferrer">
-                            {s.url.replace(/^https?:\/\//, '')}
-                          </a>
-                        )}
+                        <a href={s.url} className="ld-sources__link" target="_blank" rel="noreferrer">
+                          {s.url.replace(/^https?:\/\//, '')}
+                        </a>
                       </>
                     ) : (
                       s.label
@@ -104,23 +109,19 @@ export default function LectureDetailPage() {
           <>
             <div className="ld-divider" />
             <section className="ld-event">
-              <h2 className="ld-section-heading">// ПРО ПОДІЮ</h2>
+              <h2 className="ld-section-heading">
+                <span className="ld-section-heading__accent">//</span> {t('lectureDetail.aboutEvent')}
+              </h2>
               <div className="ld-event__meta">
                 <span className="ld-event__city">{lecture.event.city.toUpperCase()}</span>
                 <span className="ld-event__date">[{lecture.event.date}]</span>
                 {lecture.event.photosUrl && (
-                  <a
-                    href={lecture.event.photosUrl}
-                    className="ld-event__photos"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Фото з події [Google Drive]&nbsp;<span className="ld-event__arrow">↗</span>
+                  <a href={lecture.event.photosUrl} className="ld-event__photos" target="_blank" rel="noreferrer">
+                    {t('lectureDetail.eventPhotos')}&nbsp;<span className="ld-event__arrow">↗</span>
                   </a>
                 )}
               </div>
 
-              {/* Related lectures grid */}
               {related.length > 0 && (
                 <div className="ld-related">
                   {related.map((r) => (
@@ -144,18 +145,5 @@ export default function LectureDetailPage() {
 
       <Footer />
     </div>
-  )
-}
-
-function LDNav() {
-  return (
-    <nav className="ld-nav">
-      <Link to="/" className="ld-nav__logo">15x4</Link>
-      <div className="ld-nav__links">
-        <Link to="/events" className="ld-nav__link">події</Link>
-        <Link to="/lectures" className="ld-nav__link">лекції</Link>
-        <Link to="/#about" className="ld-nav__link">про нас</Link>
-      </div>
-    </nav>
   )
 }

@@ -66,6 +66,10 @@
   margin-bottom: 24px;
 }
 
+.event-detail__talks-title-accent {
+  color: var(--color-red);
+}
+
 .event-detail__talk {
   padding: 20px 0 0;
 }

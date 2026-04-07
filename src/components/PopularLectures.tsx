@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { lectures, type Lecture } from '../data/lectures'
 import './PopularLectures.css'
 
 export function LectureCard({ id, category, categoryColor, author, image, title, summary }: Lecture) {
   const [hovered, setHovered] = useState(false)
-  
+
   const colorMap: Record<string, string> = {
     orange: 'var(--color-orange)',
     green: 'var(--color-green)',
@@ -15,19 +16,19 @@ export function LectureCard({ id, category, categoryColor, author, image, title,
   const bgColor = colorMap[categoryColor] || 'var(--color-red)'
 
   return (
-    <Link 
-      to={`/lectures/${id}`} 
+    <Link
+      to={`/lectures/${id}`}
       className={`lecture-card ${hovered ? 'lecture-card--hovered' : ''}`}
       style={hovered ? { backgroundColor: bgColor } : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div className="lecture-card__info">
-        <span 
+        <span
           className={`lecture-card__badge lecture-card__badge--${categoryColor} ${hovered ? 'lecture-card__badge--filled' : ''}`}
-          style={{ 
+          style={{
             borderColor: bgColor,
-            backgroundColor: hovered ? bgColor : 'var(--color-white)'
+            backgroundColor: hovered ? bgColor : 'var(--color-white)',
           }}
         >
           {category}
@@ -63,6 +64,8 @@ function LectureRow({ left, right }: LectureRowProps) {
 }
 
 export default function PopularLectures() {
+  const { t } = useTranslation()
+
   const rows: [Lecture, Lecture][] = []
   for (let i = 0; i + 1 < lectures.length; i += 2) {
     rows.push([lectures[i], lectures[i + 1]])
@@ -72,9 +75,9 @@ export default function PopularLectures() {
     <section className="popular" id="lectures">
       <div className="popular__content">
         <div className="popular__header">
-          <span className="popular__badge">[must watch!]</span>
+          <span className="popular__badge">{t('popularLectures.badge')}</span>
           <h2 className="popular__title">
-            <span className="popular__title--accent">//</span> Популярні лекції
+            <span className="popular__title--accent">//</span> {t('popularLectures.title')}
           </h2>
         </div>
 
