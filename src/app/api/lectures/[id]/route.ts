@@ -17,6 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json({
       ...lecture,
+      userId: lecture.userId === user?.id ? lecture.userId : undefined,
       sources: lecture.sources ? JSON.parse(lecture.sources) : null,
       socialLinks: lecture.socialLinks ? JSON.parse(lecture.socialLinks) : null,
     })

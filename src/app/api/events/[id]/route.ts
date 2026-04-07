@@ -34,7 +34,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    return NextResponse.json({ ...event, lectures: lectures ?? [] })
+    return NextResponse.json({
+      ...event,
+      userId: event.userId === user?.id ? event.userId : undefined,
+      lectures: lectures ?? [],
+    })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

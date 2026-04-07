@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
+import PasswordInput from '../components/PasswordInput'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { createClient } from '../lib/supabase/client'
+import { evaluatePasswordStrength } from '../lib/password-strength'
 
 export default function AccountSettingsPage() {
   const { t } = useTranslation()
@@ -17,12 +19,49 @@ export default function AccountSettingsPage() {
 
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+
+  const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password])
+  const passwordsMatch = password.length > 0 && passwordConfirm.length > 0 && password === passwordConfirm
+  const strengthLabel = passwordStrength.level === 'strong'
+    ? t('auth.password.strong')
+    : passwordStrength.level === 'medium'
+      ? t('auth.password.medium')
+      : t('auth.password.weak')
+  const strengthColorClass = passwordStrength.level === 'strong'
+    ? 'bg-green'
+    : passwordStrength.level === 'medium'
+      ? 'bg-orange'
+      : 'bg-red'
+  const strengthWidth = `${Math.max(passwordStrength.score, 1) * 20}%`
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
     setError('')
+
+    if (passwordConfirm && !password) {
+      setError(t('account.settings.errorPasswordRequired'))
+      return
+    }
+
+    if (password) {
+      if (!passwordConfirm) {
+        setError(t('account.settings.errorPasswordConfirmRequired'))
+        return
+      }
+
+      if (password !== passwordConfirm) {
+        setError(t('account.settings.errorPasswordMismatch'))
+        return
+      }
+
+      if (!passwordStrength.isStrong) {
+        setError(t('account.settings.errorPasswordWeak'))
+        return
+      }
+    }
 
     try {
       // Update name in profiles
@@ -36,16 +75,17 @@ export default function AccountSettingsPage() {
       if (password) {
         const { error: pwError } = await supabase.auth.updateUser({ password })
         if (pwError) {
-          setError(pwError.message)
+          setError(t('account.settings.errorPasswordUpdate'))
           return
         }
       }
 
       setPassword('')
+      setPasswordConfirm('')
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch {
-      setError('Failed to save changes')
+      setError(t('account.settings.errorSave'))
     }
   }
 
@@ -75,13 +115,45 @@ export default function AccountSettingsPage() {
             </FormField>
 
             <FormField label={t('account.settings.passwordLabel')}>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder={t('account.settings.passwordHint')}
-                autoComplete="new-password"
-              />
+              <div className="flex flex-col gap-2">
+                <PasswordInput
+                  value={password}
+                  onChange={setPassword}
+                  placeholder={t('account.settings.passwordHint')}
+                  autoComplete="new-password"
+                />
+                {password && (
+                  <>
+                    <p className="text-[clamp(12px,1vw,16px)] text-black/80">
+                      {t('account.settings.passwordStrength')}: <span className="uppercase">{strengthLabel}</span>
+                    </p>
+                    <div className="h-1.5 bg-black/10 w-full">
+                      <div
+                        className={`h-full transition-all duration-200 ${strengthColorClass}`}
+                        style={{ width: strengthWidth }}
+                      />
+                    </div>
+                    <p className="text-[clamp(12px,1vw,16px)] text-black/60">
+                      {t('account.settings.passwordRequirements')}
+                    </p>
+                  </>
+                )}
+              </div>
+            </FormField>
+
+            <FormField label={t('account.settings.passwordConfirmLabel')}>
+              <div className="flex flex-col gap-2">
+                <PasswordInput
+                  value={passwordConfirm}
+                  onChange={setPasswordConfirm}
+                  autoComplete="new-password"
+                />
+                {passwordConfirm && (
+                  <p className={`text-[clamp(12px,1vw,16px)] ${passwordsMatch ? 'text-green' : 'text-red'}`}>
+                    {passwordsMatch ? t('account.settings.passwordsMatch') : t('account.settings.passwordsMismatch')}
+                  </p>
+                )}
+              </div>
             </FormField>
 
             <div className="flex items-center gap-4 mt-2">

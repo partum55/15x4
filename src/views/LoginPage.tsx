@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
+import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
@@ -62,10 +63,9 @@ export default function LoginPage() {
             </FormField>
 
             <FormField label={t('auth.login.passwordLabel')} error={errors.password}>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={setPassword}
                 autoComplete="current-password"
               />
             </FormField>

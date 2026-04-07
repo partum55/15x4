@@ -41,3 +41,6 @@ CLAUDE.md
 
 # local supabase migrations
 supabase/migrations/*.sql
+
+.vscode/
+.idea/

@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: error.message }
+    if (error) return { error: 'AUTH_INVALID_CREDENTIALS' }
     return {}
   }, [supabase])
 
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         emailRedirectTo: `${window.location.origin}/account`,
       },
     })
-    if (error) return { error: error.message }
+    if (error) return { error: 'AUTH_SIGNUP_FAILED' }
     return {}
   }, [supabase])
 

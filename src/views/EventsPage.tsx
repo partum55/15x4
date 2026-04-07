@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
+import { Skeleton } from 'boneyard-js/react'
 import type { EventLecture, Event } from '@/lib/api'
 import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
@@ -131,12 +132,30 @@ export default function EventsPage() {
   const [cityFilter, setCityFilter] = useState('')
   const [timeFilter, setTimeFilter] = useState('')
   const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+
     api
       .getEvents()
-      .then((data) => setEvents(Array.isArray(data) ? data : []))
-      .catch(() => setEvents([]))
+      .then((data) => {
+        if (!isMounted) return
+        setEvents(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setEvents([])
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const cities = useMemo(() => [...new Set(events.map((e) => e.city))], [events])
@@ -200,33 +219,35 @@ export default function EventsPage() {
     <div className="page">
       <Navbar />
 
-      <div className="flex items-end justify-between px-[clamp(16px,3.2vw,48px)] py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
-        <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
-          <span className="text-red">{'//'}</span> {t('events.pageTitle')}
-        </h1>
-        <div className="flex items-center gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
-          <FilterDropdown label={t('events.sortBy')} options={sortOptions} value={sortOrder} onChange={setSortOrder} />
-          <FilterDropdown label={t('events.city')} options={cityOptions} value={cityFilter} onChange={setCityFilter} />
-          <FilterDropdown label={t('events.time')} options={timeOptions} value={timeFilter} onChange={setTimeFilter} />
+      <Skeleton name="page-events" loading={loading}>
+        <div className="flex items-end justify-between px-[clamp(16px,3.2vw,48px)] py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
+          <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
+            <span className="text-red">{'//'}</span> {t('events.pageTitle')}
+          </h1>
+          <div className="flex items-center gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
+            <FilterDropdown label={t('events.sortBy')} options={sortOptions} value={sortOrder} onChange={setSortOrder} />
+            <FilterDropdown label={t('events.city')} options={cityOptions} value={cityFilter} onChange={setCityFilter} />
+            <FilterDropdown label={t('events.time')} options={timeOptions} value={timeFilter} onChange={setTimeFilter} />
+          </div>
         </div>
-      </div>
 
-      <main className="px-[clamp(16px,3.2vw,48px)]">
-        {filteredEvents.map((event) => (
-          <EventSection
-            key={event.id}
-            event={event}
-            isExpanded={expandedEvents.has(event.id)}
-            onToggle={() => toggleEvent(event.id)}
-            detailsLabel={t('events.details')}
-            registerLabel={t('events.register')}
-          />
-        ))}
-        <div className="w-full h-px bg-black" />
-      </main>
+        <main className="px-[clamp(16px,3.2vw,48px)]">
+          {filteredEvents.map((event) => (
+            <EventSection
+              key={event.id}
+              event={event}
+              isExpanded={expandedEvents.has(event.id)}
+              onToggle={() => toggleEvent(event.id)}
+              detailsLabel={t('events.details')}
+              registerLabel={t('events.register')}
+            />
+          ))}
+          <div className="w-full h-px bg-black" />
+        </main>
 
-      <JoinSection />
-      <Footer />
+        <JoinSection />
+        <Footer />
+      </Skeleton>
     </div>
   )
 }

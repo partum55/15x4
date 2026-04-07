@@ -1,0 +1,137 @@
+{
+  "breakpoints": {
+    "375": {
+      "name": "home-upcoming-events",
+      "viewportWidth": 375,
+      "width": 375,
+      "height": 83,
+      "bones": [
+        [
+          4.2667,
+          32,
+          91.4667,
+          26,
+          8
+        ],
+        [
+          4.2667,
+          82,
+          91.4667,
+          1,
+          8
+        ]
+      ]
+    },
+    "640": {
+      "name": "home-upcoming-events",
+      "viewportWidth": 640,
+      "width": 640,
+      "height": 83,
+      "bones": [
+        [
+          3.1982,
+          32,
+          93.6035,
+          26,
+          8
+        ],
+        [
+          3.1982,
+          82,
+          93.6035,
+          1,
+          8
+        ]
+      ]
+    },
+    "768": {
+      "name": "home-upcoming-events",
+      "viewportWidth": 768,
+      "width": 768,
+      "height": 84,
+      "bones": [
+        [
+          3.1982,
+          32,
+          93.6035,
+          26,
+          8
+        ],
+        [
+          3.1982,
+          83,
+          93.6035,
+          1,
+          8
+        ]
+      ]
+    },
+    "1024": {
+      "name": "home-upcoming-events",
+      "viewportWidth": 1024,
+      "width": 1024,
+      "height": 97,
+      "bones": [
+        [
+          3.1998,
+          43,
+          93.6005,
+          29,
+          8
+        ],
+        [
+          3.1998,
+          96,
+          93.6005,
+          1,
+          8
+        ]
+      ]
+    },
+    "1280": {
+      "name": "home-upcoming-events",
+      "viewportWidth": 1280,
+      "width": 1280,
+      "height": 116,
+      "bones": [
+        [
+          27.1606,
+          54,
+          69.6399,
+          37,
+          8
+        ],
+        [
+          3.1995,
+          115,
+          93.6011,
+          1,
+          8
+        ]
+      ]
+    },
+    "1536": {
+      "name": "home-upcoming-events",
+      "viewportWidth": 1536,
+      "width": 1536,
+      "height": 132,
+      "bones": [
+        [
+          26.7578,
+          64,
+          70.1172,
+          43,
+          8
+        ],
+        [
+          3.125,
+          131,
+          93.75,
+          1,
+          8
+        ]
+      ]
+    }
+  },
+  "_hash": "63fb853c54042f889f94a466ff429dc7"
+}

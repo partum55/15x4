@@ -1,4 +1,5 @@
 import './globals.css'
+import '../bones/registry'
 import I18nProvider from '@/components/I18nProvider'
 import { AuthProvider } from '@/context/AuthContext'
 

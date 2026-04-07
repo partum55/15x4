@@ -25,6 +25,7 @@ export async function GET() {
 
     const parsed = (lectures ?? []).map((l) => ({
       ...l,
+      userId: l.userId === user?.id ? l.userId : undefined,
       sources: l.sources ? JSON.parse(l.sources) : null,
       socialLinks: l.socialLinks ? JSON.parse(l.socialLinks) : null,
     }))
@@ -60,16 +61,22 @@ export async function POST(req: NextRequest) {
           .maybeSingle()
 
         if (adminProfileError) {
+          console.error('Failed to verify account status', {
+            message: adminProfileError.message,
+            details: adminProfileError.details,
+            hint: adminProfileError.hint,
+            code: adminProfileError.code,
+          })
           return NextResponse.json(
-            { error: `Failed to verify account status: ${adminProfileError.message}` },
+            { error: 'Failed to verify account status' },
             { status: 500 }
           )
         }
 
         profileStatus = adminProfile?.status ?? null
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to verify account status'
-        return NextResponse.json({ error: message }, { status: 500 })
+        console.error('Failed to verify account status', error)
+        return NextResponse.json({ error: 'Failed to verify account status' }, { status: 500 })
       }
     }
 
@@ -115,7 +122,7 @@ export async function POST(req: NextRequest) {
         code: error.code,
       })
 
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     if (!lecture) {
@@ -124,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(lecture, { status: 201 })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('Failed to create lecture', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
