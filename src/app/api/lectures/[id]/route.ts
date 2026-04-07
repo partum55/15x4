@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getSession()
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    const { data: lecture } = await supabaseAdmin.from('Lecture').select('*').eq('id', id).maybeSingle()
+    const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
 
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    if (!lecture.isPublic && lecture.userId !== session?.userId) {
+    if (!lecture.isPublic && lecture.userId !== user?.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
@@ -28,12 +28,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: lecture } = await supabaseAdmin.from('Lecture').select('*').eq('id', id).maybeSingle()
+    const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (lecture.userId !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (lecture.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
     const { sources, socialLinks, ...rest } = body
@@ -43,7 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ...(socialLinks !== undefined ? { socialLinks: JSON.stringify(socialLinks) } : {}),
     }
 
-    const { data: updated, error } = await supabaseAdmin
+    const { data: updated, error } = await supabase
       .from('Lecture')
       .update(data)
       .eq('id', id)
@@ -63,14 +65,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: lecture } = await supabaseAdmin.from('Lecture').select('*').eq('id', id).maybeSingle()
+    const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (lecture.userId !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (lecture.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { error } = await supabaseAdmin.from('Lecture').delete().eq('id', id)
+    const { error } = await supabase.from('Lecture').delete().eq('id', id)
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }

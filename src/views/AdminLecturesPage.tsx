@@ -27,7 +27,7 @@ export default function AdminLecturesPage() {
   const [loadingLectures, setLoadingLectures] = useState(true)
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!loading && (!user || user?.profile?.role !== 'admin')) {
       router.push('/')
     }
   }, [user, loading, router])
@@ -47,7 +47,7 @@ export default function AdminLecturesPage() {
     setLectures(prev => prev.filter(l => l.id !== lectureId))
   }
 
-  if (loading || !user || user.role !== 'admin') {
+  if (loading || !user || user?.profile?.role !== 'admin') {
     return null
   }
 

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import ArrowIcon from './ArrowIcon'
-import type { Event } from '../data/events'
+import type { Event } from '@/lib/api'
 import { api } from '../lib/api'
 
 export default function UpcomingEvents() {

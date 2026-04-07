@@ -7,7 +7,7 @@ import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
-import type { Lecture } from '../data/lectures'
+import type { Lecture } from '@/lib/api'
 
 const colorStyles: Record<string, string> = {
   orange: 'border-orange text-orange',

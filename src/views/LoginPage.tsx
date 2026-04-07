@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
@@ -11,7 +11,8 @@ import { useAuth } from '../context/AuthContext'
 export default function LoginPage() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { login } = useAuth()
+  const searchParams = useSearchParams()
+  const { signIn } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,15 +30,14 @@ export default function LoginPage() {
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
 
-    const result = await login(email.trim(), password)
+    const result = await signIn(email.trim(), password)
     if (result.error) {
       setErrors({ form: t('auth.login.errorInvalid') })
       return
     }
 
-    if (result.status === 'pending_email') router.push('/confirm-email')
-    else if (result.status === 'pending_approval') router.push('/wait-approval')
-    else router.push('/')
+    const redirect = searchParams.get('redirect') ?? '/account'
+    router.push(redirect)
   }
 
   return (

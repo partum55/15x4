@@ -7,7 +7,7 @@ import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
 import { useCurrentUser } from '../hooks/useCurrentUser'
-import type { Event } from '../data/events'
+import type { Event } from '@/lib/api'
 
 export default function MyEventsPage() {
   const { t } = useTranslation()
@@ -55,7 +55,7 @@ export default function MyEventsPage() {
                     {event.date} · {event.time} · {event.location}
                   </p>
                   <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
-                    {event.lectures.length} {event.lectures.length === 1 ? 'lecture' : 'lectures'}
+                    {event.lectures?.length ?? 0} {(event.lectures?.length ?? 0) === 1 ? 'lecture' : 'lectures'}
                   </p>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">

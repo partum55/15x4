@@ -10,11 +10,11 @@ export async function GET() {
     }
 
     const [usersResult, lecturesResult, eventsResult, pendingResult] = await Promise.all([
-      supabaseAdmin.from('User').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true }),
       supabaseAdmin.from('Lecture').select('id', { count: 'exact', head: true }),
       supabaseAdmin.from('Event').select('id', { count: 'exact', head: true }),
       supabaseAdmin
-        .from('User')
+        .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending_approval'),
     ])

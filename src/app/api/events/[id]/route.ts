@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@/lib/supabase/server'
 
 type EventLecturePayload = {
   title: string
@@ -15,17 +14,18 @@ type EventLecturePayload = {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getSession()
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    const { data: event } = await supabaseAdmin.from('Event').select('*').eq('id', id).maybeSingle()
+    const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
 
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    if (!event.isPublic && event.userId !== session?.userId) {
+    if (!event.isPublic && event.userId !== user?.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    const { data: lectures, error: lecturesError } = await supabaseAdmin
+    const { data: lectures, error: lecturesError } = await supabase
       .from('EventLecture')
       .select('*')
       .eq('eventId', id)
@@ -43,16 +43,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: event } = await supabaseAdmin.from('Event').select('*').eq('id', id).maybeSingle()
+    const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (event.userId !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (event.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { city, date, location, time, image, registrationUrl, lectures } = await req.json()
 
-    const { data: updated, error: updateError } = await supabaseAdmin
+    const { data: updated, error: updateError } = await supabase
       .from('Event')
       .update({
         city,
@@ -70,7 +72,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    const { error: deleteLecturesError } = await supabaseAdmin.from('EventLecture').delete().eq('eventId', id)
+    const { error: deleteLecturesError } = await supabase.from('EventLecture').delete().eq('eventId', id)
     if (deleteLecturesError) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
@@ -88,7 +90,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }))
 
     const { data: insertedLectures, error: insertLecturesError } = newEventLectures.length
-      ? await supabaseAdmin.from('EventLecture').insert(newEventLectures).select('*')
+      ? await supabase.from('EventLecture').insert(newEventLectures).select('*')
       : { data: [], error: null }
 
     if (insertLecturesError) {
@@ -104,15 +106,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: event } = await supabaseAdmin.from('Event').select('*').eq('id', id).maybeSingle()
+    const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (event.userId !== session.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (event.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    await supabaseAdmin.from('EventLecture').delete().eq('eventId', id)
-    const { error } = await supabaseAdmin.from('Event').delete().eq('id', id)
+    await supabase.from('EventLecture').delete().eq('eventId', id)
+    const { error } = await supabase.from('Event').delete().eq('id', id)
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }

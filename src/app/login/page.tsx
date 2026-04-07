@@ -1,2 +1,10 @@
+import { Suspense } from 'react'
 import LoginPage from '@/views/LoginPage'
-export default LoginPage
+
+export default function Page() {
+  return (
+    <Suspense>
+      <LoginPage />
+    </Suspense>
+  )
+}

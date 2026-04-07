@@ -21,16 +21,20 @@ export async function GET() {
     const eventIds = events.map((event) => event.id)
     const userIds = [...new Set(events.map((event) => event.userId).filter(Boolean))]
 
-    const [{ data: lectures }, { data: users }] = await Promise.all([
+    const [{ data: lectures }, { data: profiles }] = await Promise.all([
       eventIds.length
         ? supabaseAdmin.from('EventLecture').select('id, eventId').in('eventId', eventIds)
         : Promise.resolve({ data: [] as Array<{ id: string; eventId: string }> }),
       userIds.length
-        ? supabaseAdmin.from('User').select('id, name, email').in('id', userIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; name: string; email: string }> }),
+        ? supabaseAdmin.from('profiles').select('id, name').in('id', userIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
     ])
 
-    const usersById = new Map((users ?? []).map((user) => [user.id, user]))
+    // Get emails from auth
+    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers()
+    const emailMap = new Map(authUsers.map(u => [u.id, u.email]))
+
+    const profilesById = new Map((profiles ?? []).map((p) => [p.id, { ...p, email: emailMap.get(p.id) ?? '' }]))
     const lecturesCountByEventId = new Map<string, number>()
     for (const lecture of lectures ?? []) {
       lecturesCountByEventId.set(lecture.eventId, (lecturesCountByEventId.get(lecture.eventId) ?? 0) + 1)
@@ -38,7 +42,7 @@ export async function GET() {
 
     const response = events.map((event) => ({
       ...event,
-      user: event.userId ? usersById.get(event.userId) ?? null : null,
+      user: event.userId ? profilesById.get(event.userId) ?? null : null,
       _count: { lectures: lecturesCountByEventId.get(event.id) ?? 0 },
     }))
 

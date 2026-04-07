@@ -14,43 +14,49 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json()
     const { status, role } = body
 
-    const { data: existingUser } = await supabaseAdmin
-      .from('User')
-      .select('id, name, email, status')
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id, name, status')
       .eq('id', id)
       .maybeSingle()
 
-    if (!existingUser) {
+    if (!existingProfile) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const wasApproved = existingUser.status !== 'approved' && status === 'approved'
+    const wasApproved = existingProfile.status !== 'approved' && status === 'approved'
 
     const data: { status?: string; role?: string } = {}
     if (status) data.status = status
     if (role) data.role = role
 
-    const { data: user, error } = await supabaseAdmin
-      .from('User')
+    const { data: profile, error } = await supabaseAdmin
+      .from('profiles')
       .update(data)
       .eq('id', id)
-      .select('id, name, email, status, role')
+      .select('id, name, status, role')
       .single()
 
-    if (error || !user) {
+    if (error || !profile) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
+    // Get user email from auth
+    const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(id)
+
     // Send approval email if user was just approved
-    if (wasApproved) {
+    if (wasApproved && authUser?.email) {
       try {
-        await sendApprovalEmail(user.email, user.name)
+        await sendApprovalEmail(authUser.email, profile.name)
       } catch (emailError) {
         console.error('Failed to send approval email:', emailError)
       }
     }
 
-    return NextResponse.json(user)
+    return NextResponse.json({
+      ...profile,
+      email: authUser?.email ?? '',
+    })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -70,7 +76,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
     }
 
-    const { error } = await supabaseAdmin.from('User').delete().eq('id', id)
+    // Delete from auth (will cascade to profiles due to FK)
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }

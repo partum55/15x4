@@ -27,7 +27,7 @@ export default function AdminEventsPage() {
   const [loadingEvents, setLoadingEvents] = useState(true)
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!loading && (!user || user?.profile?.role !== 'admin')) {
       router.push('/')
     }
   }, [user, loading, router])
@@ -47,7 +47,7 @@ export default function AdminEventsPage() {
     setEvents(prev => prev.filter(e => e.id !== eventId))
   }
 
-  if (loading || !user || user.role !== 'admin') {
+  if (loading || !user || user?.profile?.role !== 'admin') {
     return null
   }
 
