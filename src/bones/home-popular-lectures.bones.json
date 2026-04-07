@@ -66,28 +66,6 @@
         ]
       ]
     },
-    "1024": {
-      "name": "home-popular-lectures",
-      "viewportWidth": 1024,
-      "width": 1024,
-      "height": 106,
-      "bones": [
-        [
-          15.3671,
-          49,
-          9.4208,
-          23,
-          8
-        ],
-        [
-          28.3035,
-          43,
-          24.4095,
-          29,
-          8
-        ]
-      ]
-    },
     "1280": {
       "name": "home-popular-lectures",
       "viewportWidth": 1280,
