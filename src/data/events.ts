@@ -15,6 +15,7 @@ export type Event = {
   location: string
   time: string
   image: string
+  registrationUrl?: string
   lectures: EventLecture[]
 }
 

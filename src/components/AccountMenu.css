@@ -1,0 +1,140 @@
+.account-menu {
+  position: relative;
+}
+
+/* Sign-in link */
+.account-menu__signin {
+  font-family: inherit;
+  font-size: clamp(14px, 1.4vw, 20px);
+  font-weight: 400;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.account-menu__signin:hover {
+  text-decoration: underline;
+}
+
+.account-menu__signin--light {
+  color: var(--color-black);
+}
+
+.account-menu__signin--dark {
+  color: var(--color-white);
+}
+
+/* Trigger button */
+.account-menu__trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s;
+}
+
+.account-menu__trigger:hover {
+  opacity: 0.75;
+}
+
+.account-menu__icon {
+  width: clamp(28px, 2.2vw, 36px);
+  height: clamp(28px, 2.2vw, 36px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: clamp(12px, 1.1vw, 17px);
+  font-weight: 700;
+}
+
+.account-menu__trigger--light .account-menu__icon {
+  border: 1.5px solid var(--color-black);
+  color: var(--color-black);
+}
+
+.account-menu__trigger--dark .account-menu__icon {
+  border: 1.5px solid var(--color-white);
+  color: var(--color-white);
+}
+
+/* Dropdown */
+.account-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 220px;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+}
+
+.account-menu__user {
+  padding: 14px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-menu__user-name {
+  font-size: clamp(13px, 1.2vw, 18px);
+  font-weight: 700;
+  color: var(--color-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-menu__user-email {
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 400;
+  color: var(--color-white);
+  opacity: 0.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-menu__divider {
+  height: 1px;
+  background: rgba(255, 255, 241, 0.12);
+}
+
+.account-menu__item {
+  display: block;
+  padding: 12px 24px;
+  font-family: inherit;
+  font-size: clamp(13px, 1.2vw, 18px);
+  font-weight: 400;
+  color: var(--color-white);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.account-menu__item:hover {
+  background: rgba(255, 255, 241, 0.08);
+}
+
+.account-menu__item--logout {
+  color: var(--color-red);
+}
+
+@media (max-width: 767px) {
+  .account-menu__dropdown {
+    position: fixed;
+    top: auto;
+    right: 0;
+    left: 0;
+    min-width: 100%;
+  }
+}

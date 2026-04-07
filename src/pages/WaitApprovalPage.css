@@ -1,0 +1,50 @@
+.wait-approval__icon {
+  color: var(--color-black);
+  margin-bottom: 24px;
+}
+
+.wait-approval__message {
+  font-size: clamp(15px, 1.4vw, 22px);
+  font-weight: 400;
+  color: var(--color-black);
+  line-height: 1.5;
+  margin-bottom: 32px;
+  max-width: 420px;
+}
+
+.wait-approval__logout-btn {
+  display: inline-block;
+  padding: 14px 32px;
+  background: var(--color-black);
+  color: var(--color-white);
+  border: none;
+  font-family: inherit;
+  font-size: clamp(14px, 1.3vw, 20px);
+  font-weight: 400;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: opacity 0.2s;
+}
+
+.wait-approval__logout-btn:hover {
+  opacity: 0.85;
+}
+
+.wait-approval__dev-link {
+  display: block;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: clamp(11px, 1vw, 14px);
+  color: var(--color-black);
+  opacity: 0.35;
+  padding: 0;
+  text-decoration: underline;
+  transition: opacity 0.15s;
+}
+
+.wait-approval__dev-link:hover {
+  opacity: 0.6;
+}

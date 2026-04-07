@@ -1,0 +1,51 @@
+.account-settings-page {
+  min-height: 100vh;
+  background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+}
+
+.account-settings-page__main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(32px, 4.2vw, 64px) clamp(16px, 3.2vw, 48px);
+}
+
+.account-settings-page__container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.account-settings-page__title {
+  font-size: clamp(22px, 2.4vw, 36px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--color-black);
+  margin-bottom: clamp(24px, 3vw, 48px);
+}
+
+.account-settings-page__readonly {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.account-settings-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.account-settings-page__save-btn {
+  width: auto;
+  flex-shrink: 0;
+}
+
+.account-settings-page__saved {
+  font-size: clamp(13px, 1.2vw, 18px);
+  color: var(--color-black);
+  opacity: 0.6;
+}

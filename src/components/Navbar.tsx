@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from './LanguageSwitcher'
+import AccountMenu from './AccountMenu'
 import './Navbar.css'
 
 type NavbarProps = {
@@ -31,6 +32,7 @@ export default function Navbar({ variant = 'light' }: NavbarProps) {
           </Link>
         ))}
         <LanguageSwitcher />
+        <AccountMenu variant={variant} />
       </div>
     </nav>
   )

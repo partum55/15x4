@@ -1,0 +1,30 @@
+.confirm-email__icon {
+  color: var(--color-black);
+  margin-bottom: 24px;
+}
+
+.confirm-email__message {
+  font-size: clamp(15px, 1.4vw, 22px);
+  font-weight: 400;
+  color: var(--color-black);
+  line-height: 1.5;
+  margin-bottom: 32px;
+  max-width: 420px;
+}
+
+.confirm-email__dev-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: clamp(11px, 1vw, 14px);
+  color: var(--color-black);
+  opacity: 0.35;
+  padding: 0;
+  text-decoration: underline;
+  transition: opacity 0.15s;
+}
+
+.confirm-email__dev-link:hover {
+  opacity: 0.6;
+}
