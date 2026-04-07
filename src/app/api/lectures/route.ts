@@ -52,17 +52,25 @@ export async function POST(req: NextRequest) {
     let profileStatus = profile?.status ?? null
 
     if (!profileStatus) {
-      const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
-        .from('profiles')
-        .select('status')
-        .eq('id', user.id)
-        .maybeSingle()
+      try {
+        const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
+          .from('profiles')
+          .select('status')
+          .eq('id', user.id)
+          .maybeSingle()
 
-      if (adminProfileError) {
-        return NextResponse.json({ error: 'Failed to verify account status' }, { status: 500 })
+        if (adminProfileError) {
+          return NextResponse.json(
+            { error: `Failed to verify account status: ${adminProfileError.message}` },
+            { status: 500 }
+          )
+        }
+
+        profileStatus = adminProfile?.status ?? null
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to verify account status'
+        return NextResponse.json({ error: message }, { status: 500 })
       }
-
-      profileStatus = adminProfile?.status ?? null
     }
 
     if (profileStatus !== 'approved') {
@@ -99,12 +107,24 @@ export async function POST(req: NextRequest) {
       .select('*')
       .single()
 
-    if (error || !lecture) {
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    if (error) {
+      console.error('Lecture insert failed', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!lecture) {
+      return NextResponse.json({ error: 'Lecture was not created' }, { status: 500 })
     }
 
     return NextResponse.json(lecture, { status: 201 })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
