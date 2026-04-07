@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect } from 'react'
+import { Skeleton } from 'boneyard-js/react'
 import type { Event } from '@/lib/api'
 import ArrowIcon from '../components/ArrowIcon'
 import AccountMenu from '../components/AccountMenu'
@@ -14,17 +15,49 @@ import { api } from '../lib/api'
 export default function EventDetailPage() {
   const { t } = useTranslation()
   const params = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
   const id = params?.id
+  const bonesMode = searchParams.get('bones') === '1'
   const [event, setEvent] = useState<Event | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!id) return
-    api.getEvent(id).then((data: Event & { error?: string }) => {
-      if (!data.error) setEvent(data)
-    })
-  }, [id])
 
-  if (!event) {
+    if (bonesMode) {
+      setLoading(true)
+      setEvent(null)
+      return
+    }
+
+    let isMounted = true
+    setLoading(true)
+
+    api.getEvent(id)
+      .then((data: Event & { error?: string }) => {
+        if (!isMounted) return
+        if (!data.error) {
+          setEvent(data)
+        } else {
+          setEvent(null)
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setEvent(null)
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id, bonesMode])
+
+  if (!bonesMode && !loading && !event) {
     return (
       <div className="page">
         <nav className="inner-nav">
@@ -46,56 +79,60 @@ export default function EventDetailPage() {
         <Link href="/events" className="inner-nav__back">← {t('eventDetail.back')}</Link>
       </nav>
 
-      <main>
-        <Image
-          src={event.image}
-          alt={`${event.city}`}
-          width={1600}
-          height={900}
-          unoptimized
-          className="w-full h-[clamp(240px,40vw,560px)] object-cover block"
-        />
+      <Skeleton name="page-event-detail" loading={bonesMode || loading}>
+        {event && (
+          <main>
+            <Image
+              src={event.image}
+              alt={`${event.city}`}
+              width={1600}
+              height={900}
+              unoptimized
+              className="w-full h-[clamp(240px,40vw,560px)] object-cover block"
+            />
 
-        <div className="grid grid-cols-2 gap-16 px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4vw,64px)] max-[767px]:grid-cols-1 max-[767px]:gap-8">
-          <div className="flex flex-col gap-4">
-            <h1 className="text-[clamp(28px,4vw,60px)] font-normal uppercase">{event.city}</h1>
-            <div className="flex gap-6 text-[clamp(14px,1.4vw,20px)]">
-              <span>[{event.date}]</span>
-              <span>{event.time}</span>
-            </div>
-            <p className="text-[clamp(13px,1.2vw,18px)] leading-[1.4] opacity-70">{event.location}</p>
-            {event.registrationUrl && (
-              <a
-                href={event.registrationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-[10px] mt-2 px-6 py-3 border border-black text-[clamp(13px,1.2vw,18px)] bg-transparent w-fit transition-colors duration-200 hover:bg-black hover:text-white"
-              >
-                <span>{t('eventDetail.register')}</span>
-                <ArrowIcon />
-              </a>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-[clamp(18px,2vw,28px)] font-normal mb-6">
-              <span className="text-red">{'//'}</span> {t('eventDetail.talks')}
-            </h2>
-            <div>
-              {event.lectures?.map((lecture, i) => (
-                <div key={i} className="pt-5">
-                  <div className="w-full h-px bg-black mb-5" />
-                  <p className="text-[clamp(14px,1.4vw,20px)] font-medium mb-1.5">{lecture.title}</p>
-                  <p className="text-[clamp(13px,1.2vw,18px)] opacity-60">{lecture.author}</p>
+            <div className="grid grid-cols-2 gap-16 px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4vw,64px)] max-[767px]:grid-cols-1 max-[767px]:gap-8">
+              <div className="flex flex-col gap-4">
+                <h1 className="text-[clamp(28px,4vw,60px)] font-normal uppercase">{event.city}</h1>
+                <div className="flex gap-6 text-[clamp(14px,1.4vw,20px)]">
+                  <span>[{event.date}]</span>
+                  <span>{event.time}</span>
                 </div>
-              ))}
-              <div className="w-full h-px bg-black mt-5" />
-            </div>
-          </div>
-        </div>
-      </main>
+                <p className="text-[clamp(13px,1.2vw,18px)] leading-[1.4] opacity-70">{event.location}</p>
+                {event.registrationUrl && (
+                  <a
+                    href={event.registrationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-[10px] mt-2 px-6 py-3 border border-black text-[clamp(13px,1.2vw,18px)] bg-transparent w-fit transition-colors duration-200 hover:bg-black hover:text-white"
+                  >
+                    <span>{t('eventDetail.register')}</span>
+                    <ArrowIcon />
+                  </a>
+                )}
+              </div>
 
-      <Footer />
+              <div>
+                <h2 className="text-[clamp(18px,2vw,28px)] font-normal mb-6">
+                  <span className="text-red">{'//'}</span> {t('eventDetail.talks')}
+                </h2>
+                <div>
+                  {event.lectures?.map((lecture, i) => (
+                    <div key={i} className="pt-5">
+                      <div className="w-full h-px bg-black mb-5" />
+                      <p className="text-[clamp(14px,1.4vw,20px)] font-medium mb-1.5">{lecture.title}</p>
+                      <p className="text-[clamp(13px,1.2vw,18px)] opacity-60">{lecture.author}</p>
+                    </div>
+                  ))}
+                  <div className="w-full h-px bg-black mt-5" />
+                </div>
+              </div>
+            </div>
+          </main>
+        )}
+
+        <Footer />
+      </Skeleton>
     </div>
   )
 }

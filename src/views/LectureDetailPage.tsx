@@ -2,36 +2,175 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect } from 'react'
+import { Skeleton } from 'boneyard-js/react'
 import type { Lecture } from '@/lib/api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { api } from '../lib/api'
 import { CATEGORY_BORDER_CLASS as badgeBorderClass } from '../constants/colors'
 
+type ResolvedLectureVideo = {
+  kind: 'iframe' | 'file'
+  src: string
+}
+
+function toHttpUrl(raw: string): URL | null {
+  try {
+    const parsed = new URL(raw)
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function getYouTubeId(url: URL): string | null {
+  const host = url.hostname.toLowerCase()
+
+  if (host === 'youtu.be') {
+    return url.pathname.slice(1) || null
+  }
+
+  if (host.endsWith('youtube.com')) {
+    if (url.pathname === '/watch') {
+      return url.searchParams.get('v')
+    }
+
+    if (url.pathname.startsWith('/embed/')) {
+      return url.pathname.split('/')[2] || null
+    }
+
+    if (url.pathname.startsWith('/shorts/')) {
+      return url.pathname.split('/')[2] || null
+    }
+  }
+
+  return null
+}
+
+function getVimeoId(url: URL): string | null {
+  const host = url.hostname.toLowerCase()
+  if (!host.endsWith('vimeo.com')) {
+    return null
+  }
+
+  const parts = url.pathname.split('/').filter(Boolean)
+  if (parts.length === 0) {
+    return null
+  }
+
+  const id = parts[parts.length - 1]
+  return /^\d+$/.test(id) ? id : null
+}
+
+function resolveLectureVideo(videoUrl?: string): ResolvedLectureVideo | null {
+  if (!videoUrl) {
+    return null
+  }
+
+  const url = toHttpUrl(videoUrl.trim())
+  if (!url) {
+    return null
+  }
+
+  const youTubeId = getYouTubeId(url)
+  if (youTubeId) {
+    return {
+      kind: 'iframe',
+      src: `https://www.youtube.com/embed/${youTubeId}?autoplay=1&rel=0`,
+    }
+  }
+
+  const vimeoId = getVimeoId(url)
+  if (vimeoId) {
+    return {
+      kind: 'iframe',
+      src: `https://player.vimeo.com/video/${vimeoId}?autoplay=1`,
+    }
+  }
+
+  if (/\.(mp4|webm|ogg)$/i.test(url.pathname)) {
+    return {
+      kind: 'file',
+      src: url.toString(),
+    }
+  }
+
+  if (url.pathname.startsWith('/embed/')) {
+    return {
+      kind: 'iframe',
+      src: url.toString(),
+    }
+  }
+
+  return null
+}
+
 export default function LectureDetailPage() {
   const { t } = useTranslation()
   const params = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
   const id = params?.id
+  const bonesMode = searchParams.get('bones') === '1'
   const [lecture, setLecture] = useState<Lecture | null>(null)
   const [related, setRelated] = useState<Lecture[]>([])
+  const [loading, setLoading] = useState(true)
+  const [openedVideoLectureId, setOpenedVideoLectureId] = useState<string | null>(null)
   const lectureCategoryLabel = lecture
     ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
     : ''
+  const resolvedVideo = lecture ? resolveLectureVideo(lecture.videoUrl) : null
+  const isVideoOpen = lecture ? openedVideoLectureId === lecture.id : false
 
   useEffect(() => {
     if (!id) return
-    api.getLecture(id).then((data: Lecture & { error?: string }) => {
-      if (!data.error) setLecture(data)
-    })
-    api.getLectures().then((all: Lecture[]) => {
-      setRelated(all.filter((l) => l.id !== id).slice(0, 4))
-    })
-  }, [id])
 
-  if (!lecture) {
+    if (bonesMode) {
+      setLoading(true)
+      setLecture(null)
+      setRelated([])
+      return
+    }
+
+    let isMounted = true
+    setLoading(true)
+
+    Promise.all([api.getLecture(id), api.getLectures()])
+      .then(([lectureData, allLectures]) => {
+        if (!isMounted) return
+
+        if (lectureData && !('error' in lectureData)) {
+          setLecture(lectureData)
+        } else {
+          setLecture(null)
+        }
+
+        const lectures = Array.isArray(allLectures) ? allLectures : []
+        setRelated(lectures.filter((l) => l.id !== id).slice(0, 4))
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setLecture(null)
+        setRelated([])
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id, bonesMode])
+
+  if (!bonesMode && !loading && !lecture) {
     return (
       <div className="page min-h-screen">
         <Navbar />
@@ -44,7 +183,9 @@ export default function LectureDetailPage() {
     <div className="page min-h-screen">
       <Navbar />
 
-      <main className="px-[clamp(16px,3.2vw,48px)] pb-[clamp(48px,6vw,96px)]">
+      <Skeleton name="page-lecture-detail" loading={bonesMode || loading}>
+        {lecture && (
+          <main className="px-[clamp(16px,3.2vw,48px)] pb-[clamp(48px,6vw,96px)]">
         {/* Title */}
         <h1 className="text-[clamp(24px,3.2vw,48px)] font-bold text-center uppercase tracking-[0.03em] mb-[clamp(24px,3vw,48px)] leading-[1.1]">
           {lecture.title.toUpperCase()}
@@ -52,28 +193,54 @@ export default function LectureDetailPage() {
 
         {/* Hero: image + meta */}
         <div className="grid grid-cols-[58%_1fr] gap-[clamp(24px,3vw,48px)] mb-[clamp(32px,4vw,64px)] items-start max-[1023px]:grid-cols-1">
-          <div className="relative cursor-pointer">
-            <Image
-              src={lecture.image}
-              alt={lecture.title}
-              width={1200}
-              height={900}
-              unoptimized
-              className="w-full aspect-[4/3] object-cover block max-[1023px]:aspect-[16/9]"
-            />
-            <button
-              className="absolute inset-0 flex items-center justify-center bg-transparent border-none cursor-pointer transition-opacity duration-200 hover:opacity-80"
-              aria-label={t('lectureDetail.play')}
-            >
-              <svg
-                viewBox="0 0 48 48"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-[clamp(48px,7vw,96px)] h-[clamp(48px,7vw,96px)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
-              >
-                <polygon points="16,10 40,24 16,38" fill="white" />
-              </svg>
-            </button>
+          <div className="relative">
+            {isVideoOpen && resolvedVideo ? (
+              resolvedVideo.kind === 'iframe' ? (
+                <iframe
+                  src={resolvedVideo.src}
+                  title={lecture.title}
+                  className="w-full aspect-[4/3] block border-0 max-[1023px]:aspect-[16/9]"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={resolvedVideo.src}
+                  className="w-full aspect-[4/3] object-cover block max-[1023px]:aspect-[16/9]"
+                  controls
+                  autoPlay
+                  playsInline
+                />
+              )
+            ) : (
+              <>
+                <Image
+                  src={lecture.image}
+                  alt={lecture.title}
+                  width={1200}
+                  height={900}
+                  unoptimized
+                  className="w-full aspect-[4/3] object-cover block max-[1023px]:aspect-[16/9]"
+                />
+                {resolvedVideo && (
+                  <button
+                    type="button"
+                    className="absolute inset-0 flex items-center justify-center bg-transparent border-none cursor-pointer transition-opacity duration-200 hover:opacity-80"
+                    aria-label={t('lectureDetail.play')}
+                    onClick={() => setOpenedVideoLectureId(lecture.id)}
+                  >
+                    <svg
+                      viewBox="0 0 48 48"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-[clamp(48px,7vw,96px)] h-[clamp(48px,7vw,96px)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
+                    >
+                      <polygon points="16,10 40,24 16,38" fill="white" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <div className="flex flex-col gap-5 pt-1">
@@ -88,6 +255,16 @@ export default function LectureDetailPage() {
               )}
             </div>
             <p className="text-[clamp(13px,1.3vw,20px)] leading-[1.55]">{lecture.summary}</p>
+            {lecture.videoUrl && !resolvedVideo && (
+              <a
+                href={lecture.videoUrl}
+                className="text-[clamp(12px,1.2vw,17px)] text-orange no-underline hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {lecture.videoUrl.replace(/^https?:\/\//, '')}
+              </a>
+            )}
           </div>
         </div>
 
@@ -219,9 +396,11 @@ export default function LectureDetailPage() {
             </section>
           </>
         )}
-      </main>
+          </main>
+        )}
 
-      <Footer />
+        <Footer />
+      </Skeleton>
     </div>
   )
 }

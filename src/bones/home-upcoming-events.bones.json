@@ -66,28 +66,6 @@
         ]
       ]
     },
-    "1024": {
-      "name": "home-upcoming-events",
-      "viewportWidth": 1024,
-      "width": 1024,
-      "height": 97,
-      "bones": [
-        [
-          3.1998,
-          43,
-          93.6005,
-          29,
-          8
-        ],
-        [
-          3.1998,
-          96,
-          93.6005,
-          1,
-          8
-        ]
-      ]
-    },
     "1280": {
       "name": "home-upcoming-events",
       "viewportWidth": 1280,
