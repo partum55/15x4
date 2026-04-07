@@ -8,6 +8,11 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
+import {
+  LECTURE_CATEGORIES,
+  getLectureCategoryColor,
+  normalizeLectureCategory,
+} from '../constants/lectureCategories'
 
 type EventFormState = {
   city: string
@@ -23,7 +28,6 @@ type LectureEntry = {
   title: string
   author: string
   category: string
-  categoryColor: 'orange' | 'green' | 'blue' | 'red'
   summary: string
   image: string
 }
@@ -46,7 +50,6 @@ function emptyLecture(): LectureEntry {
     title: '',
     author: '',
     category: '',
-    categoryColor: 'blue',
     summary: '',
     image: '',
   }
@@ -62,6 +65,7 @@ export default function AddEditEventPage() {
   const [form, setForm] = useState<EventFormState>(EMPTY_EVENT)
   const [lectures, setLectures] = useState<LectureEntry[]>([])
   const [errors, setErrors] = useState<FormErrors>({})
+  const [formError, setFormError] = useState('')
 
   useEffect(() => {
     if (!id) return
@@ -80,8 +84,7 @@ export default function AddEditEventPage() {
             tempId: String(++tempIdCounter),
             title: l.title ?? '',
             author: l.author ?? '',
-            category: l.category ?? '',
-            categoryColor: (l.categoryColor as LectureEntry['categoryColor']) ?? 'blue',
+            category: normalizeLectureCategory(l.category ?? '')?.category ?? '',
             summary: l.summary ?? '',
             image: l.image ?? '',
           }))
@@ -119,8 +122,27 @@ export default function AddEditEventPage() {
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
+    setFormError('')
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
+
+    const normalizedLectures = lectures.map((lecture) => {
+      const categoryColor = getLectureCategoryColor(lecture.category)
+      return {
+        title: lecture.title.trim(),
+        author: lecture.author.trim(),
+        category: lecture.category.trim(),
+        categoryColor,
+        summary: lecture.summary.trim(),
+        image: lecture.image.trim(),
+      }
+    })
+
+    const invalidLecture = normalizedLectures.find((lecture) => lecture.categoryColor === null)
+    if (invalidLecture) {
+      setFormError(t('addEvent.errorInvalidCategory'))
+      return
+    }
 
     const body = {
       city: form.city.trim(),
@@ -129,22 +151,30 @@ export default function AddEditEventPage() {
       time: form.time.trim(),
       image: form.image.trim(),
       registrationUrl: form.registrationUrl.trim() || null,
-      lectures: lectures.map(l => ({
-        title: l.title.trim(),
-        author: l.author.trim(),
-        category: l.category.trim(),
-        categoryColor: l.categoryColor,
-        summary: l.summary.trim(),
-        image: l.image.trim(),
+      lectures: normalizedLectures.map((lecture) => ({
+        title: lecture.title,
+        author: lecture.author,
+        category: lecture.category,
+        categoryColor: lecture.categoryColor,
+        summary: lecture.summary,
+        image: lecture.image,
       })),
     }
 
-    if (isEdit && id) {
-      await api.updateEvent(id, body)
-    } else {
-      await api.createEvent(body)
+    try {
+      const result = isEdit && id
+        ? await api.updateEvent(id, body)
+        : await api.createEvent(body)
+
+      if (result?.error) {
+        setFormError(result.error)
+        return
+      }
+
+      router.push('/account/events')
+    } catch {
+      setFormError(t('addEvent.errorSave'))
     }
-    router.push('/account/events')
   }
 
   return (
@@ -155,6 +185,10 @@ export default function AddEditEventPage() {
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">
             {isEdit ? t('addEvent.titleEdit') : t('addEvent.titleNew')}
           </h1>
+
+          {formError && (
+            <p className="text-[clamp(13px,1.2vw,18px)] text-red mb-4 px-4 py-3 border border-red">{formError}</p>
+          )}
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
             <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
@@ -220,14 +254,13 @@ export default function AddEditEventPage() {
 
                   <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
                     <FormField label={t('addEvent.lectureCategoryLabel')}>
-                      <input type="text" value={lec.category} onChange={e => setLectureField(idx, 'category', e.target.value)} />
-                    </FormField>
-                    <FormField label={t('addEvent.lectureCategoryColorLabel')}>
-                      <select value={lec.categoryColor} onChange={e => setLectureField(idx, 'categoryColor', e.target.value)}>
-                        <option value="blue">blue</option>
-                        <option value="orange">orange</option>
-                        <option value="green">green</option>
-                        <option value="red">red</option>
+                      <select value={lec.category} onChange={e => setLectureField(idx, 'category', e.target.value)}>
+                        <option value="">{t('addEvent.lectureCategoryPlaceholder')}</option>
+                        {LECTURE_CATEGORIES.map((category) => (
+                          <option key={category} value={category}>
+                            {t(`lectureCategories.${category}`, { defaultValue: category })}
+                          </option>
+                        ))}
                       </select>
                     </FormField>
                   </div>

@@ -17,6 +17,9 @@ export default function LectureDetailPage() {
   const id = params?.id
   const [lecture, setLecture] = useState<Lecture | null>(null)
   const [related, setRelated] = useState<Lecture[]>([])
+  const lectureCategoryLabel = lecture
+    ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
+    : ''
 
   useEffect(() => {
     if (!id) return
@@ -78,7 +81,7 @@ export default function LectureDetailPage() {
               <span
                 className={`inline-flex items-center px-5 py-[7px] text-[clamp(12px,1.2vw,18px)] font-normal border leading-none whitespace-nowrap ${badgeBorderClass[lecture.categoryColor] || 'border-red'}`}
               >
-                {lecture.category}
+                {lectureCategoryLabel}
               </span>
               {lecture.duration && (
                 <span className="text-[clamp(12px,1.2vw,18px)] opacity-70 whitespace-nowrap">{lecture.duration}</span>
@@ -204,7 +207,7 @@ export default function LectureDetailPage() {
                         <span
                           className={`absolute top-2 left-2 text-[clamp(10px,1vw,14px)] px-[10px] py-1 bg-white border leading-none ${badgeBorderClass[r.categoryColor] || 'border-red'}`}
                         >
-                          {r.category}
+                          {t(`lectureCategories.${r.category}`, { defaultValue: r.category })}
                         </span>
                       </div>
                       <p className="text-[clamp(11px,1.1vw,15px)] font-normal uppercase tracking-[0.02em] leading-[1.3] mb-1.5 px-3">{r.title.toUpperCase()}</p>
