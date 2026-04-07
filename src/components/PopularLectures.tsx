@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
+import { Skeleton } from 'boneyard-js/react'
 import type { Lecture } from '@/lib/api'
 import { api } from '../lib/api'
 import { CATEGORY_COLOR_VAR } from '../constants/colors'
@@ -72,12 +73,30 @@ function LectureRow({ left, right }: LectureRowProps) {
 export default function PopularLectures() {
   const { t } = useTranslation()
   const [lectures, setLectures] = useState<Lecture[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+
     api
       .getLectures()
-      .then((data) => setLectures(Array.isArray(data) ? data : []))
-      .catch(() => setLectures([]))
+      .then((data) => {
+        if (!isMounted) return
+        setLectures(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setLectures([])
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const rows: [Lecture, Lecture][] = []
@@ -86,21 +105,23 @@ export default function PopularLectures() {
   }
 
   return (
-    <section className="pt-[clamp(32px,4.2vw,64px)]" id="lectures">
-      <div className="px-[clamp(16px,3.2vw,48px)]">
-        <div className="flex items-end gap-9 ml-[clamp(0px,13%,184px)] mb-[34px] max-[767px]:ml-0 max-[767px]:flex-wrap max-[767px]:gap-2">
-          <span className="text-[clamp(14px,1.6vw,24px)] font-normal text-black pb-[7px] leading-none">{t('popularLectures.badge')}</span>
-          <h2 className="text-[clamp(22px,2.4vw,36px)] font-normal text-black leading-[1.2]">
-            <span className="text-red">{'//'}</span> {t('popularLectures.title')}
-          </h2>
-        </div>
+    <Skeleton name="home-popular-lectures" loading={loading}>
+      <section className="pt-[clamp(32px,4.2vw,64px)]" id="lectures">
+        <div className="px-[clamp(16px,3.2vw,48px)]">
+          <div className="flex items-end gap-9 ml-[clamp(0px,13%,184px)] mb-[34px] max-[767px]:ml-0 max-[767px]:flex-wrap max-[767px]:gap-2">
+            <span className="text-[clamp(14px,1.6vw,24px)] font-normal text-black pb-[7px] leading-none">{t('popularLectures.badge')}</span>
+            <h2 className="text-[clamp(22px,2.4vw,36px)] font-normal text-black leading-[1.2]">
+              <span className="text-red">{'//'}</span> {t('popularLectures.title')}
+            </h2>
+          </div>
 
-        <div className="flex flex-col">
-          {rows.map(([left, right]) => (
-            <LectureRow key={left.id} left={left} right={right} />
-          ))}
+          <div className="flex flex-col">
+            {rows.map(([left, right]) => (
+              <LectureRow key={left.id} left={left} right={right} />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </Skeleton>
   )
 }

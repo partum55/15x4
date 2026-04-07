@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
+import { Skeleton } from 'boneyard-js/react'
 import type { Lecture } from '@/lib/api'
 import Navbar from '../components/Navbar'
 import FilterDropdown from '../components/FilterDropdown'
@@ -155,12 +156,30 @@ export default function LecturesPage() {
   const [sortBy, setSortBy] = useState('')
   const [themeFilter, setThemeFilter] = useState('')
   const [lectures, setLectures] = useState<Lecture[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+
     api
       .getLectures()
-      .then((data) => setLectures(Array.isArray(data) ? data : []))
-      .catch(() => setLectures([]))
+      .then((data) => {
+        if (!isMounted) return
+        setLectures(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setLectures([])
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const categories = useMemo(() => [...new Set(lectures.map((l) => l.category))], [lectures])
@@ -308,32 +327,34 @@ export default function LecturesPage() {
     <div className="page">
       <Navbar />
 
-      <div className="flex items-end justify-between px-[clamp(16px,3.2vw,48px)] py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
-        <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
-          <span className="text-red">{'//'}</span> {t('lectures.pageTitle')}
-        </h1>
-        <div className="flex items-center gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
-          <FilterDropdown label={t('lectures.sortBy')} options={sortOptions} value={sortBy} onChange={setSortBy} />
-          <FilterDropdown label={t('lectures.theme')} options={themeOptions} value={themeFilter} onChange={setThemeFilter} />
-          <div className="flex items-center gap-3 border border-black px-4 py-2 min-w-[160px] max-[767px]:flex-1 max-[767px]:min-w-[120px]">
-            <input
-              type="text"
-              placeholder={t('lectures.search')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 border-none bg-transparent font-sans text-[clamp(14px,1.3vw,20px)] text-black outline-none placeholder:text-black placeholder:opacity-50"
-            />
-            <SearchIcon />
+      <Skeleton name="page-lectures" loading={loading}>
+        <div className="flex items-end justify-between px-[clamp(16px,3.2vw,48px)] py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
+          <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
+            <span className="text-red">{'//'}</span> {t('lectures.pageTitle')}
+          </h1>
+          <div className="flex items-center gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
+            <FilterDropdown label={t('lectures.sortBy')} options={sortOptions} value={sortBy} onChange={setSortBy} />
+            <FilterDropdown label={t('lectures.theme')} options={themeOptions} value={themeFilter} onChange={setThemeFilter} />
+            <div className="flex items-center gap-3 border border-black px-4 py-2 min-w-[160px] max-[767px]:flex-1 max-[767px]:min-w-[120px]">
+              <input
+                type="text"
+                placeholder={t('lectures.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 border-none bg-transparent font-sans text-[clamp(14px,1.3vw,20px)] text-black outline-none placeholder:text-black placeholder:opacity-50"
+              />
+              <SearchIcon />
+            </div>
           </div>
         </div>
-      </div>
 
-      <main className="px-[clamp(16px,3.2vw,48px)] border-t border-black">
-        {hasActiveFilters ? renderFilteredGrid() : renderDefaultGrid()}
-      </main>
+        <main className="px-[clamp(16px,3.2vw,48px)] border-t border-black">
+          {hasActiveFilters ? renderFilteredGrid() : renderDefaultGrid()}
+        </main>
 
-      <JoinSection />
-      <Footer />
+        <JoinSection />
+        <Footer />
+      </Skeleton>
     </div>
   )
 }

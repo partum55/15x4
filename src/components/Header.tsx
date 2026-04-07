@@ -8,6 +8,7 @@ export default function Header() {
 
   return (
     <header
+      id="home-hero"
       className="relative w-full h-[clamp(480px,65vw,982px)] bg-cover bg-center bg-no-repeat text-white max-[767px]:h-[clamp(360px,80vw,520px)]"
       style={{ backgroundImage: `url(/images/header-image.png)` }}
     >

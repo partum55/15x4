@@ -47,7 +47,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    const response = attachEventLectures(events as Array<Record<string, unknown>>, (lectures ?? []) as Array<Record<string, unknown>>)
+    const sanitizedEvents = (events as Array<Record<string, unknown>>).map((event) => ({
+      ...event,
+      userId: event.userId === user?.id ? event.userId : undefined,
+    }))
+
+    const response = attachEventLectures(sanitizedEvents, (lectures ?? []) as Array<Record<string, unknown>>)
 
     return NextResponse.json(response)
   } catch {

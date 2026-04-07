@@ -111,8 +111,15 @@
       "submitBtn": "log in",
       "noAccount": "don't have an account?",
       "register": "register",
-      "errorInvalid": "incorrect email or password",
+      "errorInvalid": "Wrong crendentials",
       "errorRequired": "this field is required"
+    },
+    "password": {
+      "show": "show",
+      "hide": "hide",
+      "weak": "weak",
+      "medium": "medium",
+      "strong": "strong"
     },
     "register": {
       "title": "// CREATE ACCOUNT",
@@ -125,10 +132,16 @@
       "confirmationSent": "We've sent a confirmation email. Please check your inbox.",
       "hasAccount": "already have an account?",
       "loginLink": "log in",
+      "errorGeneric": "Unable to create account. Please try again.",
       "errorEmailTaken": "this email is already registered",
       "errorPasswordMismatch": "passwords do not match",
       "errorRequired": "this field is required",
-      "errorPasswordShort": "password must be at least 8 characters"
+      "errorPasswordShort": "password must be at least 8 characters",
+      "errorPasswordWeak": "password must include uppercase, lowercase, number and symbol",
+      "passwordStrength": "password strength",
+      "passwordRequirements": "Use at least 8 characters, uppercase, lowercase, number and symbol.",
+      "passwordsMatch": "passwords match",
+      "passwordsMismatch": "passwords do not match"
     },
     "confirmEmail": {
       "title": "// CHECK YOUR EMAIL",
@@ -149,9 +162,20 @@
       "nameLabel": "full name",
       "emailLabel": "email",
       "passwordLabel": "new password",
+      "passwordConfirmLabel": "confirm new password",
       "passwordHint": "leave blank to keep current password",
+      "passwordStrength": "password strength",
+      "passwordRequirements": "Use at least 8 characters, uppercase, lowercase, number and symbol.",
+      "passwordsMatch": "passwords match",
+      "passwordsMismatch": "passwords do not match",
       "saveBtn": "save changes",
-      "savedMessage": "changes saved"
+      "savedMessage": "changes saved",
+      "errorPasswordRequired": "enter a new password first",
+      "errorPasswordConfirmRequired": "confirm your new password",
+      "errorPasswordMismatch": "passwords do not match",
+      "errorPasswordWeak": "password must include uppercase, lowercase, number and symbol",
+      "errorPasswordUpdate": "Unable to update password. Please try again.",
+      "errorSave": "Failed to save changes"
     },
     "menu": {
       "signIn": "sign in",

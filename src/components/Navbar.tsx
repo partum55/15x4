@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +14,38 @@ type NavbarProps = {
 export default function Navbar({ variant = 'light' }: NavbarProps) {
   const { t } = useTranslation()
   const pathname = usePathname()
+  const isHomePage = pathname === '/'
+  const isHomeHeroNavbar = variant === 'dark' && isHomePage
+  const [isPastHomeHero, setIsPastHomeHero] = useState(false)
+
+  useEffect(() => {
+    if (!isHomeHeroNavbar) {
+      return
+    }
+
+    const handleScroll = () => {
+      const heroElement = document.getElementById('home-hero')
+      const heroHeight = heroElement?.offsetHeight ?? 0
+      const switchOffset = 80
+      setIsPastHomeHero(window.scrollY >= Math.max(heroHeight - switchOffset, 0))
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleScroll)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+    }
+  }, [isHomeHeroNavbar])
+
+  const effectiveVariant: 'light' | 'dark' = isHomeHeroNavbar && isPastHomeHero ? 'light' : variant
+  const navColorClasses = isHomeHeroNavbar && !isPastHomeHero
+    ? 'text-white bg-transparent'
+    : effectiveVariant === 'dark'
+      ? 'text-white bg-black'
+      : 'text-black bg-[var(--color-white)] border-b border-black/10'
 
   const links = [
     { to: '/events', label: t('nav.events') },
@@ -22,7 +55,7 @@ export default function Navbar({ variant = 'light' }: NavbarProps) {
 
   return (
     <nav
-      className={`sticky top-0 z-50 flex items-center justify-between py-[clamp(20px,2.6vw,40px)] px-[clamp(16px,3.2vw,48px)] ${variant === 'dark' ? 'text-white bg-black' : 'text-black bg-[var(--color-white)] border-b border-black/10'}`}
+      className={`${isHomeHeroNavbar ? 'fixed top-0 left-0 right-0' : 'sticky top-0'} z-50 flex items-center justify-between py-[clamp(20px,2.6vw,40px)] px-[clamp(16px,3.2vw,48px)] ${navColorClasses}`}
     >
       <Link
         href="/"
@@ -41,7 +74,7 @@ export default function Navbar({ variant = 'light' }: NavbarProps) {
           </Link>
         ))}
         <LanguageSwitcher />
-        <AccountMenu variant={variant} />
+        <AccountMenu variant={effectiveVariant} />
       </div>
     </nav>
   )

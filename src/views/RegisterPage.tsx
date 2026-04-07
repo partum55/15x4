@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
+import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
+import { evaluatePasswordStrength } from '../lib/password-strength'
 
 export default function RegisterPage() {
   const { t } = useTranslation()
@@ -20,13 +22,28 @@ export default function RegisterPage() {
     name?: string; email?: string; password?: string; passwordConfirm?: string; form?: string
   }>({})
 
+  const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password])
+  const passwordsMatch = passwordConfirm.length > 0 && password === passwordConfirm
+  const strengthLabel = passwordStrength.level === 'strong'
+    ? t('auth.password.strong')
+    : passwordStrength.level === 'medium'
+      ? t('auth.password.medium')
+      : t('auth.password.weak')
+  const strengthColorClass = passwordStrength.level === 'strong'
+    ? 'bg-green'
+    : passwordStrength.level === 'medium'
+      ? 'bg-orange'
+      : 'bg-red'
+  const strengthWidth = `${Math.max(passwordStrength.score, 1) * 20}%`
+
   function validate() {
     const e: typeof errors = {}
     if (!name.trim()) e.name = t('auth.register.errorRequired')
     if (!email.trim()) e.email = t('auth.register.errorRequired')
     if (!password) e.password = t('auth.register.errorRequired')
-    else if (password.length < 8) e.password = t('auth.register.errorPasswordShort')
-    if (password !== passwordConfirm) e.passwordConfirm = t('auth.register.errorPasswordMismatch')
+    else if (!passwordStrength.isStrong) e.password = t('auth.register.errorPasswordWeak')
+    if (!passwordConfirm) e.passwordConfirm = t('auth.register.errorRequired')
+    else if (password !== passwordConfirm) e.passwordConfirm = t('auth.register.errorPasswordMismatch')
     return e
   }
 
@@ -37,7 +54,7 @@ export default function RegisterPage() {
 
     const result = await signUp(email.trim(), password, name.trim())
     if (result.error) {
-      setErrors({ form: result.error })
+      setErrors({ form: t('auth.register.errorGeneric') })
       return
     }
     setSubmitted(true)
@@ -92,21 +109,44 @@ export default function RegisterPage() {
             </FormField>
 
             <FormField label={t('auth.register.passwordLabel')} error={errors.password}>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="new-password"
-              />
+              <div className="flex flex-col gap-2">
+                <PasswordInput
+                  value={password}
+                  onChange={setPassword}
+                  autoComplete="new-password"
+                />
+                {password && (
+                  <>
+                    <p className="text-[clamp(12px,1vw,16px)] text-black/80">
+                      {t('auth.register.passwordStrength')}: <span className="uppercase">{strengthLabel}</span>
+                    </p>
+                    <div className="h-1.5 bg-black/10 w-full">
+                      <div
+                        className={`h-full transition-all duration-200 ${strengthColorClass}`}
+                        style={{ width: strengthWidth }}
+                      />
+                    </div>
+                    <p className="text-[clamp(12px,1vw,16px)] text-black/60">
+                      {t('auth.register.passwordRequirements')}
+                    </p>
+                  </>
+                )}
+              </div>
             </FormField>
 
             <FormField label={t('auth.register.passwordConfirmLabel')} error={errors.passwordConfirm}>
-              <input
-                type="password"
-                value={passwordConfirm}
-                onChange={e => setPasswordConfirm(e.target.value)}
-                autoComplete="new-password"
-              />
+              <div className="flex flex-col gap-2">
+                <PasswordInput
+                  value={passwordConfirm}
+                  onChange={setPasswordConfirm}
+                  autoComplete="new-password"
+                />
+                {passwordConfirm && (
+                  <p className={`text-[clamp(12px,1vw,16px)] ${passwordsMatch ? 'text-green' : 'text-red'}`}>
+                    {passwordsMatch ? t('auth.register.passwordsMatch') : t('auth.register.passwordsMismatch')}
+                  </p>
+                )}
+              </div>
             </FormField>
 
             <button

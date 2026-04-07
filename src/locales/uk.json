@@ -111,8 +111,15 @@
       "submitBtn": "увійти",
       "noAccount": "ще немає акаунту?",
       "register": "зареєструватись",
-      "errorInvalid": "невірна пошта або пароль",
+      "errorInvalid": "Wrong crendentials",
       "errorRequired": "це поле обов'язкове"
+    },
+    "password": {
+      "show": "показати",
+      "hide": "сховати",
+      "weak": "слабкий",
+      "medium": "середній",
+      "strong": "сильний"
     },
     "register": {
       "title": "// СТВОРИТИ АКАУНТ",
@@ -125,10 +132,16 @@
       "confirmationSent": "Ми надіслали лист для підтвердження. Перевірте пошту.",
       "hasAccount": "вже є акаунт?",
       "loginLink": "увійти",
+      "errorGeneric": "Не вдалося створити акаунт. Спробуйте ще раз.",
       "errorEmailTaken": "ця пошта вже зареєстрована",
       "errorPasswordMismatch": "паролі не співпадають",
       "errorRequired": "це поле обов'язкове",
-      "errorPasswordShort": "пароль має містити щонайменше 8 символів"
+      "errorPasswordShort": "пароль має містити щонайменше 8 символів",
+      "errorPasswordWeak": "пароль має містити великі і малі літери, цифру та спеціальний символ",
+      "passwordStrength": "надійність пароля",
+      "passwordRequirements": "Використайте щонайменше 8 символів, великі і малі літери, цифру та спеціальний символ.",
+      "passwordsMatch": "паролі співпадають",
+      "passwordsMismatch": "паролі не співпадають"
     },
     "confirmEmail": {
       "title": "// ПЕРЕВІРТЕ ПОШТУ",
@@ -149,9 +162,20 @@
       "nameLabel": "повне ім'я",
       "emailLabel": "електронна пошта",
       "passwordLabel": "новий пароль",
+      "passwordConfirmLabel": "підтвердити новий пароль",
       "passwordHint": "залиште порожнім, щоб не змінювати",
+      "passwordStrength": "надійність пароля",
+      "passwordRequirements": "Використайте щонайменше 8 символів, великі і малі літери, цифру та спеціальний символ.",
+      "passwordsMatch": "паролі співпадають",
+      "passwordsMismatch": "паролі не співпадають",
       "saveBtn": "зберегти зміни",
-      "savedMessage": "зміни збережено"
+      "savedMessage": "зміни збережено",
+      "errorPasswordRequired": "спочатку введіть новий пароль",
+      "errorPasswordConfirmRequired": "підтвердіть новий пароль",
+      "errorPasswordMismatch": "паролі не співпадають",
+      "errorPasswordWeak": "пароль має містити великі і малі літери, цифру та спеціальний символ",
+      "errorPasswordUpdate": "Не вдалося оновити пароль. Спробуйте ще раз.",
+      "errorSave": "Не вдалося зберегти зміни"
     },
     "menu": {
       "signIn": "увійти",
