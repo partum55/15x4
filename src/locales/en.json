@@ -102,5 +102,117 @@
   "language": {
     "uk": "UA",
     "en": "EN"
+  },
+  "auth": {
+    "login": {
+      "title": "// LOG IN",
+      "emailLabel": "email",
+      "passwordLabel": "password",
+      "submitBtn": "log in",
+      "noAccount": "don't have an account?",
+      "register": "register",
+      "errorInvalid": "incorrect email or password",
+      "errorRequired": "this field is required"
+    },
+    "register": {
+      "title": "// CREATE ACCOUNT",
+      "nameLabel": "full name",
+      "emailLabel": "email",
+      "passwordLabel": "password",
+      "passwordConfirmLabel": "confirm password",
+      "submitBtn": "create account",
+      "hasAccount": "already have an account?",
+      "loginLink": "log in",
+      "errorEmailTaken": "this email is already registered",
+      "errorPasswordMismatch": "passwords do not match",
+      "errorRequired": "this field is required",
+      "errorPasswordShort": "password must be at least 8 characters"
+    },
+    "confirmEmail": {
+      "title": "// CHECK YOUR EMAIL",
+      "message": "We sent a confirmation link to {{email}}. Click it to continue.",
+      "devHint": "[dev] click to confirm",
+      "alreadyDone": "already confirmed?"
+    },
+    "waitApproval": {
+      "title": "// ALMOST THERE",
+      "message": "Your account is pending review by our team. We'll notify you by email when it's approved.",
+      "devApprove": "[dev] approve account",
+      "logout": "log out"
+    }
+  },
+  "account": {
+    "settings": {
+      "title": "// ACCOUNT SETTINGS",
+      "nameLabel": "full name",
+      "emailLabel": "email",
+      "passwordLabel": "new password",
+      "passwordHint": "leave blank to keep current password",
+      "saveBtn": "save changes",
+      "savedMessage": "changes saved"
+    },
+    "menu": {
+      "signIn": "sign in",
+      "settings": "account settings",
+      "myLectures": "my lectures",
+      "myEvents": "my events",
+      "addLecture": "add lecture",
+      "addEvent": "add event",
+      "logout": "log out"
+    }
+  },
+  "myLectures": {
+    "title": "// MY LECTURES",
+    "empty": "you haven't added any lectures yet",
+    "addBtn": "add lecture",
+    "editBtn": "edit",
+    "deleteBtn": "delete",
+    "deleteConfirm": "delete this lecture?"
+  },
+  "myEvents": {
+    "title": "// MY EVENTS",
+    "empty": "you haven't added any events yet",
+    "addBtn": "add event",
+    "editBtn": "edit",
+    "deleteBtn": "delete",
+    "deleteConfirm": "delete this event?"
+  },
+  "addLecture": {
+    "titleNew": "// ADD LECTURE",
+    "titleEdit": "// EDIT LECTURE",
+    "titleLabel": "lecture title",
+    "authorLabel": "author name",
+    "categoryLabel": "category",
+    "categoryColorLabel": "category colour",
+    "summaryLabel": "summary",
+    "imageLabel": "image URL",
+    "durationLabel": "duration",
+    "videoUrlLabel": "video link (YouTube)",
+    "authorBioLabel": "author bio",
+    "submitBtnNew": "add lecture",
+    "submitBtnEdit": "save changes",
+    "cancelBtn": "cancel"
+  },
+  "addEvent": {
+    "titleNew": "// ADD EVENT",
+    "titleEdit": "// EDIT EVENT",
+    "cityLabel": "city",
+    "dateLabel": "date (DD/MM)",
+    "locationLabel": "location",
+    "timeLabel": "time (HH:MM)",
+    "imageLabel": "event image URL",
+    "registrationUrlLabel": "registration link (Google Forms, etc.)",
+    "lecturesTitle": "// LECTURES",
+    "addLectureBtn": "add lecture",
+    "removeLectureBtn": "remove",
+    "lectureTitleLabel": "lecture title",
+    "lectureAuthorLabel": "author name",
+    "lectureCategoryLabel": "category",
+    "lectureCategoryColorLabel": "category colour",
+    "lectureSummaryLabel": "summary",
+    "lectureImageLabel": "image URL",
+    "submitBtnNew": "add event",
+    "submitBtnEdit": "save changes",
+    "cancelBtn": "cancel"
   }
 }

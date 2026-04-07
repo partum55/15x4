@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { events } from '../data/events'
 import ArrowIcon from '../components/ArrowIcon'
+import AccountMenu from '../components/AccountMenu'
 import Footer from '../components/Footer'
 import './EventDetailPage.css'
 
@@ -15,7 +16,10 @@ export default function EventDetailPage() {
       <div className="page detail-page">
         <nav className="inner-nav">
           <Link to="/" className="inner-nav__logo">15x4</Link>
-          <Link to="/events" className="inner-nav__back">← {t('eventDetail.back')}</Link>
+          <div className="inner-nav__right">
+            <Link to="/events" className="inner-nav__back">← {t('eventDetail.back')}</Link>
+            <AccountMenu variant="light" />
+          </div>
         </nav>
         <div className="detail-page__not-found">{t('eventDetail.notFound')}</div>
       </div>

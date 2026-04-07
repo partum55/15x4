@@ -102,5 +102,117 @@
   "language": {
     "uk": "UA",
     "en": "EN"
+  },
+  "auth": {
+    "login": {
+      "title": "// УВІЙТИ",
+      "emailLabel": "електронна пошта",
+      "passwordLabel": "пароль",
+      "submitBtn": "увійти",
+      "noAccount": "ще немає акаунту?",
+      "register": "зареєструватись",
+      "errorInvalid": "невірна пошта або пароль",
+      "errorRequired": "це поле обов'язкове"
+    },
+    "register": {
+      "title": "// СТВОРИТИ АКАУНТ",
+      "nameLabel": "повне ім'я",
+      "emailLabel": "електронна пошта",
+      "passwordLabel": "пароль",
+      "passwordConfirmLabel": "підтвердити пароль",
+      "submitBtn": "створити акаунт",
+      "hasAccount": "вже є акаунт?",
+      "loginLink": "увійти",
+      "errorEmailTaken": "ця пошта вже зареєстрована",
+      "errorPasswordMismatch": "паролі не співпадають",
+      "errorRequired": "це поле обов'язкове",
+      "errorPasswordShort": "пароль має містити щонайменше 8 символів"
+    },
+    "confirmEmail": {
+      "title": "// ПЕРЕВІРТЕ ПОШТУ",
+      "message": "Ми надіслали посилання для підтвердження на {{email}}. Натисніть його, щоб продовжити.",
+      "devHint": "[dev] підтвердити",
+      "alreadyDone": "вже підтвердили?"
+    },
+    "waitApproval": {
+      "title": "// МАЙЖЕ ГОТОВО",
+      "message": "Ваш акаунт очікує перевірки нашою командою. Ми повідомимо вас електронною поштою, коли він буде схвалений.",
+      "devApprove": "[dev] схвалити акаунт",
+      "logout": "вийти"
+    }
+  },
+  "account": {
+    "settings": {
+      "title": "// НАЛАШТУВАННЯ АКАУНТУ",
+      "nameLabel": "повне ім'я",
+      "emailLabel": "електронна пошта",
+      "passwordLabel": "новий пароль",
+      "passwordHint": "залиште порожнім, щоб не змінювати",
+      "saveBtn": "зберегти зміни",
+      "savedMessage": "зміни збережено"
+    },
+    "menu": {
+      "signIn": "увійти",
+      "settings": "налаштування акаунту",
+      "myLectures": "мої лекції",
+      "myEvents": "мої події",
+      "addLecture": "додати лекцію",
+      "addEvent": "додати подію",
+      "logout": "вийти"
+    }
+  },
+  "myLectures": {
+    "title": "// МОЇ ЛЕКЦІЇ",
+    "empty": "ви ще не додали жодної лекції",
+    "addBtn": "додати лекцію",
+    "editBtn": "редагувати",
+    "deleteBtn": "видалити",
+    "deleteConfirm": "видалити цю лекцію?"
+  },
+  "myEvents": {
+    "title": "// МОЇ ПОДІЇ",
+    "empty": "ви ще не додали жодної події",
+    "addBtn": "додати подію",
+    "editBtn": "редагувати",
+    "deleteBtn": "видалити",
+    "deleteConfirm": "видалити цю подію?"
+  },
+  "addLecture": {
+    "titleNew": "// ДОДАТИ ЛЕКЦІЮ",
+    "titleEdit": "// РЕДАГУВАТИ ЛЕКЦІЮ",
+    "titleLabel": "назва лекції",
+    "authorLabel": "ім'я автора",
+    "categoryLabel": "категорія",
+    "categoryColorLabel": "колір категорії",
+    "summaryLabel": "короткий опис",
+    "imageLabel": "URL зображення",
+    "durationLabel": "тривалість",
+    "videoUrlLabel": "посилання на відео (YouTube)",
+    "authorBioLabel": "біографія автора",
+    "submitBtnNew": "додати лекцію",
+    "submitBtnEdit": "зберегти зміни",
+    "cancelBtn": "скасувати"
+  },
+  "addEvent": {
+    "titleNew": "// ДОДАТИ ПОДІЮ",
+    "titleEdit": "// РЕДАГУВАТИ ПОДІЮ",
+    "cityLabel": "місто",
+    "dateLabel": "дата (ДД/ММ)",
+    "locationLabel": "місце проведення",
+    "timeLabel": "час (ГГ:ХХ)",
+    "imageLabel": "URL зображення події",
+    "registrationUrlLabel": "посилання на реєстрацію (Google Forms тощо)",
+    "lecturesTitle": "// ЛЕКЦІЇ",
+    "addLectureBtn": "додати лекцію",
+    "removeLectureBtn": "видалити",
+    "lectureTitleLabel": "назва лекції",
+    "lectureAuthorLabel": "ім'я автора",
+    "lectureCategoryLabel": "категорія",
+    "lectureCategoryColorLabel": "колір категорії",
+    "lectureSummaryLabel": "короткий опис",
+    "lectureImageLabel": "URL зображення",
+    "submitBtnNew": "додати подію",
+    "submitBtnEdit": "зберегти зміни",
+    "cancelBtn": "скасувати"
   }
 }

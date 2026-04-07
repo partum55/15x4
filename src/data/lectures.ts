@@ -25,6 +25,7 @@ export type Lecture = {
   summary: string
   // Detail page fields (optional)
   duration?: string
+  videoUrl?: string
   authorBio?: string
   socialLinks?: SocialLink[]
   sources?: Source[]

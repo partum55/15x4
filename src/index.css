@@ -57,3 +57,9 @@ body {
 .inner-nav__back:hover {
   opacity: 1;
 }
+
+.inner-nav__right {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 1.6vw, 24px);
+}
