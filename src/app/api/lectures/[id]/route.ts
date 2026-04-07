@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { normalizeLectureCategory } from '@/constants/lectureCategories'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -15,8 +16,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
+    const normalizedCategory = normalizeLectureCategory(String(lecture.category ?? ''))
+
     return NextResponse.json({
       ...lecture,
+      category: normalizedCategory?.category ?? lecture.category,
+      categoryColor: normalizedCategory?.categoryColor ?? lecture.categoryColor,
       userId: lecture.userId === user?.id ? lecture.userId : undefined,
       sources: lecture.sources ? JSON.parse(lecture.sources) : null,
       socialLinks: lecture.socialLinks ? JSON.parse(lecture.socialLinks) : null,
@@ -40,8 +45,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const body = await req.json()
     const { sources, socialLinks, ...rest } = body
+
+    const candidateCategory = typeof rest.category === 'string'
+      ? rest.category
+      : lecture.category
+    const normalizedCategory = normalizeLectureCategory(String(candidateCategory ?? ''))
+    if (!normalizedCategory) {
+      return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
+    }
+
+    if (rest.categoryColor !== undefined && rest.categoryColor !== normalizedCategory.categoryColor) {
+      return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
+    }
+
     const data = {
       ...rest,
+      category: normalizedCategory.category,
+      categoryColor: normalizedCategory.categoryColor,
       ...(sources !== undefined ? { sources: JSON.stringify(sources) } : {}),
       ...(socialLinks !== undefined ? { socialLinks: JSON.stringify(socialLinks) } : {}),
     }

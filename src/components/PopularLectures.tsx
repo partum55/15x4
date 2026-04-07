@@ -10,9 +10,11 @@ import { api } from '../lib/api'
 import { CATEGORY_COLOR_VAR } from '../constants/colors'
 
 function LectureCard({ id, category, categoryColor, author, image, title, summary }: Lecture) {
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
 
   const bgColor = CATEGORY_COLOR_VAR[categoryColor] || 'var(--color-red)'
+  const categoryLabel = t(`lectureCategories.${category}`, { defaultValue: category })
 
   return (
     <Link
@@ -31,7 +33,7 @@ function LectureCard({ id, category, categoryColor, author, image, title, summar
             color: hovered ? 'var(--color-white)' : 'inherit',
           }}
         >
-          {category}
+          {categoryLabel}
         </span>
         <span className="text-[clamp(13px,1.3vw,20px)] font-normal text-right flex-shrink-0">{author}</span>
       </div>

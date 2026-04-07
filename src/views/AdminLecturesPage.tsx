@@ -104,7 +104,7 @@ export default function AdminLecturesPage() {
                         className="px-2 py-1 text-[clamp(11px,1vw,14px)] text-white"
                         style={{ backgroundColor: CATEGORY_COLOR_VAR[l.categoryColor as keyof typeof CATEGORY_COLOR_VAR] || 'var(--color-black)' }}
                       >
-                        {l.category}
+                        {t(`lectureCategories.${l.category}`, { defaultValue: l.category })}
                       </span>
                     </td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">

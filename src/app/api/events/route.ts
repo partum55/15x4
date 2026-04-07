@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { normalizeLectureCategory } from '@/constants/lectureCategories'
 
 function attachEventLectures(
   events: Array<Record<string, unknown>>,
@@ -8,9 +9,16 @@ function attachEventLectures(
 ) {
   const grouped = new Map<string, Array<Record<string, unknown>>>()
   for (const lecture of eventLectures) {
+    const normalizedCategory = normalizeLectureCategory(String(lecture.category ?? ''))
+    const normalizedLecture = {
+      ...lecture,
+      category: normalizedCategory?.category ?? lecture.category,
+      categoryColor: normalizedCategory?.categoryColor ?? lecture.categoryColor,
+    }
+
     const eventId = String(lecture.eventId)
     const current = grouped.get(eventId) ?? []
-    current.push(lecture)
+    current.push(normalizedLecture)
     grouped.set(eventId, current)
   }
 
@@ -119,26 +127,80 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    const eventLectures = (lectures ?? []).map(
-      (l: {
-        title: string
-        author: string
-        category: string
-        categoryColor: string
-        image: string
-        summary: string
-        lectureId?: string
-      }) => ({
-        title: l.title,
-        author: l.author,
-        category: l.category,
-        categoryColor: l.categoryColor,
-        image: l.image,
-        summary: l.summary,
-        lectureId: l.lectureId ?? null,
-        eventId: event.id,
-      }),
+    const rawLectures = Array.isArray(lectures) ? lectures : []
+    const preparedLectures = rawLectures
+      .map((lecture) => {
+        const raw = lecture as {
+          title?: string
+          author?: string
+          category?: string
+          categoryColor?: string
+          image?: string
+          summary?: string
+          lectureId?: string
+        }
+
+        return {
+          title: raw.title?.trim() ?? '',
+          author: raw.author?.trim() ?? '',
+          category: raw.category?.trim() ?? '',
+          categoryColor: raw.categoryColor,
+          image: raw.image?.trim() ?? '',
+          summary: raw.summary?.trim() ?? '',
+          lectureId: raw.lectureId,
+        }
+      })
+      .filter((lecture) =>
+        lecture.title || lecture.author || lecture.category || lecture.image || lecture.summary,
+      )
+
+    const invalidLecture = preparedLectures.find(
+      (lecture) => !lecture.title || !lecture.author || !lecture.category || !lecture.image || !lecture.summary,
     )
+    if (invalidLecture) {
+      return NextResponse.json({ error: 'Invalid lecture payload' }, { status: 400 })
+    }
+
+    const normalizedLectures = preparedLectures.map((lecture) => {
+      const normalizedCategory = normalizeLectureCategory(lecture.category)
+      if (!normalizedCategory) {
+        return null
+      }
+
+      if (
+        lecture.categoryColor !== undefined &&
+        lecture.categoryColor !== normalizedCategory.categoryColor
+      ) {
+        return null
+      }
+
+      return {
+        title: lecture.title,
+        author: lecture.author,
+        category: normalizedCategory.category,
+        categoryColor: normalizedCategory.categoryColor,
+        image: lecture.image,
+        summary: lecture.summary,
+        lectureId: lecture.lectureId ?? null,
+      }
+    })
+
+    if (normalizedLectures.some((lecture) => lecture === null)) {
+      return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
+    }
+
+    const eventLectures = (normalizedLectures as Array<{
+      title: string
+      author: string
+      category: string
+      categoryColor: string
+      image: string
+      summary: string
+      lectureId: string | null
+    }>).map((lecture) => ({
+      ...lecture,
+      eventId: event.id,
+    }))
 
     const { data: createdLectures, error: lecturesError } = eventLectures.length
       ? await supabase.from('EventLecture').insert(eventLectures).select('*')

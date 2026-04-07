@@ -23,7 +23,9 @@ function ArchiveLectureCard({
   id, category, categoryColor, author, image, title, summary,
   variant = 'horizontal',
 }: ArchiveLectureCardProps) {
+  const { t } = useTranslation()
   const borderColor = CATEGORY_COLOR_VAR[categoryColor] || 'var(--color-red)'
+  const categoryLabel = t(`lectureCategories.${category}`, { defaultValue: category })
 
   if (variant === 'compact') {
     return (
@@ -40,7 +42,7 @@ function ArchiveLectureCard({
             className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
             style={{ borderColor }}
           >
-            {category}
+            {categoryLabel}
           </span>
         </div>
         <div className="flex flex-col gap-[10px] py-6 px-3 max-[767px]:px-0 max-[767px]:py-0">
@@ -66,7 +68,7 @@ function ArchiveLectureCard({
             className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
             style={{ borderColor }}
           >
-            {category}
+            {categoryLabel}
           </span>
         </div>
         <div className="flex flex-col gap-[10px]">
@@ -101,7 +103,7 @@ function ArchiveLectureCard({
             className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
             style={{ borderColor }}
           >
-            {category}
+            {categoryLabel}
           </span>
         </div>
       </Link>
@@ -127,7 +129,7 @@ function ArchiveLectureCard({
           className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
           style={{ borderColor }}
         >
-          {category}
+          {categoryLabel}
         </span>
       </div>
       <div className="flex flex-col gap-6 py-6 px-3 flex-1 max-[767px]:px-0 max-[767px]:py-0">
@@ -215,7 +217,10 @@ export default function LecturesPage() {
 
   const themeOptions = [
     { value: '', label: t('lectures.allThemes') },
-    ...categories.map((c) => ({ value: c, label: c })),
+    ...categories.map((c) => ({
+      value: c,
+      label: t(`lectureCategories.${c}`, { defaultValue: c }),
+    })),
   ]
 
   const renderTwoColumnRows = (items: Lecture[], keyPrefix: string) => {

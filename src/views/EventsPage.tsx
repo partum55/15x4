@@ -23,11 +23,13 @@ function EventLectureCard({
   id, title, author, category, categoryColor, image, summary,
   isHovered = false,
 }: EventLectureCardProps) {
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
   const showHoverState = isHovered || hovered
 
   const bgColor = CATEGORY_COLOR_VAR[categoryColor] || 'var(--color-red)'
   const hasImage = image && image.length > 0
+  const categoryLabel = t(`lectureCategories.${category}`, { defaultValue: category })
 
   return (
     <Link
@@ -60,7 +62,7 @@ function EventLectureCard({
             backgroundColor: showHoverState ? bgColor : 'var(--color-white)',
           }}
         >
-          {category}
+          {categoryLabel}
         </span>
       </div>
       <div className="flex flex-col gap-9 py-6 px-3 flex-1 max-[767px]:px-0 max-[767px]:py-0">

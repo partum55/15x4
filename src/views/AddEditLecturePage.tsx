@@ -8,12 +8,16 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
+import {
+  LECTURE_CATEGORIES,
+  getLectureCategoryColor,
+  normalizeLectureCategory,
+} from '../constants/lectureCategories'
 
 type FormState = {
   title: string
   author: string
   category: string
-  categoryColor: 'orange' | 'green' | 'blue' | 'red'
   summary: string
   image: string
   duration: string
@@ -27,7 +31,6 @@ const EMPTY: FormState = {
   title: '',
   author: '',
   category: '',
-  categoryColor: 'blue',
   summary: '',
   image: '',
   duration: '',
@@ -50,11 +53,12 @@ export default function AddEditLecturePage() {
     if (!id) return
     api.getLecture(id).then((data: FormState & { id?: string; error?: string }) => {
       if (!data.error) {
+        const normalizedCategory = normalizeLectureCategory(data.category ?? '')?.category ?? ''
+
         setForm({
           title: data.title ?? '',
           author: data.author ?? '',
-          category: data.category ?? '',
-          categoryColor: (data.categoryColor as FormState['categoryColor']) ?? 'blue',
+          category: normalizedCategory,
           summary: data.summary ?? '',
           image: data.image ?? '',
           duration: data.duration ?? '',
@@ -85,11 +89,17 @@ export default function AddEditLecturePage() {
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
 
+    const categoryColor = getLectureCategoryColor(form.category)
+    if (!categoryColor) {
+      setErrors((prev) => ({ ...prev, category: t('addLecture.errorInvalidCategory') }))
+      return
+    }
+
     const body = {
       title: form.title.trim(),
       author: form.author.trim(),
       category: form.category.trim(),
-      categoryColor: form.categoryColor,
+      categoryColor,
       summary: form.summary.trim(),
       image: form.image.trim(),
       duration: form.duration.trim() || undefined,
@@ -109,7 +119,7 @@ export default function AddEditLecturePage() {
 
       router.push('/account/lectures')
     } catch {
-      setFormError('Failed to save lecture')
+      setFormError(t('addLecture.errorSave'))
     }
   }
 
@@ -135,20 +145,16 @@ export default function AddEditLecturePage() {
               <input type="text" value={form.author} onChange={e => set('author', e.target.value)} />
             </FormField>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
-              <FormField label={t('addLecture.categoryLabel')} error={errors.category}>
-                <input type="text" value={form.category} onChange={e => set('category', e.target.value)} />
-              </FormField>
-
-              <FormField label={t('addLecture.categoryColorLabel')}>
-                <select value={form.categoryColor} onChange={e => set('categoryColor', e.target.value as FormState['categoryColor'])}>
-                  <option value="blue">blue</option>
-                  <option value="orange">orange</option>
-                  <option value="green">green</option>
-                  <option value="red">red</option>
-                </select>
-              </FormField>
-            </div>
+            <FormField label={t('addLecture.categoryLabel')} error={errors.category}>
+              <select value={form.category} onChange={e => set('category', e.target.value)}>
+                <option value="">{t('addLecture.categoryPlaceholder')}</option>
+                {LECTURE_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {t(`lectureCategories.${category}`, { defaultValue: category })}
+                  </option>
+                ))}
+              </select>
+            </FormField>
 
             <FormField label={t('addLecture.summaryLabel')} error={errors.summary}>
               <textarea rows={4} value={form.summary} onChange={e => set('summary', e.target.value)} />

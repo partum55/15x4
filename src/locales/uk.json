@@ -52,6 +52,12 @@
     "titleZA": "назва Я–А",
     "noResults": "Лекцій не знайдено"
   },
+  "lectureCategories": {
+    "tech": "Технічна",
+    "nature": "Природнича",
+    "artes": "Гуманітарна",
+    "wild-card": "Wild card"
+  },
   "lectureDetail": {
     "aboutAuthor": "ПРО АВТОРА",
     "additionalSources": "ДОДАТКОВІ ДЖЕРЕЛА",
@@ -210,6 +216,7 @@
     "titleLabel": "назва лекції",
     "authorLabel": "ім'я автора",
     "categoryLabel": "категорія",
+    "categoryPlaceholder": "оберіть категорію",
     "categoryColorLabel": "колір категорії",
     "summaryLabel": "короткий опис",
     "imageLabel": "URL зображення",
@@ -218,7 +225,9 @@
     "authorBioLabel": "біографія автора",
     "submitBtnNew": "додати лекцію",
     "submitBtnEdit": "зберегти зміни",
-    "cancelBtn": "скасувати"
+    "cancelBtn": "скасувати",
+    "errorInvalidCategory": "некоректна категорія лекції",
+    "errorSave": "не вдалося зберегти лекцію"
   },
   "addEvent": {
     "titleNew": "// ДОДАТИ ПОДІЮ",
@@ -235,12 +244,15 @@
     "lectureTitleLabel": "назва лекції",
     "lectureAuthorLabel": "ім'я автора",
     "lectureCategoryLabel": "категорія",
+    "lectureCategoryPlaceholder": "оберіть категорію",
     "lectureCategoryColorLabel": "колір категорії",
     "lectureSummaryLabel": "короткий опис",
     "lectureImageLabel": "URL зображення",
     "submitBtnNew": "додати подію",
     "submitBtnEdit": "зберегти зміни",
-    "cancelBtn": "скасувати"
+    "cancelBtn": "скасувати",
+    "errorInvalidCategory": "некоректна категорія лекції",
+    "errorSave": "не вдалося зберегти подію"
   },
   "validation": {
     "required": "це поле обов'язкове"

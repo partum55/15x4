@@ -60,7 +60,7 @@ export default function MyLecturesPage() {
                   <span
                     className={`inline-block px-3 py-1 text-[clamp(11px,1vw,14px)] font-normal border-[1.5px] w-fit whitespace-nowrap ${colorStyles[lecture.categoryColor] || colorStyles.red}`}
                   >
-                    {lecture.category}
+                    {t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })}
                   </span>
                   <p className="text-[clamp(14px,1.4vw,20px)] font-normal uppercase tracking-[-0.03em] text-black whitespace-nowrap overflow-hidden text-ellipsis">{lecture.title}</p>
                   <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">{lecture.author}</p>

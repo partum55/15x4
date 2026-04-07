@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { normalizeLectureCategory } from '@/constants/lectureCategories'
 
 export async function GET() {
   try {
@@ -23,12 +24,18 @@ export async function GET() {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    const parsed = (lectures ?? []).map((l) => ({
-      ...l,
-      userId: l.userId === user?.id ? l.userId : undefined,
-      sources: l.sources ? JSON.parse(l.sources) : null,
-      socialLinks: l.socialLinks ? JSON.parse(l.socialLinks) : null,
-    }))
+    const parsed = (lectures ?? []).map((l) => {
+      const normalizedCategory = normalizeLectureCategory(String(l.category ?? ''))
+
+      return {
+        ...l,
+        category: normalizedCategory?.category ?? l.category,
+        categoryColor: normalizedCategory?.categoryColor ?? l.categoryColor,
+        userId: l.userId === user?.id ? l.userId : undefined,
+        sources: l.sources ? JSON.parse(l.sources) : null,
+        socialLinks: l.socialLinks ? JSON.parse(l.socialLinks) : null,
+      }
+    })
 
     return NextResponse.json(parsed)
   } catch {
@@ -91,11 +98,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const normalizedCategory = normalizeLectureCategory(String(category))
+    if (!normalizedCategory || normalizedCategory.categoryColor !== categoryColor) {
+      return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
+    }
+
     const { data: lecture, error } = await supabase
       .from('Lecture')
       .insert({
-        category,
-        categoryColor,
+        category: normalizedCategory.category,
+        categoryColor: normalizedCategory.categoryColor,
         author,
         image,
         title,
