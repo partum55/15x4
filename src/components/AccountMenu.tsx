@@ -10,6 +10,24 @@ type AccountMenuProps = {
   variant?: 'light' | 'dark'
 }
 
+function UserOutlineIcon({ variant }: { variant: 'light' | 'dark' }) {
+  const stroke = variant === 'dark' ? '#ffffff' : '#000000'
+
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="4" stroke={stroke} strokeWidth="1.8" />
+      <path d="M4 20C4 16.7 7.6 14 12 14C16.4 14 20 16.7 20 20" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -34,18 +52,25 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
     router.push('/')
   }
 
-  if (!user || !user.profile) {
+  if (!user) {
     return (
       <Link
         href="/login"
-        className={`text-[clamp(14px,1.4vw,20px)] font-normal no-underline transition-opacity duration-150 hover:underline ${variant === 'dark' ? 'text-white' : 'text-black'}`}
+        aria-label={t('account.menu.signIn')}
+        className="bg-transparent border-none cursor-pointer p-0 flex items-center transition-opacity duration-150 hover:opacity-75"
       >
-        {t('account.menu.signIn')}
+        <span
+          className={`w-[clamp(28px,2.2vw,36px)] h-[clamp(28px,2.2vw,36px)] rounded-full flex items-center justify-center ${variant === 'dark' ? 'border border-white text-white' : 'border border-black text-black'}`}
+          style={{ borderWidth: '1.5px' }}
+        >
+          <UserOutlineIcon variant={variant} />
+        </span>
       </Link>
     )
   }
 
-  const initial = user.profile.name.charAt(0).toUpperCase()
+  const displayName = user.profile?.name ?? user.email
+  const initial = displayName.charAt(0).toUpperCase()
 
   return (
     <div className="relative" ref={menuRef}>
@@ -65,7 +90,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
       {open && (
         <div className="absolute top-[calc(100%+12px)] right-0 min-w-[220px] bg-black text-white flex flex-col z-[200] max-[767px]:fixed max-[767px]:top-auto max-[767px]:right-0 max-[767px]:left-0 max-[767px]:min-w-full">
           <div className="px-6 pt-[14px] pb-3 flex flex-col gap-0.5">
-            <span className="text-[clamp(13px,1.2vw,18px)] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">{user.profile.name}</span>
+            <span className="text-[clamp(13px,1.2vw,18px)] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">{displayName}</span>
             <span className="text-[clamp(11px,1vw,14px)] font-normal text-white opacity-50 whitespace-nowrap overflow-hidden text-ellipsis">{user.email}</span>
           </div>
           <div className="h-px bg-[rgba(255,255,241,0.12)]" />
@@ -85,7 +110,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
           <Link href="/account/events/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
             {t('account.menu.addEvent')}
           </Link>
-          {user.profile.role === 'admin' && (
+          {user.profile?.role === 'admin' && (
             <>
               <div className="h-px bg-[rgba(255,255,241,0.12)]" />
               <Link href="/admin" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-orange no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
