@@ -1,8 +1,10 @@
+'use client'
+
 import { useRef, useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { getCurrentUser, logout } from '../auth'
-import './AccountMenu.css'
+import { useAuth } from '../context/AuthContext'
 
 type AccountMenuProps = {
   variant?: 'light' | 'dark'
@@ -10,10 +12,10 @@ type AccountMenuProps = {
 
 export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const user = getCurrentUser()
+  const { user, logout } = useAuth()
 
   useEffect(() => {
     if (!open) return
@@ -26,17 +28,17 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout()
     setOpen(false)
-    navigate('/')
+    router.push('/')
   }
 
   if (!user) {
     return (
       <Link
-        to="/login"
-        className={`account-menu__signin account-menu__signin--${variant}`}
+        href="/login"
+        className={`text-[clamp(14px,1.4vw,20px)] font-normal no-underline transition-opacity duration-150 hover:underline ${variant === 'dark' ? 'text-white' : 'text-black'}`}
       >
         {t('account.menu.signIn')}
       </Link>
@@ -46,40 +48,53 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   const initial = user.name.charAt(0).toUpperCase()
 
   return (
-    <div className="account-menu" ref={menuRef}>
+    <div className="relative" ref={menuRef}>
       <button
-        className={`account-menu__trigger account-menu__trigger--${variant}`}
+        className="bg-transparent border-none cursor-pointer p-0 flex items-center transition-opacity duration-150 hover:opacity-75"
         onClick={() => setOpen(v => !v)}
         aria-label="Account menu"
       >
-        <span className="account-menu__icon">{initial}</span>
+        <span
+          className={`w-[clamp(28px,2.2vw,36px)] h-[clamp(28px,2.2vw,36px)] rounded-full flex items-center justify-center text-[clamp(12px,1.1vw,17px)] font-bold ${variant === 'dark' ? 'border border-white text-white' : 'border border-black text-black'}`}
+          style={{ borderWidth: '1.5px' }}
+        >
+          {initial}
+        </span>
       </button>
 
       {open && (
-        <div className="account-menu__dropdown">
-          <div className="account-menu__user">
-            <span className="account-menu__user-name">{user.name}</span>
-            <span className="account-menu__user-email">{user.email}</span>
+        <div className="absolute top-[calc(100%+12px)] right-0 min-w-[220px] bg-black text-white flex flex-col z-[200] max-[767px]:fixed max-[767px]:top-auto max-[767px]:right-0 max-[767px]:left-0 max-[767px]:min-w-full">
+          <div className="px-6 pt-[14px] pb-3 flex flex-col gap-0.5">
+            <span className="text-[clamp(13px,1.2vw,18px)] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">{user.name}</span>
+            <span className="text-[clamp(11px,1vw,14px)] font-normal text-white opacity-50 whitespace-nowrap overflow-hidden text-ellipsis">{user.email}</span>
           </div>
-          <div className="account-menu__divider" />
-          <Link to="/account/settings" className="account-menu__item" onClick={() => setOpen(false)}>
+          <div className="h-px bg-[rgba(255,255,241,0.12)]" />
+          <Link href="/account/settings" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
             {t('account.menu.settings')}
           </Link>
-          <Link to="/account/lectures" className="account-menu__item" onClick={() => setOpen(false)}>
+          <Link href="/account/lectures" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
             {t('account.menu.myLectures')}
           </Link>
-          <Link to="/account/events" className="account-menu__item" onClick={() => setOpen(false)}>
+          <Link href="/account/events" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
             {t('account.menu.myEvents')}
           </Link>
-          <div className="account-menu__divider" />
-          <Link to="/account/lectures/new" className="account-menu__item" onClick={() => setOpen(false)}>
+          <div className="h-px bg-[rgba(255,255,241,0.12)]" />
+          <Link href="/account/lectures/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
             {t('account.menu.addLecture')}
           </Link>
-          <Link to="/account/events/new" className="account-menu__item" onClick={() => setOpen(false)}>
+          <Link href="/account/events/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
             {t('account.menu.addEvent')}
           </Link>
-          <div className="account-menu__divider" />
-          <button className="account-menu__item account-menu__item--logout" onClick={handleLogout}>
+          {user.role === 'admin' && (
+            <>
+              <div className="h-px bg-[rgba(255,255,241,0.12)]" />
+              <Link href="/admin" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-orange no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+                {t('account.menu.admin')}
+              </Link>
+            </>
+          )}
+          <div className="h-px bg-[rgba(255,255,241,0.12)]" />
+          <button className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-red bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={handleLogout}>
             {t('account.menu.logout')}
           </button>
         </div>

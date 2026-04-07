@@ -30,6 +30,10 @@ export type Lecture = {
   socialLinks?: SocialLink[]
   sources?: Source[]
   event?: LectureEvent
+  userId?: string
+  isPublic?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 export const lectures: Lecture[] = [

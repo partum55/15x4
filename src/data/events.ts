@@ -16,6 +16,10 @@ export type Event = {
   time: string
   image: string
   registrationUrl?: string
+  userId?: string
+  isPublic?: boolean
+  createdAt?: string
+  updatedAt?: string
   lectures: EventLecture[]
 }
 

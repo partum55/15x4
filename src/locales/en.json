@@ -131,13 +131,13 @@
     "confirmEmail": {
       "title": "// CHECK YOUR EMAIL",
       "message": "We sent a confirmation link to {{email}}. Click it to continue.",
-      "devHint": "[dev] click to confirm",
-      "alreadyDone": "already confirmed?"
+      "confirming": "Confirming your email...",
+      "success": "Email confirmed! Redirecting...",
+      "error": "Invalid or expired confirmation link."
     },
     "waitApproval": {
       "title": "// ALMOST THERE",
       "message": "Your account is pending review by our team. We'll notify you by email when it's approved.",
-      "devApprove": "[dev] approve account",
       "logout": "log out"
     }
   },
@@ -158,6 +158,7 @@
       "myEvents": "my events",
       "addLecture": "add lecture",
       "addEvent": "add event",
+      "admin": "admin panel",
       "logout": "log out"
     }
   },
@@ -214,5 +215,58 @@
     "submitBtnNew": "add event",
     "submitBtnEdit": "save changes",
     "cancelBtn": "cancel"
+  },
+  "validation": {
+    "required": "this field is required"
+  },
+  "admin": {
+    "title": "// ADMIN PANEL",
+    "users": {
+      "title": "// USERS",
+      "name": "name",
+      "email": "email",
+      "status": "status",
+      "role": "role",
+      "createdAt": "registered",
+      "actions": "actions",
+      "approve": "approve",
+      "makeAdmin": "make admin",
+      "makeUser": "make user",
+      "delete": "delete",
+      "confirmDelete": "delete this user?",
+      "empty": "no users found"
+    },
+    "lectures": {
+      "title": "// ALL LECTURES",
+      "author": "author",
+      "category": "category",
+      "public": "public",
+      "owner": "owner",
+      "delete": "delete",
+      "confirmDelete": "delete this lecture?",
+      "empty": "no lectures found"
+    },
+    "events": {
+      "title": "// ALL EVENTS",
+      "city": "city",
+      "date": "date",
+      "public": "public",
+      "owner": "owner",
+      "delete": "delete",
+      "confirmDelete": "delete this event?",
+      "empty": "no events found"
+    },
+    "stats": {
+      "users": "users",
+      "lectures": "lectures",
+      "events": "events",
+      "pending": "pending approval"
+    },
+    "nav": {
+      "dashboard": "dashboard",
+      "users": "users",
+      "lectures": "lectures",
+      "events": "events"
+    }
   }
 }
