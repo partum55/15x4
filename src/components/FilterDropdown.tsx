@@ -1,6 +1,7 @@
+'use client'
+
 import { useState, useRef, useEffect } from 'react'
 import ChevronIcon from './ChevronIcon'
-import './FilterDropdown.css'
 
 type FilterOption = {
   value: string
@@ -32,9 +33,9 @@ export default function FilterDropdown({ label, options, value, onChange }: Filt
   const displayLabel = value ? selectedOption?.label || label : label
 
   return (
-    <div className="filter-dropdown" ref={ref}>
+    <div className="relative" ref={ref}>
       <button
-        className="filter-dropdown__trigger"
+        className="flex items-center gap-2 bg-transparent border-none font-sans text-[clamp(14px,1.3vw,20px)] text-black cursor-pointer py-2 px-0 hover:opacity-70"
         onClick={() => setIsOpen(!isOpen)}
         type="button"
       >
@@ -42,12 +43,12 @@ export default function FilterDropdown({ label, options, value, onChange }: Filt
         <ChevronIcon direction={isOpen ? 'up' : 'down'} />
       </button>
       {isOpen && (
-        <div className="filter-dropdown__menu">
+        <div className="absolute top-[calc(100%+4px)] left-0 bg-white border border-black min-w-[180px] z-[100] flex flex-col">
           {options.map((option) => (
             <button
               key={option.value}
               type="button"
-              className={`filter-dropdown__option${option.value === value ? ' filter-dropdown__option--active' : ''}`}
+              className={`block w-full text-left px-4 py-[10px] border-none bg-transparent font-sans text-[clamp(13px,1.2vw,18px)] text-black cursor-pointer transition-colors duration-150 hover:bg-[rgba(0,0,0,0.05)] ${option.value === value ? 'font-bold' : ''}`}
               onClick={() => {
                 onChange(option.value)
                 setIsOpen(false)
