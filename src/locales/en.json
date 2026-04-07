@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "logo": "15x4",
+    "events": "events",
+    "lectures": "lectures",
+    "about": "about us"
+  },
+  "header": {
+    "title": "15x4",
+    "subtitle": " – SHARE YOUR KNOWLEDGE",
+    "tagline": "[open science-popular lecture hall]",
+    "description": "Anyone can be a part of it — speak, share what excites you. This is a space for young scientists and those who simply can't live without learning."
+  },
+  "upcomingEvents": {
+    "title": "UPCOMING EVENTS",
+    "register": "register"
+  },
+  "popularLectures": {
+    "title": "POPULAR LECTURES",
+    "badge": "[must watch!]"
+  },
+  "join": {
+    "title": "JOIN THE EVENTS",
+    "ideaText": "Click here if you have a topic you'd like to learn more about",
+    "ideaButton": "I have a lecture idea",
+    "speakerText": "And here, if you'd like to join and give a lecture",
+    "speakerButton": "I want to be a speaker"
+  },
+  "footer": {
+    "tagline": "[open science-popular lecture hall]",
+    "contactLabel": "WRITE TO US",
+    "copyright": "©15x4"
+  },
+  "events": {
+    "pageTitle": "EVENTS",
+    "sortBy": "sort by",
+    "city": "city",
+    "time": "time",
+    "details": "details",
+    "register": "register",
+    "allCities": "all cities",
+    "dateAsc": "oldest first",
+    "dateDesc": "newest first"
+  },
+  "lectures": {
+    "pageTitle": "LECTURES",
+    "sortBy": "sort by",
+    "theme": "theme",
+    "search": "search",
+    "allThemes": "all themes",
+    "titleAZ": "title A–Z",
+    "titleZA": "title Z–A",
+    "noResults": "No lectures found"
+  },
+  "lectureDetail": {
+    "aboutAuthor": "ABOUT AUTHOR",
+    "additionalSources": "ADDITIONAL SOURCES",
+    "aboutEvent": "ABOUT EVENT",
+    "eventPhotos": "Event photos [Google Drive]",
+    "notFound": "Lecture not found",
+    "play": "Play lecture"
+  },
+  "eventDetail": {
+    "back": "events",
+    "register": "register",
+    "talks": "Talks",
+    "notFound": "Event not found"
+  },
+  "about": {
+    "pageTitle": "ABOUT US",
+    "whoWeAre": {
+      "title": "WHO WE ARE?",
+      "note": "[must watch!]",
+      "description": "The <bold>15x4</bold> project was born in Kharkiv and launched a wave of decentralized movement of young scientists and science enthusiasts. It's a Ukrainian adaptation of the short TED Talks format that quickly spread to other cities in Ukraine and Eastern European countries.",
+      "missionLabel": "MISSION",
+      "mission": "We promote science popularization by making knowledge accessible to everyone through short, dynamic lectures."
+    },
+    "format": {
+      "title": "FORMAT",
+      "description1": "4 lectures of 15 minutes each + Q&A. <italic>[Offline]</italic> with registration or <italic>[online]</italic> streaming.",
+      "description2": "Each event consists of 4 topics that create a <italic>balance of different fields</italic> of science:"
+    },
+    "categories": {
+      "technical": {
+        "title": "Technical",
+        "description": "How do algorithms manage finances or houses become smarter?"
+      },
+      "natural": {
+        "title": "Natural Science",
+        "description": "From climate chaos to neural connections in the brain."
+      },
+      "humanities": {
+        "title": "Humanities",
+        "description": "Why languages evolve or migration changes societies — stories about ourselves."
+      },
+      "wildcard": {
+        "title": "Wild card",
+        "description": "From microplastics in oceans to psychological illusions."
+      }
+    }
+  },
+  "language": {
+    "uk": "UA",
+    "en": "EN"
+  }
+}

@@ -1,0 +1,208 @@
+/* About Header */
+.about-header {
+  padding: 24px clamp(16px, 3.2vw, 48px);
+}
+
+.about-header__title {
+  font-size: clamp(28px, 3.2vw, 48px);
+  font-weight: 400;
+  color: var(--color-black);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.about-header__title-accent {
+  color: var(--color-red);
+}
+
+/* Section Headers */
+.about-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.about-section-header__prefix {
+  font-size: clamp(24px, 2.4vw, 36px);
+  font-weight: 400;
+  color: var(--color-red);
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.about-section-header__title {
+  font-size: clamp(24px, 2.4vw, 36px);
+  font-weight: 400;
+  color: var(--color-black);
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.about-section-header__note {
+  font-size: clamp(16px, 1.6vw, 24px);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--color-black);
+  margin-left: 12px;
+}
+
+/* Who We Are Section */
+.about-who {
+  padding: clamp(24px, 4vw, 60px) clamp(16px, 3.2vw, 48px);
+}
+
+.about-who__content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 36px;
+}
+
+.about-who__text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 690px;
+  flex: 1;
+}
+
+.about-who__description {
+  font-size: clamp(16px, 1.6vw, 24px);
+  font-weight: 400;
+  color: var(--color-black);
+  line-height: 1.4;
+}
+
+.about-who__description-bold {
+  font-weight: 700;
+  font-style: italic;
+}
+
+.about-who__mission-label {
+  font-size: clamp(16px, 1.6vw, 24px);
+  font-weight: 400;
+  color: var(--color-black);
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+}
+
+.about-who__mission {
+  font-size: clamp(16px, 1.6vw, 24px);
+  font-weight: 400;
+  color: var(--color-black);
+  line-height: 1.4;
+}
+
+.about-who__image {
+  width: 100%;
+  max-width: 690px;
+  height: auto;
+  aspect-ratio: 690 / 387;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Format Section */
+.about-format {
+  padding: clamp(24px, 4vw, 60px) clamp(16px, 3.2vw, 48px);
+}
+
+.about-format__description {
+  font-size: clamp(16px, 1.6vw, 24px);
+  font-weight: 400;
+  color: var(--color-black);
+  line-height: 1.4;
+  max-width: 690px;
+  margin-bottom: 12px;
+}
+
+.about-format__description-italic {
+  font-style: italic;
+}
+
+/* Category List */
+.about-categories {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 36px;
+  margin-top: 36px;
+}
+
+.about-category {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-category__header {
+  position: relative;
+  width: 100%;
+}
+
+.about-category__background {
+  width: 100%;
+  height: clamp(80px, 7.5vw, 111px);
+}
+
+.about-category__background--blue   { background-color: var(--color-blue); }
+.about-category__background--green  { background-color: var(--color-green); }
+.about-category__background--red    { background-color: var(--color-red); }
+.about-category__background--orange { background-color: var(--color-orange); }
+
+.about-category__title {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background-color: var(--color-white);
+  border: 2px solid;
+  padding: 8px 24px;
+  font-size: clamp(14px, 1.3vw, 20px);
+  font-weight: 400;
+  color: var(--color-black);
+  white-space: nowrap;
+}
+
+.about-category__title--blue   { border-color: var(--color-blue); }
+.about-category__title--green  { border-color: var(--color-green); }
+.about-category__title--red    { border-color: var(--color-red); }
+.about-category__title--orange { border-color: var(--color-orange); }
+
+.about-category__description {
+  font-size: clamp(14px, 1.3vw, 20px);
+  font-weight: 400;
+  color: var(--color-black);
+  line-height: 1.4;
+}
+
+/* ── Tablet ── */
+@media (max-width: 1199px) {
+  .about-who__content {
+    flex-direction: column;
+  }
+
+  .about-who__image {
+    max-width: 100%;
+  }
+
+  .about-categories {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .about-section-header {
+    flex-wrap: wrap;
+  }
+
+  .about-section-header__note {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .about-categories {
+    grid-template-columns: 1fr;
+  }
+}

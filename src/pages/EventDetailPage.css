@@ -1,0 +1,100 @@
+.detail-page__not-found {
+  padding: 64px clamp(16px, 3.2vw, 48px);
+  font-size: 24px;
+}
+
+.event-detail__hero {
+  width: 100%;
+  height: clamp(240px, 40vw, 560px);
+  object-fit: cover;
+  display: block;
+}
+
+.event-detail__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  padding: clamp(32px, 4vw, 64px) clamp(16px, 3.2vw, 48px);
+}
+
+.event-detail__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.event-detail__city {
+  font-size: clamp(28px, 4vw, 60px);
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.event-detail__info {
+  display: flex;
+  gap: 24px;
+  font-size: clamp(14px, 1.4vw, 20px);
+}
+
+.event-detail__location {
+  font-size: clamp(13px, 1.2vw, 18px);
+  line-height: 1.4;
+  opacity: 0.7;
+}
+
+.event-detail__register-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px 24px;
+  border: 1px solid var(--color-black);
+  font-size: clamp(13px, 1.2vw, 18px);
+  cursor: pointer;
+  background: transparent;
+  width: fit-content;
+  transition: background 0.2s, color 0.2s;
+}
+
+.event-detail__register-btn:hover {
+  background: var(--color-black);
+  color: var(--color-white);
+}
+
+.event-detail__talks-title {
+  font-size: clamp(18px, 2vw, 28px);
+  font-weight: 400;
+  margin-bottom: 24px;
+}
+
+.event-detail__talks-title-accent {
+  color: var(--color-red);
+}
+
+.event-detail__talk {
+  padding: 20px 0 0;
+}
+
+.event-detail__talk-divider {
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-black);
+  margin-bottom: 20px;
+}
+
+.event-detail__talk-name {
+  font-size: clamp(14px, 1.4vw, 20px);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.event-detail__talk-author {
+  font-size: clamp(13px, 1.2vw, 18px);
+  opacity: 0.6;
+}
+
+@media (max-width: 767px) {
+  .event-detail__body {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}

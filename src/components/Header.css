@@ -1,0 +1,82 @@
+.header {
+  position: relative;
+  width: 100%;
+  height: clamp(480px, 65vw, 982px);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: var(--color-white);
+}
+
+/* Position navbar absolutely within the header hero */
+.header .navbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* ── Hero title ── */
+.header__title {
+  position: absolute;
+  top: 39.6%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: clamp(28px, 5.3vw, 80px);
+  font-weight: 400;
+  line-height: 1.225;
+  letter-spacing: -0.04em;
+  color: var(--color-white);
+  padding: 0 clamp(16px, 3.2vw, 48px);
+}
+
+.header__title-bold {
+  font-weight: 700;
+  font-style: italic;
+}
+
+.header__title-light {
+  font-weight: 300;
+  text-transform: uppercase;
+}
+
+/* ── Description block ── */
+.header__description {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(750px, 80%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header__tagline {
+  font-size: clamp(14px, 1.6vw, 24px);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--color-white);
+  line-height: 1.2;
+}
+
+.header__desc-text {
+  font-size: clamp(14px, 1.6vw, 24px);
+  font-weight: 400;
+  color: var(--color-white);
+  line-height: 1.2;
+}
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .header {
+    height: clamp(360px, 80vw, 520px);
+  }
+
+  .header__description {
+    width: 90%;
+    bottom: 5%;
+  }
+}
