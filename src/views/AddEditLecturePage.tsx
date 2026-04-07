@@ -44,6 +44,7 @@ export default function AddEditLecturePage() {
 
   const [form, setForm] = useState<FormState>(EMPTY)
   const [errors, setErrors] = useState<FormErrors>({})
+  const [formError, setFormError] = useState('')
 
   useEffect(() => {
     if (!id) return
@@ -74,11 +75,13 @@ export default function AddEditLecturePage() {
     if (!form.author.trim()) e.author = t('auth.login.errorRequired')
     if (!form.category.trim()) e.category = t('auth.login.errorRequired')
     if (!form.summary.trim()) e.summary = t('auth.login.errorRequired')
+    if (!form.image.trim()) e.image = t('auth.login.errorRequired')
     return e
   }
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
+    setFormError('')
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
 
@@ -94,12 +97,20 @@ export default function AddEditLecturePage() {
       authorBio: form.authorBio.trim() || undefined,
     }
 
-    if (isEdit && id) {
-      await api.updateLecture(id, body)
-    } else {
-      await api.createLecture(body)
+    try {
+      const result = isEdit && id
+        ? await api.updateLecture(id, body)
+        : await api.createLecture(body)
+
+      if (result?.error) {
+        setFormError(result.error)
+        return
+      }
+
+      router.push('/account/lectures')
+    } catch {
+      setFormError('Failed to save lecture')
     }
-    router.push('/account/lectures')
   }
 
   return (
@@ -110,6 +121,10 @@ export default function AddEditLecturePage() {
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">
             {isEdit ? t('addLecture.titleEdit') : t('addLecture.titleNew')}
           </h1>
+
+          {formError && (
+            <p className="text-[clamp(13px,1.2vw,18px)] text-red mb-4 px-4 py-3 border border-red">{formError}</p>
+          )}
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
             <FormField label={t('addLecture.titleLabel')} error={errors.title}>
@@ -139,7 +154,7 @@ export default function AddEditLecturePage() {
               <textarea rows={4} value={form.summary} onChange={e => set('summary', e.target.value)} />
             </FormField>
 
-            <FormField label={t('addLecture.imageLabel')}>
+            <FormField label={t('addLecture.imageLabel')} error={errors.image}>
               <input type="text" value={form.image} onChange={e => set('image', e.target.value)} placeholder="https://" />
             </FormField>
 
