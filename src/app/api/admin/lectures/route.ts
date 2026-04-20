@@ -11,7 +11,7 @@ export async function GET() {
 
     const { data: lectures, error } = await supabaseAdmin
       .from('Lecture')
-      .select('id, title, author, category, categoryColor, isPublic, createdAt, userId')
+      .select('id, titleUk, titleEn, authorUk, authorEn, category, categoryColor, isPublic, createdAt, userId')
       .order('createdAt', { ascending: false })
 
     if (error || !lectures) {
@@ -30,6 +30,8 @@ export async function GET() {
     const profilesById = new Map((profiles ?? []).map((p) => [p.id, { ...p, email: emailMap.get(p.id) ?? '' }]))
     const response = lectures.map((lecture) => ({
       ...lecture,
+      title: lecture.titleUk,
+      author: lecture.authorUk,
       user: lecture.userId ? profilesById.get(lecture.userId) ?? null : null,
     }))
 

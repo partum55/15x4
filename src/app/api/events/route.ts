@@ -1,40 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { normalizeLectureCategory } from '@/constants/lectureCategories'
 
-function attachEventLectures(
+type Locale = 'uk' | 'en'
+
+function resolveLocale(req: NextRequest): Locale {
+  const cookie = req.cookies.get('i18nextLng')?.value
+  return cookie === 'en' ? 'en' : 'uk'
+}
+
+function mapEventRow(row: Record<string, unknown>, locale: Locale) {
+  return {
+    ...row,
+    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
+    city: locale === 'en' ? row.cityEn ?? row.cityUk : row.cityUk ?? row.cityEn,
+    location: locale === 'en' ? row.locationEn ?? row.locationUk : row.locationUk ?? row.locationEn,
+  }
+}
+
+function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
+  return {
+    ...row,
+    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
+    author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
+    summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
+  }
+}
+
+function attachLectures(
   events: Array<Record<string, unknown>>,
-  eventLectures: Array<Record<string, unknown>>,
+  lectures: Array<Record<string, unknown>>,
+  locale: Locale,
 ) {
   const grouped = new Map<string, Array<Record<string, unknown>>>()
-  for (const lecture of eventLectures) {
-    const normalizedCategory = normalizeLectureCategory(String(lecture.category ?? ''))
-    const normalizedLecture = {
-      ...lecture,
-      category: normalizedCategory?.category ?? lecture.category,
-      categoryColor: normalizedCategory?.categoryColor ?? lecture.categoryColor,
-    }
+  for (const lecture of lectures) {
+    const key = String(lecture.eventId)
+    const current = grouped.get(key) ?? []
+    current.push(mapLectureRow(lecture, locale))
+    grouped.set(key, current)
+  }
 
-    const eventId = String(lecture.eventId)
-    const current = grouped.get(eventId) ?? []
-    current.push(normalizedLecture)
-    grouped.set(eventId, current)
+  for (const [key, list] of grouped.entries()) {
+    list.sort((a, b) => Number(a.slot ?? 0) - Number(b.slot ?? 0))
+    grouped.set(key, list)
   }
 
   return events.map((event) => ({
-    ...event,
+    ...mapEventRow(event, locale),
     lectures: grouped.get(String(event.id)) ?? [],
   }))
 }
 
-export async function GET() {
+async function ensureApprovedUser(userId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('status')
+    .eq('id', userId)
+    .maybeSingle()
+
+  let profileStatus = profile?.status ?? null
+  if (!profileStatus) {
+    const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
+      .from('profiles')
+      .select('status')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (adminProfileError) {
+      return { ok: false, error: 'Failed to verify account status', status: 500 as const }
+    }
+    profileStatus = adminProfile?.status ?? null
+  }
+
+  if (profileStatus !== 'approved') {
+    return { ok: false, error: 'Account not approved', status: 403 as const }
+  }
+
+  return { ok: true as const }
+}
+
+export async function GET(req: NextRequest) {
   try {
+    const locale = resolveLocale(req)
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
     let query = supabase.from('Event').select('*').order('createdAt', { ascending: false })
-    
     if (user) {
       query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
     } else {
@@ -48,7 +101,7 @@ export async function GET() {
 
     const eventIds = events.map((event) => event.id)
     const { data: lectures, error: lecturesError } = eventIds.length
-      ? await supabase.from('EventLecture').select('*').in('eventId', eventIds)
+      ? await supabase.from('Lecture').select('*').in('eventId', eventIds)
       : { data: [] as Array<Record<string, unknown>>, error: null }
 
     if (lecturesError) {
@@ -60,9 +113,9 @@ export async function GET() {
       userId: event.userId === user?.id ? event.userId : undefined,
     }))
 
-    const response = attachEventLectures(sanitizedEvents, (lectures ?? []) as Array<Record<string, unknown>>)
-
-    return NextResponse.json(response)
+    return NextResponse.json(
+      attachLectures(sanitizedEvents, (lectures ?? []) as Array<Record<string, unknown>>, locale),
+    )
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -71,52 +124,52 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('status')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    let profileStatus = profile?.status ?? null
-
-    if (!profileStatus) {
-      const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
-        .from('profiles')
-        .select('status')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (adminProfileError) {
-        return NextResponse.json({ error: 'Failed to verify account status' }, { status: 500 })
-      }
-
-      profileStatus = adminProfile?.status ?? null
-    }
-
-    if (profileStatus !== 'approved') {
-      return NextResponse.json({ error: 'Account not approved' }, { status: 403 })
+    const approval = await ensureApprovedUser(user.id, supabase)
+    if (!approval.ok) {
+      return NextResponse.json({ error: approval.error }, { status: approval.status })
     }
 
     const body = await req.json()
-    const { city, date, location, time, image, registrationUrl, lectures } = body
+    const {
+      titleUk,
+      titleEn,
+      descriptionUk,
+      descriptionEn,
+      cityUk,
+      cityEn,
+      date,
+      locationUk,
+      locationEn,
+      time,
+      image,
+      registrationUrl,
+    } = body
 
-    if (!city || !date || !location || !time || !image) {
+    if (!titleUk || !cityUk || !date || !locationUk || !time || !image) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const { data: event, error: eventError } = await supabase
       .from('Event')
       .insert({
-        city,
-        date,
-        location,
-        time,
-        image,
-        registrationUrl: registrationUrl ?? null,
+        titleUk: String(titleUk).trim(),
+        titleEn: String(titleEn ?? '').trim(),
+        descriptionUk: String(descriptionUk ?? '').trim(),
+        descriptionEn: String(descriptionEn ?? '').trim(),
+        cityUk: String(cityUk).trim(),
+        cityEn: String(cityEn ?? '').trim(),
+        date: String(date).trim(),
+        locationUk: String(locationUk).trim(),
+        locationEn: String(locationEn ?? '').trim(),
+        time: String(time).trim(),
+        image: String(image).trim(),
+        registrationUrl: registrationUrl ? String(registrationUrl).trim() : null,
         isPublic: false,
         userId: user.id,
       })
@@ -127,90 +180,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    const rawLectures = Array.isArray(lectures) ? lectures : []
-    const preparedLectures = rawLectures
-      .map((lecture) => {
-        const raw = lecture as {
-          title?: string
-          author?: string
-          category?: string
-          categoryColor?: string
-          image?: string
-          summary?: string
-          lectureId?: string
-        }
-
-        return {
-          title: raw.title?.trim() ?? '',
-          author: raw.author?.trim() ?? '',
-          category: raw.category?.trim() ?? '',
-          categoryColor: raw.categoryColor,
-          image: raw.image?.trim() ?? '',
-          summary: raw.summary?.trim() ?? '',
-          lectureId: raw.lectureId,
-        }
-      })
-      .filter((lecture) =>
-        lecture.title || lecture.author || lecture.category || lecture.image || lecture.summary,
-      )
-
-    const invalidLecture = preparedLectures.find(
-      (lecture) => !lecture.title || !lecture.author || !lecture.category || !lecture.image || !lecture.summary,
-    )
-    if (invalidLecture) {
-      return NextResponse.json({ error: 'Invalid lecture payload' }, { status: 400 })
-    }
-
-    const normalizedLectures = preparedLectures.map((lecture) => {
-      const normalizedCategory = normalizeLectureCategory(lecture.category)
-      if (!normalizedCategory) {
-        return null
-      }
-
-      if (
-        lecture.categoryColor !== undefined &&
-        lecture.categoryColor !== normalizedCategory.categoryColor
-      ) {
-        return null
-      }
-
-      return {
-        title: lecture.title,
-        author: lecture.author,
-        category: normalizedCategory.category,
-        categoryColor: normalizedCategory.categoryColor,
-        image: lecture.image,
-        summary: lecture.summary,
-        lectureId: lecture.lectureId ?? null,
-      }
-    })
-
-    if (normalizedLectures.some((lecture) => lecture === null)) {
-      return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
-    }
-
-    const eventLectures = (normalizedLectures as Array<{
-      title: string
-      author: string
-      category: string
-      categoryColor: string
-      image: string
-      summary: string
-      lectureId: string | null
-    }>).map((lecture) => ({
-      ...lecture,
-      eventId: event.id,
-    }))
-
-    const { data: createdLectures, error: lecturesError } = eventLectures.length
-      ? await supabase.from('EventLecture').insert(eventLectures).select('*')
-      : { data: [], error: null }
-
-    if (lecturesError) {
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
-
-    return NextResponse.json({ ...event, lectures: createdLectures ?? [] }, { status: 201 })
+    const locale = resolveLocale(req)
+    return NextResponse.json(mapEventRow(event as Record<string, unknown>, locale), { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

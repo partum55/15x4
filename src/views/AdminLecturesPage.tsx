@@ -12,6 +12,10 @@ type Lecture = {
   id: string
   title: string
   author: string
+  titleUk: string
+  titleEn: string
+  authorUk: string
+  authorEn: string
   category: string
   categoryColor: string
   isPublic: boolean

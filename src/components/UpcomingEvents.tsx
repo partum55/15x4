@@ -55,7 +55,7 @@ export default function UpcomingEvents() {
                 <div className="flex items-start min-h-[290px] max-[767px]:flex-col max-[767px]:min-h-0">
                   {/* Col 1: info */}
                   <div className="flex-[0_0_clamp(200px,23.1%,327px)] pt-6 pb-6 flex flex-col justify-between max-[1199px]:flex-[0_0_280px] max-[767px]:flex-none max-[767px]:w-full max-[767px]:pb-4">
-                    <p className="text-[clamp(16px,1.6vw,24px)] font-normal mb-4">{event.city.toUpperCase()} [{event.date}]</p>
+                    <p className="text-[clamp(16px,1.6vw,24px)] font-normal mb-4">{event.title.toUpperCase()} [{event.date}]</p>
                     <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.4] mb-4">{event.location}</p>
                     <p className="text-[clamp(13px,1.3vw,20px)] font-normal mb-4">{event.time}</p>
                     <Link

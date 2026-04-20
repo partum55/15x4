@@ -9,10 +9,18 @@ import { useAuth } from '@/context/AuthContext'
 
 type Event = {
   id: string
+  title: string
+  titleUk: string
+  titleEn: string
   city: string
+  cityUk: string
+  cityEn: string
   date: string
   location: string
+  locationUk: string
+  locationEn: string
   time: string
+  image: string
   isPublic: boolean
   createdAt: string
   user: { id: string; name: string; email: string } | null
@@ -96,7 +104,7 @@ export default function AdminEventsPage() {
                   <tr key={e.id} className="border-b border-black/20 hover:bg-black/5">
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
                       <Link href={`/events/${e.id}`} className="text-black hover:underline">
-                        {e.city}
+                        {e.title}
                       </Link>
                     </td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e.date}</td>

@@ -10,7 +10,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id } = await params
-    await supabaseAdmin.from('EventLecture').delete().eq('eventId', id)
     const { error } = await supabaseAdmin.from('Event').delete().eq('id', id)
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

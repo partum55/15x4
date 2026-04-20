@@ -197,7 +197,13 @@ export default function LecturesPage() {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       result = result.filter(
-        (l) => l.title.toLowerCase().includes(q) || l.author.toLowerCase().includes(q),
+        (l) =>
+          l.title.toLowerCase().includes(q) ||
+          l.author.toLowerCase().includes(q) ||
+          l.titleUk.toLowerCase().includes(q) ||
+          l.titleEn.toLowerCase().includes(q) ||
+          l.authorUk.toLowerCase().includes(q) ||
+          l.authorEn.toLowerCase().includes(q),
       )
     }
     if (sortBy === 'titleAZ') {
