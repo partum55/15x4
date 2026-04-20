@@ -3,6 +3,7 @@ import '../bones/registry'
 import I18nProvider from '@/components/I18nProvider'
 import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata = {
   title: '15x4',
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>{children}</AuthProvider>
         </I18nProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
