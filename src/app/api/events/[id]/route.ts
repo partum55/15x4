@@ -88,7 +88,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (event.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
-    const { titleUk, titleEn, descriptionUk, descriptionEn, cityUk, cityEn, date, locationUk, locationEn, time, image, registrationUrl } = body
+    const { titleUk, titleEn, descriptionUk, descriptionEn, cityUk, cityEn, date, locationUk, locationEn, time, image, registrationUrl, lectures } = body
 
     if (!titleUk || !cityUk || !date || !locationUk || !time || !image) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -116,6 +116,56 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (updateError || !updated) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    const rawLectures = Array.isArray(lectures) ? lectures : []
+    if (rawLectures.length > 4) {
+      return NextResponse.json({ error: 'Too many lectures' }, { status: 400 })
+    }
+
+    const preparedLectures = rawLectures.map((item, index) => {
+      const lecture = item as Record<string, unknown>
+      return {
+        eventId: id,
+        userId: user.id,
+        slot: Number(lecture.slot ?? index + 1),
+        titleUk: String(lecture.titleUk ?? '').trim(),
+        titleEn: String(lecture.titleEn ?? '').trim(),
+        authorUk: String(lecture.authorUk ?? '').trim(),
+        authorEn: String(lecture.authorEn ?? '').trim(),
+        category: String(lecture.category ?? '').trim(),
+        categoryColor: String(lecture.categoryColor ?? '').trim(),
+        summaryUk: String(lecture.summaryUk ?? '').trim(),
+        summaryEn: String(lecture.summaryEn ?? '').trim(),
+        image: String(lecture.image ?? '').trim(),
+        isPublic: false,
+      }
+    })
+
+    const invalidLecture = preparedLectures.find((lecture) =>
+      !lecture.titleUk ||
+      !lecture.authorUk ||
+      !lecture.category ||
+      !lecture.summaryUk ||
+      !lecture.image ||
+      lecture.slot < 1 ||
+      lecture.slot > 4 ||
+      !validCategoryPair(lecture.category, lecture.categoryColor),
+    )
+    if (invalidLecture) {
+      return NextResponse.json({ error: 'Invalid lecture payload' }, { status: 400 })
+    }
+
+    const { error: deleteLecturesError } = await supabase.from('Lecture').delete().eq('eventId', id)
+    if (deleteLecturesError) {
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    if (preparedLectures.length > 0) {
+      const { error: insertLecturesError } = await supabase.from('Lecture').insert(preparedLectures)
+      if (insertLecturesError) {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+      }
     }
 
     const locale = resolveLocale(req)
