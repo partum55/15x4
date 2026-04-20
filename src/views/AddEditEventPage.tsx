@@ -8,6 +8,11 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
+import {
+  LECTURE_CATEGORIES,
+  getLectureCategoryColor,
+  normalizeLectureCategory,
+} from '../constants/lectureCategories'
 
 type EventFormState = {
   titleUk: string
@@ -22,6 +27,19 @@ type EventFormState = {
   time: string
   image: string
   registrationUrl: string
+}
+
+type EventLectureFormState = {
+  tempId: string
+  slot: string
+  titleUk: string
+  titleEn: string
+  authorUk: string
+  authorEn: string
+  category: string
+  summaryUk: string
+  summaryEn: string
+  image: string
 }
 
 type FormErrors = Partial<Record<keyof EventFormState, string>>
@@ -41,6 +59,22 @@ const EMPTY_EVENT: EventFormState = {
   registrationUrl: '',
 }
 
+let lectureTempCounter = 0
+function emptyLecture(slot: number): EventLectureFormState {
+  return {
+    tempId: String(++lectureTempCounter),
+    slot: String(slot),
+    titleUk: '',
+    titleEn: '',
+    authorUk: '',
+    authorEn: '',
+    category: '',
+    summaryUk: '',
+    summaryEn: '',
+    image: '',
+  }
+}
+
 export default function AddEditEventPage() {
   const { t } = useTranslation()
   const router = useRouter()
@@ -49,6 +83,7 @@ export default function AddEditEventPage() {
   const isEdit = Boolean(id)
 
   const [form, setForm] = useState<EventFormState>(EMPTY_EVENT)
+  const [lectures, setLectures] = useState<EventLectureFormState[]>([])
   const [errors, setErrors] = useState<FormErrors>({})
   const [formError, setFormError] = useState('')
   const [translating, setTranslating] = useState(false)
@@ -71,12 +106,46 @@ export default function AddEditEventPage() {
           image: data.image ?? '',
           registrationUrl: data.registrationUrl ?? '',
         })
+        setLectures(
+          Array.isArray((data as { lectures?: Array<Record<string, unknown>> }).lectures)
+            ? ((data as { lectures?: Array<Record<string, unknown>> }).lectures ?? []).map((lecture, index) => ({
+                tempId: String(++lectureTempCounter),
+                slot: String(lecture.slot ?? index + 1),
+                titleUk: String(lecture.titleUk ?? ''),
+                titleEn: String(lecture.titleEn ?? ''),
+                authorUk: String(lecture.authorUk ?? ''),
+                authorEn: String(lecture.authorEn ?? ''),
+                category: normalizeLectureCategory(String(lecture.category ?? ''))?.category ?? '',
+                summaryUk: String(lecture.summaryUk ?? ''),
+                summaryEn: String(lecture.summaryEn ?? ''),
+                image: String(lecture.image ?? ''),
+              }))
+            : [],
+        )
       }
     })
   }, [id])
 
   function setField(field: keyof EventFormState, value: string) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  function setLectureField(index: number, field: keyof EventLectureFormState, value: string) {
+    setLectures((prev) => prev.map((lecture, i) => (i === index ? { ...lecture, [field]: value } : lecture)))
+  }
+
+  function addLecture() {
+    if (lectures.length >= 4) return
+    const slot = lectures.length + 1
+    setLectures((prev) => [...prev, emptyLecture(slot)])
+  }
+
+  function removeLecture(index: number) {
+    setLectures((prev) =>
+      prev
+        .filter((_, i) => i !== index)
+        .map((lecture, i) => ({ ...lecture, slot: String(i + 1) })),
+    )
   }
 
   function validate(): FormErrors {
@@ -164,6 +233,36 @@ export default function AddEditEventPage() {
       time: form.time.trim(),
       image: form.image.trim(),
       registrationUrl: form.registrationUrl.trim() || null,
+      lectures: lectures.map((lecture, index) => ({
+        slot: Number(lecture.slot || index + 1),
+        titleUk: lecture.titleUk.trim(),
+        titleEn: lecture.titleEn.trim(),
+        authorUk: lecture.authorUk.trim(),
+        authorEn: lecture.authorEn.trim(),
+        category: lecture.category.trim(),
+        categoryColor: getLectureCategoryColor(lecture.category.trim()),
+        summaryUk: lecture.summaryUk.trim(),
+        summaryEn: lecture.summaryEn.trim(),
+        image: lecture.image.trim(),
+      })),
+    }
+
+    if (body.lectures.length > 4) {
+      setFormError(t('addEvent.errorLecturesLimit'))
+      return
+    }
+
+    const invalidLecture = body.lectures.find((lecture) =>
+      !lecture.titleUk ||
+      !lecture.authorUk ||
+      !lecture.category ||
+      !lecture.summaryUk ||
+      !lecture.image ||
+      !lecture.categoryColor,
+    )
+    if (invalidLecture) {
+      setFormError(t('addEvent.errorInvalidCategory'))
+      return
     }
 
     try {
@@ -259,6 +358,77 @@ export default function AddEditEventPage() {
             <FormField label={t('addEvent.registrationUrlLabel')}>
               <input type="text" value={form.registrationUrl} onChange={e => setField('registrationUrl', e.target.value)} placeholder="https://forms.google.com/..." />
             </FormField>
+
+            <div className="flex flex-col gap-4 pt-6 border-t border-black">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[clamp(16px,1.6vw,24px)] font-normal tracking-[-0.04em] uppercase text-black">{t('addEvent.lecturesTitle')}</h2>
+                <button
+                  type="button"
+                  className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+                  onClick={addLecture}
+                  disabled={lectures.length >= 4}
+                >
+                  {t('addEvent.addLectureBtn')}
+                </button>
+              </div>
+
+              {lectures.map((lecture, index) => (
+                <div key={lecture.tempId} className="border border-black p-4 flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[clamp(12px,1.1vw,16px)] uppercase opacity-60">#{lecture.slot}</span>
+                    <button
+                      type="button"
+                      className="text-[clamp(12px,1.1vw,16px)] uppercase underline opacity-70 hover:opacity-100"
+                      onClick={() => removeLecture(index)}
+                    >
+                      {t('addEvent.removeLectureBtn')}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+                    <FormField label={t('addEvent.lectureTitleUkLabel')}>
+                      <input type="text" value={lecture.titleUk} onChange={(e) => setLectureField(index, 'titleUk', e.target.value)} />
+                    </FormField>
+                    <FormField label={t('addEvent.lectureTitleEnLabel')}>
+                      <input type="text" value={lecture.titleEn} onChange={(e) => setLectureField(index, 'titleEn', e.target.value)} />
+                    </FormField>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+                    <FormField label={t('addEvent.lectureAuthorUkLabel')}>
+                      <input type="text" value={lecture.authorUk} onChange={(e) => setLectureField(index, 'authorUk', e.target.value)} />
+                    </FormField>
+                    <FormField label={t('addEvent.lectureAuthorEnLabel')}>
+                      <input type="text" value={lecture.authorEn} onChange={(e) => setLectureField(index, 'authorEn', e.target.value)} />
+                    </FormField>
+                  </div>
+
+                  <FormField label={t('addEvent.lectureCategoryLabel')}>
+                    <select value={lecture.category} onChange={(e) => setLectureField(index, 'category', e.target.value)}>
+                      <option value="">{t('addEvent.lectureCategoryPlaceholder')}</option>
+                      {LECTURE_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {t(`lectureCategories.${category}`, { defaultValue: category })}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+
+                  <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+                    <FormField label={t('addEvent.lectureSummaryUkLabel')}>
+                      <textarea rows={3} value={lecture.summaryUk} onChange={(e) => setLectureField(index, 'summaryUk', e.target.value)} />
+                    </FormField>
+                    <FormField label={t('addEvent.lectureSummaryEnLabel')}>
+                      <textarea rows={3} value={lecture.summaryEn} onChange={(e) => setLectureField(index, 'summaryEn', e.target.value)} />
+                    </FormField>
+                  </div>
+
+                  <FormField label={t('addEvent.lectureImageLabel')}>
+                    <input type="text" value={lecture.image} onChange={(e) => setLectureField(index, 'image', e.target.value)} placeholder="https://" />
+                  </FormField>
+                </div>
+              ))}
+            </div>
 
             <div className="flex items-center gap-6 mt-2 pt-6 border-t border-black">
               <button

@@ -1,15 +1,19 @@
 'use client'
 
 import { useTranslation } from 'react-i18next'
+import { useRouter } from 'next/navigation'
 
 export default function LanguageSwitcher() {
   const { i18n, t } = useTranslation()
+  const router = useRouter()
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'uk'
 
   const toggleLanguage = () => {
     const newLang = currentLang === 'uk' ? 'en' : 'uk'
     window.localStorage.setItem('i18nextLng', newLang)
-    void i18n.changeLanguage(newLang)
+    void i18n.changeLanguage(newLang).then(() => {
+      router.refresh()
+    })
   }
 
   return (

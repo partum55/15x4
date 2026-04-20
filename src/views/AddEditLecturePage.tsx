@@ -22,7 +22,6 @@ type FormState = {
   summaryUk: string
   summaryEn: string
   image: string
-  duration: string
   authorBioUk: string
   authorBioEn: string
   videoUrl: string
@@ -41,7 +40,6 @@ const EMPTY: FormState = {
   summaryUk: '',
   summaryEn: '',
   image: '',
-  duration: '',
   authorBioUk: '',
   authorBioEn: '',
   videoUrl: '',
@@ -80,7 +78,6 @@ export default function AddEditLecturePage() {
           summaryUk: data.summaryUk ?? '',
           summaryEn: data.summaryEn ?? '',
           image: data.image ?? '',
-          duration: data.duration ?? '',
           authorBioUk: data.authorBioUk ?? '',
           authorBioEn: data.authorBioEn ?? '',
           videoUrl: data.videoUrl ?? '',
@@ -188,7 +185,6 @@ export default function AddEditLecturePage() {
       summaryUk: form.summaryUk.trim(),
       summaryEn: form.summaryEn.trim(),
       image: form.image.trim(),
-      duration: form.duration.trim() || undefined,
       videoUrl: form.videoUrl.trim() || undefined,
       authorBioUk: form.authorBioUk.trim() || undefined,
       authorBioEn: form.authorBioEn.trim() || undefined,
@@ -294,10 +290,6 @@ export default function AddEditLecturePage() {
 
             <FormField label={t('addLecture.videoUrlLabel')}>
               <input type="text" value={form.videoUrl} onChange={(e) => set('videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
-            </FormField>
-
-            <FormField label={t('addLecture.durationLabel')}>
-              <input type="text" value={form.duration} onChange={(e) => set('duration', e.target.value)} placeholder="17 хв" />
             </FormField>
 
             <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
