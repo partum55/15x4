@@ -41,6 +41,36 @@ const EMPTY_EVENT: EventFormState = {
   registrationUrl: '',
 }
 
+type TranslateActionsProps = {
+  onUkToEn: () => void
+  onEnToUk: () => void
+  ukToEnLoading: boolean
+  enToUkLoading: boolean
+}
+
+function TranslateActions({ onUkToEn, onEnToUk, ukToEnLoading, enToUkLoading }: TranslateActionsProps) {
+  return (
+    <div className="flex items-center gap-2 max-[991px]:justify-start">
+      <button
+        type="button"
+        className="h-[42px] min-w-[98px] px-4 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.06em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+        onClick={onUkToEn}
+        disabled={ukToEnLoading}
+      >
+        {ukToEnLoading ? '...' : 'UA → EN'}
+      </button>
+      <button
+        type="button"
+        className="h-[42px] min-w-[98px] px-4 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.06em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+        onClick={onEnToUk}
+        disabled={enToUkLoading}
+      >
+        {enToUkLoading ? '...' : 'EN → UA'}
+      </button>
+    </div>
+  )
+}
+
 export default function AddEditEventPage() {
   const { t } = useTranslation()
   const router = useRouter()
@@ -154,72 +184,64 @@ export default function AddEditEventPage() {
           )}
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addEvent.titleUkLabel')} error={errors.titleUk}>
                 <input type="text" value={form.titleUk} onChange={e => setField('titleUk', e.target.value)} />
               </FormField>
               <FormField label={t('addEvent.titleEnLabel')}>
-                <div className="flex gap-2">
-                  <input type="text" value={form.titleEn} onChange={e => setField('titleEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => handleTranslate('titleUk', 'titleEn', 'uk', 'en')} disabled={translating === 'titleEn'}>
-                    {translating === 'titleEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => handleTranslate('titleEn', 'titleUk', 'en', 'uk')} disabled={translating === 'titleUk'}>
-                    {translating === 'titleUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <input type="text" value={form.titleEn} onChange={e => setField('titleEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => handleTranslate('titleUk', 'titleEn', 'uk', 'en')}
+                onEnToUk={() => handleTranslate('titleEn', 'titleUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'titleEn'}
+                enToUkLoading={translating === 'titleUk'}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addEvent.cityUkLabel')} error={errors.cityUk}>
                 <input type="text" value={form.cityUk} onChange={e => setField('cityUk', e.target.value)} />
               </FormField>
               <FormField label={t('addEvent.cityEnLabel')}>
-                <div className="flex gap-2">
-                  <input type="text" value={form.cityEn} onChange={e => setField('cityEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => handleTranslate('cityUk', 'cityEn', 'uk', 'en')} disabled={translating === 'cityEn'}>
-                    {translating === 'cityEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => handleTranslate('cityEn', 'cityUk', 'en', 'uk')} disabled={translating === 'cityUk'}>
-                    {translating === 'cityUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <input type="text" value={form.cityEn} onChange={e => setField('cityEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => handleTranslate('cityUk', 'cityEn', 'uk', 'en')}
+                onEnToUk={() => handleTranslate('cityEn', 'cityUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'cityEn'}
+                enToUkLoading={translating === 'cityUk'}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addEvent.locationUkLabel')} error={errors.locationUk}>
                 <input type="text" value={form.locationUk} onChange={e => setField('locationUk', e.target.value)} />
               </FormField>
               <FormField label={t('addEvent.locationEnLabel')}>
-                <div className="flex gap-2">
-                  <input type="text" value={form.locationEn} onChange={e => setField('locationEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => handleTranslate('locationUk', 'locationEn', 'uk', 'en')} disabled={translating === 'locationEn'}>
-                    {translating === 'locationEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => handleTranslate('locationEn', 'locationUk', 'en', 'uk')} disabled={translating === 'locationUk'}>
-                    {translating === 'locationUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <input type="text" value={form.locationEn} onChange={e => setField('locationEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => handleTranslate('locationUk', 'locationEn', 'uk', 'en')}
+                onEnToUk={() => handleTranslate('locationEn', 'locationUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'locationEn'}
+                enToUkLoading={translating === 'locationUk'}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addEvent.descriptionUkLabel')}>
                 <textarea rows={3} value={form.descriptionUk} onChange={e => setField('descriptionUk', e.target.value)} />
               </FormField>
               <FormField label={t('addEvent.descriptionEnLabel')}>
-                <div className="flex gap-2">
-                  <textarea rows={3} value={form.descriptionEn} onChange={e => setField('descriptionEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => handleTranslate('descriptionUk', 'descriptionEn', 'uk', 'en')} disabled={translating === 'descriptionEn'}>
-                    {translating === 'descriptionEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => handleTranslate('descriptionEn', 'descriptionUk', 'en', 'uk')} disabled={translating === 'descriptionUk'}>
-                    {translating === 'descriptionUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <textarea rows={3} value={form.descriptionEn} onChange={e => setField('descriptionEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => handleTranslate('descriptionUk', 'descriptionEn', 'uk', 'en')}
+                onEnToUk={() => handleTranslate('descriptionEn', 'descriptionUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'descriptionEn'}
+                enToUkLoading={translating === 'descriptionUk'}
+              />
             </div>
 
             <FormField label={t('addEvent.dateLabel')} error={errors.date}>
