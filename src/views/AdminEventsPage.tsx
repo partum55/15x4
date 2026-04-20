@@ -55,6 +55,12 @@ export default function AdminEventsPage() {
     setEvents(prev => prev.filter(e => e.id !== eventId))
   }
 
+  async function handleApprove(eventId: string) {
+    const res = await fetch(`/api/admin/events/${eventId}`, { method: 'PATCH' })
+    if (!res.ok) return
+    setEvents(prev => prev.map(event => (event.id === eventId ? { ...event, isPublic: true } : event)))
+  }
+
   if (loading || !user || user?.profile?.role !== 'admin') {
     return null
   }
@@ -117,12 +123,22 @@ export default function AdminEventsPage() {
                       {e.user?.name || '—'}
                     </td>
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => handleDelete(e.id)}
-                        className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
-                      >
-                        {t('admin.events.delete')}
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        {!e.isPublic && (
+                          <button
+                            onClick={() => handleApprove(e.id)}
+                            className="px-3 py-1 bg-black text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
+                          >
+                            {t('admin.events.approve')}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(e.id)}
+                          className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
+                        >
+                          {t('admin.events.delete')}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

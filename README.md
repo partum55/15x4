@@ -98,7 +98,7 @@ npm install
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co"
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY="YOUR_SUPABASE_PUBLISHABLE_KEY"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="YOUR_SUPABASE_PUBLISHABLE_KEY"
 SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
 JWT_SECRET="your-super-secret-key"
 
@@ -127,5 +127,5 @@ npm run dev
 
 ## Примітка по ключах Supabase
 
-- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY безпечний для клієнта.
+- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY безпечний для клієнта.
 - SUPABASE_SERVICE_ROLE_KEY використовуй тільки на сервері (API routes), ніколи не віддавай у браузер.

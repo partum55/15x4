@@ -108,6 +108,7 @@ export const api = {
     getLectures: () => fetch('/api/admin/lectures').then(json),
     deleteLecture: (id: string) => del(`/api/admin/lectures/${id}`),
     getEvents: () => fetch('/api/admin/events').then(json),
+    approveEvent: (id: string) => patch(`/api/admin/events/${id}`, {}),
     deleteEvent: (id: string) => del(`/api/admin/events/${id}`),
     getStats: () => fetch('/api/admin/stats').then(json),
   },
