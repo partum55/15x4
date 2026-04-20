@@ -92,7 +92,7 @@ function EventSection({ event, isExpanded, onToggle, detailsLabel, registerLabel
       <div className="flex items-start justify-between pt-9 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:gap-6">
         <div className="flex flex-col gap-9">
           <div className="flex items-center justify-between gap-6 min-w-[clamp(200px,22vw,327px)]">
-            <span className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.city} [{event.date}]</span>
+            <span className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.title} [{event.date}]</span>
             <span className="text-[clamp(16px,1.6vw,24px)] font-normal">{event.time}</span>
           </div>
           <p className="text-[clamp(14px,1.3vw,20px)] font-normal max-w-[clamp(200px,22vw,327px)] leading-[1.4]">{event.location}</p>

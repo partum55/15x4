@@ -19,19 +19,14 @@ export default function EventDetailPage() {
   const id = params?.id
   const bonesMode = searchParams.get('bones') === '1'
   const [event, setEvent] = useState<Event | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!bonesMode)
 
   useEffect(() => {
     if (!id) return
 
-    if (bonesMode) {
-      setLoading(true)
-      setEvent(null)
-      return
-    }
+    if (bonesMode) return
 
     let isMounted = true
-    setLoading(true)
 
     api.getEvent(id)
       .then((data: Event & { error?: string }) => {
@@ -93,7 +88,7 @@ export default function EventDetailPage() {
 
             <div className="grid grid-cols-2 gap-16 px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4vw,64px)] max-[767px]:grid-cols-1 max-[767px]:gap-8">
               <div className="flex flex-col gap-4">
-                <h1 className="text-[clamp(28px,4vw,60px)] font-normal uppercase">{event.city}</h1>
+                <h1 className="text-[clamp(28px,4vw,60px)] font-normal uppercase">{event.title}</h1>
                 <div className="flex gap-6 text-[clamp(14px,1.4vw,20px)]">
                   <span>[{event.date}]</span>
                   <span>{event.time}</span>

@@ -1,14 +1,24 @@
 export type Lecture = {
   id: string
+  eventId: string
+  slot: number
   category: string
   categoryColor: 'orange' | 'green' | 'blue' | 'red'
   author: string
+  authorUk: string
+  authorEn: string
   image: string
   title: string
+  titleUk: string
+  titleEn: string
   summary: string
+  summaryUk: string
+  summaryEn: string
   duration?: string
   videoUrl?: string
   authorBio?: string
+  authorBioUk?: string
+  authorBioEn?: string
   eventCity?: string
   eventDate?: string
   eventPhotosUrl?: string
@@ -22,21 +32,36 @@ export type Lecture = {
 
 export type EventLecture = {
   id: string
+  eventId: string
+  slot: number
   title: string
+  titleUk: string
+  titleEn: string
   author: string
+  authorUk: string
+  authorEn: string
   category: string
   categoryColor: 'orange' | 'green' | 'blue' | 'red'
   image: string
   summary: string
-  lectureId?: string
-  eventId: string
+  summaryUk: string
+  summaryEn: string
 }
 
 export type Event = {
   id: string
+  title: string
+  titleUk: string
+  titleEn: string
   city: string
+  cityUk: string
+  cityEn: string
   date: string
+  descriptionUk: string
+  descriptionEn: string
   location: string
+  locationUk: string
+  locationEn: string
   time: string
   image: string
   registrationUrl?: string
@@ -59,24 +84,23 @@ const del = (url: string) =>
   fetch(url, { method: 'DELETE' }).then(json)
 
 export const api = {
-  // Profile
   updateProfile: (body: { name?: string }) => patch('/api/profile', body),
 
-  // Lectures
   getLectures: () => fetch('/api/lectures').then(json).then((data) => asArray<Lecture>(data)),
   getLecture: (id: string) => fetch(`/api/lectures/${id}`).then(json),
   createLecture: (body: object) => post('/api/lectures', body),
   updateLecture: (id: string, body: object) => put(`/api/lectures/${id}`, body),
   deleteLecture: (id: string) => del(`/api/lectures/${id}`),
 
-  // Events
   getEvents: () => fetch('/api/events').then(json).then((data) => asArray<Event>(data)),
   getEvent: (id: string) => fetch(`/api/events/${id}`).then(json),
   createEvent: (body: object) => post('/api/events', body),
   updateEvent: (id: string, body: object) => put(`/api/events/${id}`, body),
   deleteEvent: (id: string) => del(`/api/events/${id}`),
 
-  // Admin
+  translateText: (body: { text: string; sourceLanguage: 'uk' | 'en'; targetLanguage: 'uk' | 'en' }) =>
+    post('/api/ai/translate', body),
+
   admin: {
     getUsers: () => fetch('/api/admin/users').then(json),
     updateUser: (id: string, body: { status?: string; role?: string }) => patch(`/api/admin/users/${id}`, body),

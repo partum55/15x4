@@ -1,30 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { normalizeLectureCategory } from '@/constants/lectureCategories'
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+type Locale = 'uk' | 'en'
+
+function resolveLocale(req: NextRequest): Locale {
+  const cookie = req.cookies.get('i18nextLng')?.value
+  return cookie === 'en' ? 'en' : 'uk'
+}
+
+function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
+  return {
+    ...row,
+    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
+    author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
+    summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
+    authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
+    sources: row.sources ? JSON.parse(String(row.sources)) : null,
+    socialLinks: row.socialLinks ? JSON.parse(String(row.socialLinks)) : null,
+  }
+}
+
+function validCategoryPair(category: string, categoryColor: string) {
+  return (
+    (category === 'tech' && categoryColor === 'blue') ||
+    (category === 'nature' && categoryColor === 'green') ||
+    (category === 'artes' && categoryColor === 'red') ||
+    (category === 'wild-card' && categoryColor === 'orange')
+  )
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    const locale = resolveLocale(req)
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
-
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
     if (!lecture.isPublic && lecture.userId !== user?.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    const normalizedCategory = normalizeLectureCategory(String(lecture.category ?? ''))
-
+    const mapped = mapLectureRow(lecture as Record<string, unknown>, locale)
     return NextResponse.json({
-      ...lecture,
-      category: normalizedCategory?.category ?? lecture.category,
-      categoryColor: normalizedCategory?.categoryColor ?? lecture.categoryColor,
+      ...mapped,
       userId: lecture.userId === user?.id ? lecture.userId : undefined,
-      sources: lecture.sources ? JSON.parse(lecture.sources) : null,
-      socialLinks: lecture.socialLinks ? JSON.parse(lecture.socialLinks) : null,
     })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -35,8 +58,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
@@ -44,26 +69,57 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (lecture.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
-    const { sources, socialLinks, ...rest } = body
+    const {
+      eventId,
+      slot,
+      category,
+      categoryColor,
+      authorUk,
+      authorEn,
+      image,
+      titleUk,
+      titleEn,
+      summaryUk,
+      summaryEn,
+      duration,
+      videoUrl,
+      authorBioUk,
+      authorBioEn,
+      sources,
+      socialLinks,
+      eventCity,
+      eventDate,
+      eventPhotosUrl,
+    } = body
 
-    const candidateCategory = typeof rest.category === 'string'
-      ? rest.category
-      : lecture.category
-    const normalizedCategory = normalizeLectureCategory(String(candidateCategory ?? ''))
-    if (!normalizedCategory) {
-      return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
-    }
+    const normalizedCategory = String(category ?? lecture.category)
+    const normalizedCategoryColor = String(categoryColor ?? lecture.categoryColor)
 
-    if (rest.categoryColor !== undefined && rest.categoryColor !== normalizedCategory.categoryColor) {
+    if (!validCategoryPair(normalizedCategory, normalizedCategoryColor)) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
     }
 
     const data = {
-      ...rest,
-      category: normalizedCategory.category,
-      categoryColor: normalizedCategory.categoryColor,
-      ...(sources !== undefined ? { sources: JSON.stringify(sources) } : {}),
-      ...(socialLinks !== undefined ? { socialLinks: JSON.stringify(socialLinks) } : {}),
+      eventId: eventId ?? lecture.eventId,
+      slot: slot ? Number(slot) : lecture.slot,
+      category: normalizedCategory,
+      categoryColor: normalizedCategoryColor,
+      authorUk: authorUk !== undefined ? String(authorUk).trim() : lecture.authorUk,
+      authorEn: authorEn !== undefined ? String(authorEn).trim() : lecture.authorEn,
+      image: image !== undefined ? String(image).trim() : lecture.image,
+      titleUk: titleUk !== undefined ? String(titleUk).trim() : lecture.titleUk,
+      titleEn: titleEn !== undefined ? String(titleEn).trim() : lecture.titleEn,
+      summaryUk: summaryUk !== undefined ? String(summaryUk).trim() : lecture.summaryUk,
+      summaryEn: summaryEn !== undefined ? String(summaryEn).trim() : lecture.summaryEn,
+      duration: duration !== undefined ? (duration ? String(duration).trim() : null) : lecture.duration,
+      videoUrl: videoUrl !== undefined ? (videoUrl ? String(videoUrl).trim() : null) : lecture.videoUrl,
+      authorBioUk: authorBioUk !== undefined ? (authorBioUk ? String(authorBioUk).trim() : null) : lecture.authorBioUk,
+      authorBioEn: authorBioEn !== undefined ? (authorBioEn ? String(authorBioEn).trim() : null) : lecture.authorBioEn,
+      sources: sources !== undefined ? (sources ? JSON.stringify(sources) : null) : lecture.sources,
+      socialLinks: socialLinks !== undefined ? (socialLinks ? JSON.stringify(socialLinks) : null) : lecture.socialLinks,
+      eventCity: eventCity !== undefined ? (eventCity ? String(eventCity).trim() : null) : lecture.eventCity,
+      eventDate: eventDate !== undefined ? (eventDate ? String(eventDate).trim() : null) : lecture.eventDate,
+      eventPhotosUrl: eventPhotosUrl !== undefined ? (eventPhotosUrl ? String(eventPhotosUrl).trim() : null) : lecture.eventPhotosUrl,
     }
 
     const { data: updated, error } = await supabase
@@ -77,7 +133,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    return NextResponse.json(updated)
+    const locale = resolveLocale(req)
+    return NextResponse.json(mapLectureRow(updated as Record<string, unknown>, locale))
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -87,8 +144,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()

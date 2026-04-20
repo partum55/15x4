@@ -120,7 +120,7 @@ export default function LectureDetailPage() {
   const bonesMode = searchParams.get('bones') === '1'
   const [lecture, setLecture] = useState<Lecture | null>(null)
   const [related, setRelated] = useState<Lecture[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!bonesMode)
   const [openedVideoLectureId, setOpenedVideoLectureId] = useState<string | null>(null)
   const lectureCategoryLabel = lecture
     ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
@@ -131,15 +131,9 @@ export default function LectureDetailPage() {
   useEffect(() => {
     if (!id) return
 
-    if (bonesMode) {
-      setLoading(true)
-      setLecture(null)
-      setRelated([])
-      return
-    }
+    if (bonesMode) return
 
     let isMounted = true
-    setLoading(true)
 
     Promise.all([api.getLecture(id), api.getLectures()])
       .then(([lectureData, allLectures]) => {

@@ -11,7 +11,7 @@ export async function GET() {
 
     const { data: events, error } = await supabaseAdmin
       .from('Event')
-      .select('id, city, date, location, time, isPublic, createdAt, userId')
+      .select('id, titleUk, titleEn, cityUk, cityEn, date, locationUk, locationEn, time, image, isPublic, createdAt, userId')
       .order('createdAt', { ascending: false })
 
     if (error || !events) {
@@ -23,7 +23,7 @@ export async function GET() {
 
     const [{ data: lectures }, { data: profiles }] = await Promise.all([
       eventIds.length
-        ? supabaseAdmin.from('EventLecture').select('id, eventId').in('eventId', eventIds)
+        ? supabaseAdmin.from('Lecture').select('id, eventId').in('eventId', eventIds)
         : Promise.resolve({ data: [] as Array<{ id: string; eventId: string }> }),
       userIds.length
         ? supabaseAdmin.from('profiles').select('id, name').in('id', userIds)
@@ -42,6 +42,9 @@ export async function GET() {
 
     const response = events.map((event) => ({
       ...event,
+      title: event.titleUk,
+      city: event.cityUk,
+      location: event.locationUk,
       user: event.userId ? profilesById.get(event.userId) ?? null : null,
       _count: { lectures: lecturesCountByEventId.get(event.id) ?? 0 },
     }))

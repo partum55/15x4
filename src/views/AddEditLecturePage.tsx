@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -8,33 +8,42 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
-import {
-  LECTURE_CATEGORIES,
-  getLectureCategoryColor,
-  normalizeLectureCategory,
-} from '../constants/lectureCategories'
+import { LECTURE_CATEGORIES, getLectureCategoryColor, normalizeLectureCategory } from '../constants/lectureCategories'
+import type { Event } from '@/lib/api'
 
 type FormState = {
-  title: string
-  author: string
+  eventId: string
+  slot: string
+  titleUk: string
+  titleEn: string
+  authorUk: string
+  authorEn: string
   category: string
-  summary: string
+  summaryUk: string
+  summaryEn: string
   image: string
   duration: string
-  authorBio: string
+  authorBioUk: string
+  authorBioEn: string
   videoUrl: string
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>
 
 const EMPTY: FormState = {
-  title: '',
-  author: '',
+  eventId: '',
+  slot: '1',
+  titleUk: '',
+  titleEn: '',
+  authorUk: '',
+  authorEn: '',
   category: '',
-  summary: '',
+  summaryUk: '',
+  summaryEn: '',
   image: '',
   duration: '',
-  authorBio: '',
+  authorBioUk: '',
+  authorBioEn: '',
   videoUrl: '',
 }
 
@@ -48,21 +57,32 @@ export default function AddEditLecturePage() {
   const [form, setForm] = useState<FormState>(EMPTY)
   const [errors, setErrors] = useState<FormErrors>({})
   const [formError, setFormError] = useState('')
+  const [events, setEvents] = useState<Event[]>([])
+  const [translating, setTranslating] = useState<keyof FormState | null>(null)
+
+  useEffect(() => {
+    api.getEvents().then((rows) => setEvents(rows))
+  }, [])
 
   useEffect(() => {
     if (!id) return
-    api.getLecture(id).then((data: FormState & { id?: string; error?: string }) => {
+    api.getLecture(id).then((data: FormState & { error?: string }) => {
       if (!data.error) {
         const normalizedCategory = normalizeLectureCategory(data.category ?? '')?.category ?? ''
-
         setForm({
-          title: data.title ?? '',
-          author: data.author ?? '',
+          eventId: data.eventId ?? '',
+          slot: String(data.slot ?? '1'),
+          titleUk: data.titleUk ?? '',
+          titleEn: data.titleEn ?? '',
+          authorUk: data.authorUk ?? '',
+          authorEn: data.authorEn ?? '',
           category: normalizedCategory,
-          summary: data.summary ?? '',
+          summaryUk: data.summaryUk ?? '',
+          summaryEn: data.summaryEn ?? '',
           image: data.image ?? '',
           duration: data.duration ?? '',
-          authorBio: data.authorBio ?? '',
+          authorBioUk: data.authorBioUk ?? '',
+          authorBioEn: data.authorBioEn ?? '',
           videoUrl: data.videoUrl ?? '',
         })
       }
@@ -70,24 +90,43 @@ export default function AddEditLecturePage() {
   }, [id])
 
   function set(field: keyof FormState, value: string) {
-    setForm(f => ({ ...f, [field]: value }))
+    setForm((f) => ({ ...f, [field]: value }))
   }
 
   function validate(): FormErrors {
     const e: FormErrors = {}
-    if (!form.title.trim()) e.title = t('auth.login.errorRequired')
-    if (!form.author.trim()) e.author = t('auth.login.errorRequired')
+    if (!form.eventId.trim()) e.eventId = t('auth.login.errorRequired')
+    if (!form.slot.trim()) e.slot = t('auth.login.errorRequired')
+    if (!form.titleUk.trim()) e.titleUk = t('auth.login.errorRequired')
+    if (!form.authorUk.trim()) e.authorUk = t('auth.login.errorRequired')
     if (!form.category.trim()) e.category = t('auth.login.errorRequired')
-    if (!form.summary.trim()) e.summary = t('auth.login.errorRequired')
+    if (!form.summaryUk.trim()) e.summaryUk = t('auth.login.errorRequired')
     if (!form.image.trim()) e.image = t('auth.login.errorRequired')
     return e
+  }
+
+  async function translate(fromField: keyof FormState, toField: keyof FormState, sourceLanguage: 'uk' | 'en', targetLanguage: 'uk' | 'en') {
+    const source = form[fromField].trim()
+    if (!source) return
+    setTranslating(toField)
+    try {
+      const result = await api.translateText({ text: source, sourceLanguage, targetLanguage })
+      if (result?.translatedText) {
+        setForm((prev) => ({ ...prev, [toField]: result.translatedText }))
+      }
+    } finally {
+      setTranslating(null)
+    }
   }
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
     setFormError('')
     const e = validate()
-    if (Object.keys(e).length) { setErrors(e); return }
+    if (Object.keys(e).length) {
+      setErrors(e)
+      return
+    }
 
     const categoryColor = getLectureCategoryColor(form.category)
     if (!categoryColor) {
@@ -96,38 +135,37 @@ export default function AddEditLecturePage() {
     }
 
     const body = {
-      title: form.title.trim(),
-      author: form.author.trim(),
+      eventId: form.eventId.trim(),
+      slot: Number(form.slot),
+      titleUk: form.titleUk.trim(),
+      titleEn: form.titleEn.trim(),
+      authorUk: form.authorUk.trim(),
+      authorEn: form.authorEn.trim(),
       category: form.category.trim(),
       categoryColor,
-      summary: form.summary.trim(),
+      summaryUk: form.summaryUk.trim(),
+      summaryEn: form.summaryEn.trim(),
       image: form.image.trim(),
       duration: form.duration.trim() || undefined,
       videoUrl: form.videoUrl.trim() || undefined,
-      authorBio: form.authorBio.trim() || undefined,
+      authorBioUk: form.authorBioUk.trim() || undefined,
+      authorBioEn: form.authorBioEn.trim() || undefined,
     }
 
-    try {
-      const result = isEdit && id
-        ? await api.updateLecture(id, body)
-        : await api.createLecture(body)
-
-      if (result?.error) {
-        setFormError(result.error)
-        return
-      }
-
-      router.push('/account/lectures')
-    } catch {
-      setFormError(t('addLecture.errorSave'))
+    const result = isEdit && id ? await api.updateLecture(id, body) : await api.createLecture(body)
+    if (result?.error) {
+      setFormError(result.error)
+      return
     }
+
+    router.push('/account/lectures')
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar variant="light" />
       <main className="flex-1 px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
-        <div className="w-full max-w-[640px]">
+        <div className="w-full max-w-[900px]">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">
             {isEdit ? t('addLecture.titleEdit') : t('addLecture.titleNew')}
           </h1>
@@ -137,16 +175,64 @@ export default function AddEditLecturePage() {
           )}
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
-            <FormField label={t('addLecture.titleLabel')} error={errors.title}>
-              <input type="text" value={form.title} onChange={e => set('title', e.target.value)} />
-            </FormField>
+            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+              <FormField label={t('addLecture.eventLabel')} error={errors.eventId}>
+                <select value={form.eventId} onChange={(e) => set('eventId', e.target.value)}>
+                  <option value="">{t('addLecture.eventPlaceholder')}</option>
+                  {events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.titleUk || event.cityUk}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
 
-            <FormField label={t('addLecture.authorLabel')} error={errors.author}>
-              <input type="text" value={form.author} onChange={e => set('author', e.target.value)} />
-            </FormField>
+              <FormField label={t('addLecture.slotLabel')} error={errors.slot}>
+                <select value={form.slot} onChange={(e) => set('slot', e.target.value)}>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+              <FormField label={t('addLecture.titleUkLabel')} error={errors.titleUk}>
+                <input type="text" value={form.titleUk} onChange={(e) => set('titleUk', e.target.value)} />
+              </FormField>
+              <FormField label={t('addLecture.titleEnLabel')}>
+                <div className="flex gap-2">
+                  <input type="text" value={form.titleEn} onChange={(e) => set('titleEn', e.target.value)} />
+                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('titleUk', 'titleEn', 'uk', 'en')} disabled={translating === 'titleEn'}>
+                    {translating === 'titleEn' ? '…' : 'UA→EN'}
+                  </button>
+                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('titleEn', 'titleUk', 'en', 'uk')} disabled={translating === 'titleUk'}>
+                    {translating === 'titleUk' ? '…' : 'EN→UA'}
+                  </button>
+                </div>
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+              <FormField label={t('addLecture.authorUkLabel')} error={errors.authorUk}>
+                <input type="text" value={form.authorUk} onChange={(e) => set('authorUk', e.target.value)} />
+              </FormField>
+              <FormField label={t('addLecture.authorEnLabel')}>
+                <div className="flex gap-2">
+                  <input type="text" value={form.authorEn} onChange={(e) => set('authorEn', e.target.value)} />
+                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('authorUk', 'authorEn', 'uk', 'en')} disabled={translating === 'authorEn'}>
+                    {translating === 'authorEn' ? '…' : 'UA→EN'}
+                  </button>
+                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('authorEn', 'authorUk', 'en', 'uk')} disabled={translating === 'authorUk'}>
+                    {translating === 'authorUk' ? '…' : 'EN→UA'}
+                  </button>
+                </div>
+              </FormField>
+            </div>
 
             <FormField label={t('addLecture.categoryLabel')} error={errors.category}>
-              <select value={form.category} onChange={e => set('category', e.target.value)}>
+              <select value={form.category} onChange={(e) => set('category', e.target.value)}>
                 <option value="">{t('addLecture.categoryPlaceholder')}</option>
                 {LECTURE_CATEGORIES.map((category) => (
                   <option key={category} value={category}>
@@ -156,25 +242,51 @@ export default function AddEditLecturePage() {
               </select>
             </FormField>
 
-            <FormField label={t('addLecture.summaryLabel')} error={errors.summary}>
-              <textarea rows={4} value={form.summary} onChange={e => set('summary', e.target.value)} />
-            </FormField>
+            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+              <FormField label={t('addLecture.summaryUkLabel')} error={errors.summaryUk}>
+                <textarea rows={4} value={form.summaryUk} onChange={(e) => set('summaryUk', e.target.value)} />
+              </FormField>
+              <FormField label={t('addLecture.summaryEnLabel')}>
+                <div className="flex gap-2">
+                  <textarea rows={4} value={form.summaryEn} onChange={(e) => set('summaryEn', e.target.value)} />
+                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('summaryUk', 'summaryEn', 'uk', 'en')} disabled={translating === 'summaryEn'}>
+                    {translating === 'summaryEn' ? '…' : 'UA→EN'}
+                  </button>
+                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('summaryEn', 'summaryUk', 'en', 'uk')} disabled={translating === 'summaryUk'}>
+                    {translating === 'summaryUk' ? '…' : 'EN→UA'}
+                  </button>
+                </div>
+              </FormField>
+            </div>
 
             <FormField label={t('addLecture.imageLabel')} error={errors.image}>
-              <input type="text" value={form.image} onChange={e => set('image', e.target.value)} placeholder="https://" />
+              <input type="text" value={form.image} onChange={(e) => set('image', e.target.value)} placeholder="https://" />
             </FormField>
 
             <FormField label={t('addLecture.videoUrlLabel')}>
-              <input type="text" value={form.videoUrl} onChange={e => set('videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
+              <input type="text" value={form.videoUrl} onChange={(e) => set('videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
             </FormField>
 
             <FormField label={t('addLecture.durationLabel')}>
-              <input type="text" value={form.duration} onChange={e => set('duration', e.target.value)} placeholder="17 хв" />
+              <input type="text" value={form.duration} onChange={(e) => set('duration', e.target.value)} placeholder="17 хв" />
             </FormField>
 
-            <FormField label={t('addLecture.authorBioLabel')}>
-              <textarea rows={3} value={form.authorBio} onChange={e => set('authorBio', e.target.value)} />
-            </FormField>
+            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+              <FormField label={t('addLecture.authorBioUkLabel')}>
+                <textarea rows={3} value={form.authorBioUk} onChange={(e) => set('authorBioUk', e.target.value)} />
+              </FormField>
+              <FormField label={t('addLecture.authorBioEnLabel')}>
+                <div className="flex gap-2">
+                  <textarea rows={3} value={form.authorBioEn} onChange={(e) => set('authorBioEn', e.target.value)} />
+                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('authorBioUk', 'authorBioEn', 'uk', 'en')} disabled={translating === 'authorBioEn'}>
+                    {translating === 'authorBioEn' ? '…' : 'UA→EN'}
+                  </button>
+                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('authorBioEn', 'authorBioUk', 'en', 'uk')} disabled={translating === 'authorBioUk'}>
+                    {translating === 'authorBioUk' ? '…' : 'EN→UA'}
+                  </button>
+                </div>
+              </FormField>
+            </div>
 
             <div className="flex items-center gap-6 mt-2 pt-6 border-t border-black">
               <button
