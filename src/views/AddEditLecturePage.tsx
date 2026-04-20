@@ -47,36 +47,6 @@ const EMPTY: FormState = {
   videoUrl: '',
 }
 
-type TranslateActionsProps = {
-  onUkToEn: () => void
-  onEnToUk: () => void
-  ukToEnLoading: boolean
-  enToUkLoading: boolean
-}
-
-function TranslateActions({ onUkToEn, onEnToUk, ukToEnLoading, enToUkLoading }: TranslateActionsProps) {
-  return (
-    <div className="flex items-center gap-2 max-[991px]:justify-start">
-      <button
-        type="button"
-        className="h-[42px] min-w-[98px] px-4 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.06em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
-        onClick={onUkToEn}
-        disabled={ukToEnLoading}
-      >
-        {ukToEnLoading ? '...' : 'UA → EN'}
-      </button>
-      <button
-        type="button"
-        className="h-[42px] min-w-[98px] px-4 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.06em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
-        onClick={onEnToUk}
-        disabled={enToUkLoading}
-      >
-        {enToUkLoading ? '...' : 'EN → UA'}
-      </button>
-    </div>
-  )
-}
-
 export default function AddEditLecturePage() {
   const { t } = useTranslation()
   const router = useRouter()
@@ -88,7 +58,7 @@ export default function AddEditLecturePage() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [formError, setFormError] = useState('')
   const [events, setEvents] = useState<Event[]>([])
-  const [translating, setTranslating] = useState<keyof FormState | null>(null)
+  const [translating, setTranslating] = useState(false)
 
   useEffect(() => {
     api.getEvents().then((rows) => setEvents(rows))
@@ -135,17 +105,59 @@ export default function AddEditLecturePage() {
     return e
   }
 
-  async function translate(fromField: keyof FormState, toField: keyof FormState, sourceLanguage: 'uk' | 'en', targetLanguage: 'uk' | 'en') {
-    const source = form[fromField].trim()
-    if (!source) return
-    setTranslating(toField)
+  async function translatePair(
+    sourceValue: string,
+    sourceLanguage: 'uk' | 'en',
+    targetLanguage: 'uk' | 'en',
+  ) {
+    if (!sourceValue.trim()) return ''
+    const result = await api.translateText({ text: sourceValue.trim(), sourceLanguage, targetLanguage })
+    return result?.translatedText ? String(result.translatedText) : ''
+  }
+
+  async function handleTranslateAll() {
+    setTranslating(true)
     try {
-      const result = await api.translateText({ text: source, sourceLanguage, targetLanguage })
-      if (result?.translatedText) {
-        setForm((prev) => ({ ...prev, [toField]: result.translatedText }))
+      const useUkAsSource =
+        form.titleUk.trim() ||
+        form.authorUk.trim() ||
+        form.summaryUk.trim() ||
+        form.authorBioUk.trim() ||
+        !form.titleEn.trim()
+
+      if (useUkAsSource) {
+        const [titleEn, authorEn, summaryEn, authorBioEn] = await Promise.all([
+          translatePair(form.titleUk, 'uk', 'en'),
+          translatePair(form.authorUk, 'uk', 'en'),
+          translatePair(form.summaryUk, 'uk', 'en'),
+          translatePair(form.authorBioUk, 'uk', 'en'),
+        ])
+
+        setForm((prev) => ({
+          ...prev,
+          titleEn: titleEn || prev.titleEn,
+          authorEn: authorEn || prev.authorEn,
+          summaryEn: summaryEn || prev.summaryEn,
+          authorBioEn: authorBioEn || prev.authorBioEn,
+        }))
+      } else {
+        const [titleUk, authorUk, summaryUk, authorBioUk] = await Promise.all([
+          translatePair(form.titleEn, 'en', 'uk'),
+          translatePair(form.authorEn, 'en', 'uk'),
+          translatePair(form.summaryEn, 'en', 'uk'),
+          translatePair(form.authorBioEn, 'en', 'uk'),
+        ])
+
+        setForm((prev) => ({
+          ...prev,
+          titleUk: titleUk || prev.titleUk,
+          authorUk: authorUk || prev.authorUk,
+          summaryUk: summaryUk || prev.summaryUk,
+          authorBioUk: authorBioUk || prev.authorBioUk,
+        }))
       }
     } finally {
-      setTranslating(null)
+      setTranslating(false)
     }
   }
 
@@ -205,6 +217,17 @@ export default function AddEditLecturePage() {
           )}
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+                onClick={handleTranslateAll}
+                disabled={translating}
+              >
+                {translating ? '...' : 'Translate'}
+              </button>
+            </div>
+
             <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
               <FormField label={t('addLecture.eventLabel')} error={errors.eventId}>
                 <select value={form.eventId} onChange={(e) => set('eventId', e.target.value)}>
@@ -227,34 +250,22 @@ export default function AddEditLecturePage() {
               </FormField>
             </div>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
+            <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.titleUkLabel')} error={errors.titleUk}>
                 <input type="text" value={form.titleUk} onChange={(e) => set('titleUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.titleEnLabel')}>
                 <input type="text" value={form.titleEn} onChange={(e) => set('titleEn', e.target.value)} />
               </FormField>
-              <TranslateActions
-                onUkToEn={() => translate('titleUk', 'titleEn', 'uk', 'en')}
-                onEnToUk={() => translate('titleEn', 'titleUk', 'en', 'uk')}
-                ukToEnLoading={translating === 'titleEn'}
-                enToUkLoading={translating === 'titleUk'}
-              />
             </div>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
+            <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.authorUkLabel')} error={errors.authorUk}>
                 <input type="text" value={form.authorUk} onChange={(e) => set('authorUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.authorEnLabel')}>
                 <input type="text" value={form.authorEn} onChange={(e) => set('authorEn', e.target.value)} />
               </FormField>
-              <TranslateActions
-                onUkToEn={() => translate('authorUk', 'authorEn', 'uk', 'en')}
-                onEnToUk={() => translate('authorEn', 'authorUk', 'en', 'uk')}
-                ukToEnLoading={translating === 'authorEn'}
-                enToUkLoading={translating === 'authorUk'}
-              />
             </div>
 
             <FormField label={t('addLecture.categoryLabel')} error={errors.category}>
@@ -268,19 +279,13 @@ export default function AddEditLecturePage() {
               </select>
             </FormField>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
+            <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.summaryUkLabel')} error={errors.summaryUk}>
                 <textarea rows={4} value={form.summaryUk} onChange={(e) => set('summaryUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.summaryEnLabel')}>
                 <textarea rows={4} value={form.summaryEn} onChange={(e) => set('summaryEn', e.target.value)} />
               </FormField>
-              <TranslateActions
-                onUkToEn={() => translate('summaryUk', 'summaryEn', 'uk', 'en')}
-                onEnToUk={() => translate('summaryEn', 'summaryUk', 'en', 'uk')}
-                ukToEnLoading={translating === 'summaryEn'}
-                enToUkLoading={translating === 'summaryUk'}
-              />
             </div>
 
             <FormField label={t('addLecture.imageLabel')} error={errors.image}>
@@ -295,19 +300,13 @@ export default function AddEditLecturePage() {
               <input type="text" value={form.duration} onChange={(e) => set('duration', e.target.value)} placeholder="17 хв" />
             </FormField>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
+            <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.authorBioUkLabel')}>
                 <textarea rows={3} value={form.authorBioUk} onChange={(e) => set('authorBioUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.authorBioEnLabel')}>
                 <textarea rows={3} value={form.authorBioEn} onChange={(e) => set('authorBioEn', e.target.value)} />
               </FormField>
-              <TranslateActions
-                onUkToEn={() => translate('authorBioUk', 'authorBioEn', 'uk', 'en')}
-                onEnToUk={() => translate('authorBioEn', 'authorBioUk', 'en', 'uk')}
-                ukToEnLoading={translating === 'authorBioEn'}
-                enToUkLoading={translating === 'authorBioUk'}
-              />
             </div>
 
             <div className="flex items-center gap-6 mt-2 pt-6 border-t border-black">
