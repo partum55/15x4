@@ -162,7 +162,9 @@ export default function AddEditEventPage() {
     sourceValue: string,
     sourceLanguage: 'uk' | 'en',
     targetLanguage: 'uk' | 'en',
+    existingTarget = '',
   ) {
+    if (existingTarget.trim()) return existingTarget
     if (!sourceValue.trim()) return ''
     const result = await api.translateText({ text: sourceValue.trim(), sourceLanguage, targetLanguage })
     return result?.translatedText ? String(result.translatedText) : ''
@@ -180,10 +182,10 @@ export default function AddEditEventPage() {
 
       if (useUkAsSource) {
         const [titleEn, cityEn, locationEn, descriptionEn] = await Promise.all([
-          translatePair(form.titleUk, 'uk', 'en'),
-          translatePair(form.cityUk, 'uk', 'en'),
-          translatePair(form.locationUk, 'uk', 'en'),
-          translatePair(form.descriptionUk, 'uk', 'en'),
+          translatePair(form.titleUk, 'uk', 'en', form.titleEn),
+          translatePair(form.cityUk, 'uk', 'en', form.cityEn),
+          translatePair(form.locationUk, 'uk', 'en', form.locationEn),
+          translatePair(form.descriptionUk, 'uk', 'en', form.descriptionEn),
         ])
 
         setForm((prev) => ({
@@ -193,12 +195,29 @@ export default function AddEditEventPage() {
           locationEn: locationEn || prev.locationEn,
           descriptionEn: descriptionEn || prev.descriptionEn,
         }))
+
+        const translatedLectures = await Promise.all(
+          lectures.map(async (lecture) => {
+            const [lTitleEn, lAuthorEn, lSummaryEn] = await Promise.all([
+              translatePair(lecture.titleUk, 'uk', 'en', lecture.titleEn),
+              translatePair(lecture.authorUk, 'uk', 'en', lecture.authorEn),
+              translatePair(lecture.summaryUk, 'uk', 'en', lecture.summaryEn),
+            ])
+            return {
+              ...lecture,
+              titleEn: lTitleEn || lecture.titleEn,
+              authorEn: lAuthorEn || lecture.authorEn,
+              summaryEn: lSummaryEn || lecture.summaryEn,
+            }
+          }),
+        )
+        setLectures(translatedLectures)
       } else {
         const [titleUk, cityUk, locationUk, descriptionUk] = await Promise.all([
-          translatePair(form.titleEn, 'en', 'uk'),
-          translatePair(form.cityEn, 'en', 'uk'),
-          translatePair(form.locationEn, 'en', 'uk'),
-          translatePair(form.descriptionEn, 'en', 'uk'),
+          translatePair(form.titleEn, 'en', 'uk', form.titleUk),
+          translatePair(form.cityEn, 'en', 'uk', form.cityUk),
+          translatePair(form.locationEn, 'en', 'uk', form.locationUk),
+          translatePair(form.descriptionEn, 'en', 'uk', form.descriptionUk),
         ])
 
         setForm((prev) => ({
@@ -208,6 +227,23 @@ export default function AddEditEventPage() {
           locationUk: locationUk || prev.locationUk,
           descriptionUk: descriptionUk || prev.descriptionUk,
         }))
+
+        const translatedLectures = await Promise.all(
+          lectures.map(async (lecture) => {
+            const [lTitleUk, lAuthorUk, lSummaryUk] = await Promise.all([
+              translatePair(lecture.titleEn, 'en', 'uk', lecture.titleUk),
+              translatePair(lecture.authorEn, 'en', 'uk', lecture.authorUk),
+              translatePair(lecture.summaryEn, 'en', 'uk', lecture.summaryUk),
+            ])
+            return {
+              ...lecture,
+              titleUk: lTitleUk || lecture.titleUk,
+              authorUk: lAuthorUk || lecture.authorUk,
+              summaryUk: lSummaryUk || lecture.summaryUk,
+            }
+          }),
+        )
+        setLectures(translatedLectures)
       }
     } finally {
       setTranslating(false)

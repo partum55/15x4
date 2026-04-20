@@ -106,7 +106,9 @@ export default function AddEditLecturePage() {
     sourceValue: string,
     sourceLanguage: 'uk' | 'en',
     targetLanguage: 'uk' | 'en',
+    existingTarget = '',
   ) {
+    if (existingTarget.trim()) return existingTarget
     if (!sourceValue.trim()) return ''
     const result = await api.translateText({ text: sourceValue.trim(), sourceLanguage, targetLanguage })
     return result?.translatedText ? String(result.translatedText) : ''
@@ -124,10 +126,10 @@ export default function AddEditLecturePage() {
 
       if (useUkAsSource) {
         const [titleEn, authorEn, summaryEn, authorBioEn] = await Promise.all([
-          translatePair(form.titleUk, 'uk', 'en'),
-          translatePair(form.authorUk, 'uk', 'en'),
-          translatePair(form.summaryUk, 'uk', 'en'),
-          translatePair(form.authorBioUk, 'uk', 'en'),
+          translatePair(form.titleUk, 'uk', 'en', form.titleEn),
+          translatePair(form.authorUk, 'uk', 'en', form.authorEn),
+          translatePair(form.summaryUk, 'uk', 'en', form.summaryEn),
+          translatePair(form.authorBioUk, 'uk', 'en', form.authorBioEn),
         ])
 
         setForm((prev) => ({
@@ -139,10 +141,10 @@ export default function AddEditLecturePage() {
         }))
       } else {
         const [titleUk, authorUk, summaryUk, authorBioUk] = await Promise.all([
-          translatePair(form.titleEn, 'en', 'uk'),
-          translatePair(form.authorEn, 'en', 'uk'),
-          translatePair(form.summaryEn, 'en', 'uk'),
-          translatePair(form.authorBioEn, 'en', 'uk'),
+          translatePair(form.titleEn, 'en', 'uk', form.titleUk),
+          translatePair(form.authorEn, 'en', 'uk', form.authorUk),
+          translatePair(form.summaryEn, 'en', 'uk', form.summaryUk),
+          translatePair(form.authorBioEn, 'en', 'uk', form.authorBioUk),
         ])
 
         setForm((prev) => ({
