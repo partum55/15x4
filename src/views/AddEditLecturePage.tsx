@@ -47,6 +47,36 @@ const EMPTY: FormState = {
   videoUrl: '',
 }
 
+type TranslateActionsProps = {
+  onUkToEn: () => void
+  onEnToUk: () => void
+  ukToEnLoading: boolean
+  enToUkLoading: boolean
+}
+
+function TranslateActions({ onUkToEn, onEnToUk, ukToEnLoading, enToUkLoading }: TranslateActionsProps) {
+  return (
+    <div className="flex items-center gap-2 max-[991px]:justify-start">
+      <button
+        type="button"
+        className="h-[42px] min-w-[98px] px-4 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.06em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+        onClick={onUkToEn}
+        disabled={ukToEnLoading}
+      >
+        {ukToEnLoading ? '...' : 'UA → EN'}
+      </button>
+      <button
+        type="button"
+        className="h-[42px] min-w-[98px] px-4 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.06em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+        onClick={onEnToUk}
+        disabled={enToUkLoading}
+      >
+        {enToUkLoading ? '...' : 'EN → UA'}
+      </button>
+    </div>
+  )
+}
+
 export default function AddEditLecturePage() {
   const { t } = useTranslation()
   const router = useRouter()
@@ -197,38 +227,34 @@ export default function AddEditLecturePage() {
               </FormField>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.titleUkLabel')} error={errors.titleUk}>
                 <input type="text" value={form.titleUk} onChange={(e) => set('titleUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.titleEnLabel')}>
-                <div className="flex gap-2">
-                  <input type="text" value={form.titleEn} onChange={(e) => set('titleEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('titleUk', 'titleEn', 'uk', 'en')} disabled={translating === 'titleEn'}>
-                    {translating === 'titleEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('titleEn', 'titleUk', 'en', 'uk')} disabled={translating === 'titleUk'}>
-                    {translating === 'titleUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <input type="text" value={form.titleEn} onChange={(e) => set('titleEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => translate('titleUk', 'titleEn', 'uk', 'en')}
+                onEnToUk={() => translate('titleEn', 'titleUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'titleEn'}
+                enToUkLoading={translating === 'titleUk'}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.authorUkLabel')} error={errors.authorUk}>
                 <input type="text" value={form.authorUk} onChange={(e) => set('authorUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.authorEnLabel')}>
-                <div className="flex gap-2">
-                  <input type="text" value={form.authorEn} onChange={(e) => set('authorEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('authorUk', 'authorEn', 'uk', 'en')} disabled={translating === 'authorEn'}>
-                    {translating === 'authorEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase" onClick={() => translate('authorEn', 'authorUk', 'en', 'uk')} disabled={translating === 'authorUk'}>
-                    {translating === 'authorUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <input type="text" value={form.authorEn} onChange={(e) => set('authorEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => translate('authorUk', 'authorEn', 'uk', 'en')}
+                onEnToUk={() => translate('authorEn', 'authorUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'authorEn'}
+                enToUkLoading={translating === 'authorUk'}
+              />
             </div>
 
             <FormField label={t('addLecture.categoryLabel')} error={errors.category}>
@@ -242,21 +268,19 @@ export default function AddEditLecturePage() {
               </select>
             </FormField>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.summaryUkLabel')} error={errors.summaryUk}>
                 <textarea rows={4} value={form.summaryUk} onChange={(e) => set('summaryUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.summaryEnLabel')}>
-                <div className="flex gap-2">
-                  <textarea rows={4} value={form.summaryEn} onChange={(e) => set('summaryEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('summaryUk', 'summaryEn', 'uk', 'en')} disabled={translating === 'summaryEn'}>
-                    {translating === 'summaryEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('summaryEn', 'summaryUk', 'en', 'uk')} disabled={translating === 'summaryUk'}>
-                    {translating === 'summaryUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <textarea rows={4} value={form.summaryEn} onChange={(e) => set('summaryEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => translate('summaryUk', 'summaryEn', 'uk', 'en')}
+                onEnToUk={() => translate('summaryEn', 'summaryUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'summaryEn'}
+                enToUkLoading={translating === 'summaryUk'}
+              />
             </div>
 
             <FormField label={t('addLecture.imageLabel')} error={errors.image}>
@@ -271,21 +295,19 @@ export default function AddEditLecturePage() {
               <input type="text" value={form.duration} onChange={(e) => set('duration', e.target.value)} placeholder="17 хв" />
             </FormField>
 
-            <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.authorBioUkLabel')}>
                 <textarea rows={3} value={form.authorBioUk} onChange={(e) => set('authorBioUk', e.target.value)} />
               </FormField>
               <FormField label={t('addLecture.authorBioEnLabel')}>
-                <div className="flex gap-2">
-                  <textarea rows={3} value={form.authorBioEn} onChange={(e) => set('authorBioEn', e.target.value)} />
-                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('authorBioUk', 'authorBioEn', 'uk', 'en')} disabled={translating === 'authorBioEn'}>
-                    {translating === 'authorBioEn' ? '…' : 'UA→EN'}
-                  </button>
-                  <button type="button" className="px-3 border border-black text-sm uppercase h-fit" onClick={() => translate('authorBioEn', 'authorBioUk', 'en', 'uk')} disabled={translating === 'authorBioUk'}>
-                    {translating === 'authorBioUk' ? '…' : 'EN→UA'}
-                  </button>
-                </div>
+                <textarea rows={3} value={form.authorBioEn} onChange={(e) => set('authorBioEn', e.target.value)} />
               </FormField>
+              <TranslateActions
+                onUkToEn={() => translate('authorBioUk', 'authorBioEn', 'uk', 'en')}
+                onEnToUk={() => translate('authorBioEn', 'authorBioUk', 'en', 'uk')}
+                ukToEnLoading={translating === 'authorBioEn'}
+                enToUkLoading={translating === 'authorBioUk'}
+              />
             </div>
 
             <div className="flex items-center gap-6 mt-2 pt-6 border-t border-black">
