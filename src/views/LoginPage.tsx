@@ -37,7 +37,7 @@ export default function LoginPage() {
       return
     }
 
-    const redirect = searchParams.get('redirect') ?? '/account'
+    const redirect = searchParams.get('redirect') ?? '/'
     router.push(redirect)
   }
 

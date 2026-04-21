@@ -102,11 +102,6 @@ export async function POST(req: NextRequest) {
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const approval = await ensureApprovedUser(user.id, supabase)
-    if (!approval.ok) {
-      return NextResponse.json({ error: approval.error }, { status: approval.status })
-    }
-
     const body = await req.json()
     const {
       eventId,

@@ -113,7 +113,7 @@ export async function middleware(request: NextRequest) {
 
   if (isAuthRoute && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/account'
+    url.pathname = '/'
     return NextResponse.redirect(url)
   }
 
