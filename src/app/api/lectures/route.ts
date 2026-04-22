@@ -63,10 +63,12 @@ export async function GET(req: NextRequest) {
       ? supabase.from('Lecture').select('*', { count: 'exact' })
       : supabase.from('Lecture').select('*')
 
-    if (user && canManageContent(role)) {
-      query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
-    } else {
-      query = query.eq('isPublic', true)
+    if (role !== 'admin') {
+      if (user && canManageContent(role)) {
+        query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
+      } else {
+        query = query.eq('isPublic', true)
+      }
     }
 
     if (category) {
@@ -100,7 +102,7 @@ export async function GET(req: NextRequest) {
       const mapped = mapLectureRow(lectureRow, locale)
       return {
         ...mapped,
-        userId: lectureRow.userId === user?.id ? lectureRow.userId : undefined,
+        userId: lectureRow.userId === user?.id || role === 'admin' ? lectureRow.userId : undefined,
       }
     })
 

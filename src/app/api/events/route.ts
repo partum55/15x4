@@ -73,10 +73,12 @@ export async function GET(req: NextRequest) {
 
     const role = user ? await getProfileRole(user.id, supabase) : null
     let query = supabase.from('Event').select('*').order('createdAt', { ascending: false })
-    if (user && canManageContent(role)) {
-      query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
-    } else {
-      query = query.eq('isPublic', true)
+    if (role !== 'admin') {
+      if (user && canManageContent(role)) {
+        query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
+      } else {
+        query = query.eq('isPublic', true)
+      }
     }
 
     const { data: events, error } = await query
@@ -95,7 +97,7 @@ export async function GET(req: NextRequest) {
 
     const sanitizedEvents = (events as Array<Record<string, unknown>>).map((event) => ({
       ...event,
-      userId: event.userId === user?.id ? event.userId : undefined,
+      userId: event.userId === user?.id || role === 'admin' ? event.userId : undefined,
     }))
 
     return NextResponse.json(

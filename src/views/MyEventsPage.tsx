@@ -13,6 +13,7 @@ export default function MyEventsPage() {
   const { t } = useTranslation()
   const { user } = useCurrentUser()
   const [events, setEvents] = useState<Event[]>([])
+  const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     api.getEvents().then((all) => {
@@ -21,9 +22,23 @@ export default function MyEventsPage() {
   }, [user?.id])
 
   async function handleDelete(id: string) {
+    if (deletingEventIds.has(id)) return
     if (!window.confirm(t('myEvents.deleteConfirm'))) return
-    await api.deleteEvent(id)
-    setEvents(prev => prev.filter(e => e.id !== id))
+    setDeletingEventIds(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
+    try {
+      await api.deleteEvent(id)
+      setEvents(prev => prev.filter(e => e.id !== id))
+    } finally {
+      setDeletingEventIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
   }
 
   return (
@@ -66,10 +81,13 @@ export default function MyEventsPage() {
                     {t('myEvents.editBtn')}
                   </Link>
                   <button
-                    className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100"
+                    type="button"
+                    className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100 disabled:cursor-wait disabled:opacity-45 disabled:animate-pulse"
                     onClick={() => handleDelete(event.id)}
+                    disabled={deletingEventIds.has(event.id)}
+                    aria-busy={deletingEventIds.has(event.id)}
                   >
-                    {t('myEvents.deleteBtn')}
+                    {deletingEventIds.has(event.id) ? `${t('myEvents.deleteBtn')}...` : t('myEvents.deleteBtn')}
                   </button>
                 </div>
               </li>

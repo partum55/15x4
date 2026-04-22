@@ -54,7 +54,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (!event.isPublic && (!user || event.userId !== user.id || !canManageContent(role))) {
+    const canReadPrivate = Boolean(user && (event.userId === user.id || canManageContent(role)))
+    if (!event.isPublic && !canReadPrivate) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
@@ -95,7 +96,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (event.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const ownerId = String(event.userId ?? user.id)
 
     const body = await req.json()
     const { titleUk, titleEn, descriptionUk, descriptionEn, cityUk, cityEn, date, locationUk, locationEn, time, image, registrationUrl, lectures } = body
@@ -137,7 +139,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       const lecture = item as Record<string, unknown>
       return {
         eventId: id,
-        userId: user.id,
+        userId: ownerId,
         slot: Number(lecture.slot ?? index + 1),
         titleUk: String(lecture.titleUk ?? '').trim(),
         titleEn: String(lecture.titleEn ?? '').trim(),
@@ -202,7 +204,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (event.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { error } = await supabase.from('Event').delete().eq('id', id)
     if (error) {
@@ -232,7 +234,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (event.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
     const { slot, category, categoryColor, titleUk, titleEn, authorUk, authorEn, summaryUk, summaryEn, image } = body
@@ -247,7 +249,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const lecturePayload = {
       eventId: id,
-      userId: user.id,
+      userId: String(event.userId ?? user.id),
       slot: Number(slot),
       category: String(category),
       categoryColor: String(categoryColor),

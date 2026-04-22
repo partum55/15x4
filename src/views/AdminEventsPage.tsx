@@ -33,6 +33,8 @@ export default function AdminEventsPage() {
   const { user, loading } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
+  const [approvingEventIds, setApprovingEventIds] = useState<Set<string>>(new Set())
+  const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -41,24 +43,62 @@ export default function AdminEventsPage() {
   }, [user, loading, router])
 
   useEffect(() => {
+    if (loading || !user || user?.profile?.role !== 'admin') return
+    let isMounted = true
+    setLoadingEvents(true)
     fetch('/api/admin/events')
       .then(res => res.json())
       .then(data => {
+        if (!isMounted) return
         if (!data.error) setEvents(data)
-        setLoadingEvents(false)
       })
-  }, [])
+      .finally(() => {
+        if (isMounted) setLoadingEvents(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [loading, user])
 
   async function handleDelete(eventId: string) {
+    if (deletingEventIds.has(eventId)) return
     if (!confirm(t('admin.events.confirmDelete'))) return
-    await fetch(`/api/admin/events/${eventId}`, { method: 'DELETE' })
-    setEvents(prev => prev.filter(e => e.id !== eventId))
+    setDeletingEventIds(prev => {
+      const next = new Set(prev)
+      next.add(eventId)
+      return next
+    })
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}`, { method: 'DELETE' })
+      if (!res.ok) return
+      setEvents(prev => prev.filter(e => e.id !== eventId))
+    } finally {
+      setDeletingEventIds(prev => {
+        const next = new Set(prev)
+        next.delete(eventId)
+        return next
+      })
+    }
   }
 
   async function handleApprove(eventId: string) {
-    const res = await fetch(`/api/admin/events/${eventId}`, { method: 'PATCH' })
-    if (!res.ok) return
-    setEvents(prev => prev.map(event => (event.id === eventId ? { ...event, isPublic: true } : event)))
+    if (approvingEventIds.has(eventId)) return
+    setApprovingEventIds(prev => {
+      const next = new Set(prev)
+      next.add(eventId)
+      return next
+    })
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}`, { method: 'PATCH' })
+      if (!res.ok) return
+      setEvents(prev => prev.map(event => (event.id === eventId ? { ...event, isPublic: true } : event)))
+    } finally {
+      setApprovingEventIds(prev => {
+        const next = new Set(prev)
+        next.delete(eventId)
+        return next
+      })
+    }
   }
 
   if (loading || !user || user?.profile?.role !== 'admin') {
@@ -124,19 +164,31 @@ export default function AdminEventsPage() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/account/events/${e.id}/edit`}
+                          className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:opacity-70"
+                        >
+                          {t('admin.events.edit', { defaultValue: 'edit' })}
+                        </Link>
                         {!e.isPublic && (
                           <button
+                            type="button"
                             onClick={() => handleApprove(e.id)}
-                            className="px-3 py-1 bg-black text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
+                            disabled={approvingEventIds.has(e.id)}
+                            aria-busy={approvingEventIds.has(e.id)}
+                            className="px-3 py-1 bg-black text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
                           >
-                            {t('admin.events.approve')}
+                            {approvingEventIds.has(e.id) ? `${t('admin.events.approve')}...` : t('admin.events.approve')}
                           </button>
                         )}
                         <button
+                          type="button"
                           onClick={() => handleDelete(e.id)}
-                          className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
+                          disabled={deletingEventIds.has(e.id)}
+                          aria-busy={deletingEventIds.has(e.id)}
+                          className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
                         >
-                          {t('admin.events.delete')}
+                          {deletingEventIds.has(e.id) ? `${t('admin.events.delete')}...` : t('admin.events.delete')}
                         </button>
                       </div>
                     </td>

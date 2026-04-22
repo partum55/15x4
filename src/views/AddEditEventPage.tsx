@@ -87,6 +87,7 @@ export default function AddEditEventPage() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [formError, setFormError] = useState('')
   const [translating, setTranslating] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -135,12 +136,14 @@ export default function AddEditEventPage() {
   }
 
   function addLecture() {
+    if (saving || translating) return
     if (lectures.length >= 4) return
     const slot = lectures.length + 1
     setLectures((prev) => [...prev, emptyLecture(slot)])
   }
 
   function removeLecture(index: number) {
+    if (saving || translating) return
     setLectures((prev) =>
       prev
         .filter((_, i) => i !== index)
@@ -171,6 +174,7 @@ export default function AddEditEventPage() {
   }
 
   async function handleTranslateAll() {
+    if (translating || saving) return
     setTranslating(true)
     try {
       const useUkAsSource =
@@ -252,6 +256,7 @@ export default function AddEditEventPage() {
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
+    if (saving || translating) return
     setFormError('')
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
@@ -301,6 +306,7 @@ export default function AddEditEventPage() {
       return
     }
 
+    setSaving(true)
     try {
       const result = isEdit && id
         ? await api.updateEvent(id, body)
@@ -314,6 +320,8 @@ export default function AddEditEventPage() {
       router.push('/account/events')
     } catch {
       setFormError(t('addEvent.errorSave'))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -334,9 +342,10 @@ export default function AddEditEventPage() {
             <div className="flex justify-end">
               <button
                 type="button"
-                className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+                className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-wait disabled:animate-pulse"
                 onClick={handleTranslateAll}
-                disabled={translating}
+                disabled={translating || saving}
+                aria-busy={translating}
               >
                 {translating ? '...' : 'Translate'}
               </button>
@@ -400,9 +409,9 @@ export default function AddEditEventPage() {
                 <h2 className="text-[clamp(16px,1.6vw,24px)] font-normal tracking-[-0.04em] uppercase text-black">{t('addEvent.lecturesTitle')}</h2>
                 <button
                   type="button"
-                  className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+                  className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-wait disabled:animate-pulse"
                   onClick={addLecture}
-                  disabled={lectures.length >= 4}
+                  disabled={lectures.length >= 4 || saving || translating}
                 >
                   {t('addEvent.addLectureBtn')}
                 </button>
@@ -414,8 +423,9 @@ export default function AddEditEventPage() {
                     <span className="text-[clamp(12px,1.1vw,16px)] uppercase opacity-60">#{lecture.slot}</span>
                     <button
                       type="button"
-                      className="text-[clamp(12px,1.1vw,16px)] uppercase underline opacity-70 hover:opacity-100"
+                      className="text-[clamp(12px,1.1vw,16px)] uppercase underline opacity-70 hover:opacity-100 disabled:cursor-wait disabled:opacity-40"
                       onClick={() => removeLecture(index)}
+                      disabled={saving || translating}
                     >
                       {t('addEvent.removeLectureBtn')}
                     </button>
@@ -469,9 +479,11 @@ export default function AddEditEventPage() {
             <div className="flex items-center gap-6 mt-2 pt-6 border-t border-black">
               <button
                 type="submit"
-                className="flex items-center gap-3 px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.3vw,20px)] font-normal uppercase cursor-pointer transition-opacity duration-200 hover:opacity-85"
+                disabled={saving || translating}
+                aria-busy={saving}
+                className="flex items-center gap-3 px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.3vw,20px)] font-normal uppercase cursor-pointer transition-opacity duration-200 hover:opacity-85 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
               >
-                <span>{isEdit ? t('addEvent.submitBtnEdit') : t('addEvent.submitBtnNew')}</span>
+                <span>{saving ? '...' : isEdit ? t('addEvent.submitBtnEdit') : t('addEvent.submitBtnNew')}</span>
                 <ArrowIcon />
               </button>
               <Link

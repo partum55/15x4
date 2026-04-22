@@ -22,6 +22,8 @@ export default function AdminUsersPage() {
   const { user, loading } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
+  const [pendingRoleUserIds, setPendingRoleUserIds] = useState<Set<string>>(new Set())
+  const [deletingUserIds, setDeletingUserIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -39,18 +41,48 @@ export default function AdminUsersPage() {
   }, [])
 
   async function handleSetRole(userId: string, role: ProfileRole) {
-    await fetch(`/api/admin/users/${userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role }),
+    if (pendingRoleUserIds.has(userId) || deletingUserIds.has(userId)) return
+    setPendingRoleUserIds(prev => {
+      const next = new Set(prev)
+      next.add(userId)
+      return next
     })
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      })
+      if (!res.ok) return
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+    } finally {
+      setPendingRoleUserIds(prev => {
+        const next = new Set(prev)
+        next.delete(userId)
+        return next
+      })
+    }
   }
 
   async function handleDelete(userId: string) {
+    if (deletingUserIds.has(userId) || pendingRoleUserIds.has(userId)) return
     if (!confirm(t('admin.users.confirmDelete'))) return
-    await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
-    setUsers(prev => prev.filter(u => u.id !== userId))
+    setDeletingUserIds(prev => {
+      const next = new Set(prev)
+      next.add(userId)
+      return next
+    })
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
+      if (!res.ok) return
+      setUsers(prev => prev.filter(u => u.id !== userId))
+    } finally {
+      setDeletingUserIds(prev => {
+        const next = new Set(prev)
+        next.delete(userId)
+        return next
+      })
+    }
   }
 
   if (loading || !user || user?.profile?.role !== 'admin') {
@@ -118,19 +150,25 @@ export default function AdminUsersPage() {
                           PROFILE_ROLES.filter(role => role !== u.role).map(role => (
                             <button
                               key={role}
+                              type="button"
                               onClick={() => handleSetRole(u.id, role)}
-                              className="px-3 py-1 bg-blue text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
+                              disabled={pendingRoleUserIds.has(u.id) || deletingUserIds.has(u.id)}
+                              aria-busy={pendingRoleUserIds.has(u.id)}
+                              className="px-3 py-1 bg-blue text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
                             >
-                              {t(`admin.users.makeRole.${role}`)}
+                              {pendingRoleUserIds.has(u.id) ? '...' : t(`admin.users.makeRole.${role}`)}
                             </button>
                           ))
                         )}
                         {u.id !== user.id && (
                           <button
+                            type="button"
                             onClick={() => handleDelete(u.id)}
-                            className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
+                            disabled={deletingUserIds.has(u.id) || pendingRoleUserIds.has(u.id)}
+                            aria-busy={deletingUserIds.has(u.id)}
+                            className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
                           >
-                            {t('admin.users.delete')}
+                            {deletingUserIds.has(u.id) ? `${t('admin.users.delete')}...` : t('admin.users.delete')}
                           </button>
                         )}
                       </div>
