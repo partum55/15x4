@@ -83,10 +83,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, refresh, fetchProfile])
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error: 'AUTH_INVALID_CREDENTIALS' }
+    if (data.user) {
+      const userData = await fetchProfile(data.user)
+      setUser(userData)
+    }
+    setLoading(false)
     return {}
-  }, [supabase])
+  }, [supabase, fetchProfile])
 
   const signInWithGoogle = useCallback(async (next = '/') => {
     const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/'
