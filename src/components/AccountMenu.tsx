@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { canManageContent } from '@/lib/roles'
@@ -32,9 +32,10 @@ function UserOutlineIcon({ variant }: { variant: 'light' | 'dark' }) {
 export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   const { t } = useTranslation()
   const router = useRouter()
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const { user, signOut } = useAuth()
+  const { user, loading, signOut } = useAuth()
 
   useEffect(() => {
     if (!open) return
@@ -54,7 +55,20 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   }
 
   function handleLoginClick() {
-    router.push('/login')
+    const redirect = pathname && !pathname.startsWith('/login') && !pathname.startsWith('/register')
+      ? `?redirect=${encodeURIComponent(pathname)}`
+      : ''
+    router.push(`/login${redirect}`)
+  }
+
+  if (loading) {
+    return (
+      <span
+        className={`w-[clamp(28px,2.2vw,36px)] h-[clamp(28px,2.2vw,36px)] rounded-full block animate-pulse ${variant === 'dark' ? 'border border-white/60' : 'border border-black/40'}`}
+        style={{ borderWidth: '1.5px' }}
+        aria-hidden="true"
+      />
+    )
   }
 
   if (!user) {

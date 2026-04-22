@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from 'boneyard-js/react'
 import type { Lecture } from '@/lib/api'
@@ -10,138 +8,11 @@ import Navbar from '../components/Navbar'
 import FilterDropdown from '../components/FilterDropdown'
 import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'
+import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
-import { CATEGORY_COLOR_VAR } from '../constants/colors'
+import { LECTURE_CATEGORIES } from '../constants/lectureCategories'
 
-type CardVariant = 'horizontal' | 'compact' | 'vertical' | 'featured'
-
-type ArchiveLectureCardProps = Lecture & {
-  variant?: CardVariant
-}
-
-function ArchiveLectureCard({
-  id, category, categoryColor, author, image, title, summary,
-  variant = 'horizontal',
-}: ArchiveLectureCardProps) {
-  const { t } = useTranslation()
-  const borderColor = CATEGORY_COLOR_VAR[categoryColor] || 'var(--color-red)'
-  const categoryLabel = t(`lectureCategories.${category}`, { defaultValue: category })
-
-  if (variant === 'compact') {
-    return (
-      <Link
-        href={`/lectures/${id}`}
-        className="flex-1 no-underline text-inherit cursor-pointer py-6 flex flex-row gap-9 max-[767px]:flex-col max-[767px]:gap-4"
-      >
-        <div className="relative w-[clamp(200px,22vw,327px)] flex-shrink-0 max-[767px]:w-full">
-          <div
-            className="w-full h-[clamp(80px,7.5vw,111px)] object-cover block"
-            style={{ backgroundColor: borderColor }}
-          />
-          <span
-            className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
-            style={{ borderColor }}
-          >
-            {categoryLabel}
-          </span>
-        </div>
-        <div className="flex flex-col gap-[10px] py-6 px-3 max-[767px]:px-0 max-[767px]:py-0">
-          <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em] leading-[1.2]">{title}</p>
-          <p className="text-[clamp(14px,1.3vw,20px)] font-normal">{author}</p>
-        </div>
-      </Link>
-    )
-  }
-
-  if (variant === 'vertical') {
-    return (
-      <Link
-        href={`/lectures/${id}`}
-        className="flex-1 no-underline text-inherit cursor-pointer py-6 flex flex-col gap-6 w-[clamp(200px,22vw,327px)] max-[767px]:w-full"
-      >
-        <div className="relative w-full">
-          <div
-            className="w-full h-[clamp(80px,9vw,130px)] object-cover block"
-            style={{ backgroundColor: borderColor }}
-          />
-          <span
-            className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
-            style={{ borderColor }}
-          >
-            {categoryLabel}
-          </span>
-        </div>
-        <div className="flex flex-col gap-[10px]">
-          <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em] leading-[1.2]">{title}</p>
-          <p className="text-[clamp(14px,1.3vw,20px)] font-normal">{author}</p>
-        </div>
-        <p className="text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{summary}</p>
-      </Link>
-    )
-  }
-
-  if (variant === 'featured') {
-    return (
-      <Link
-        href={`/lectures/${id}`}
-        className="flex-[2] no-underline text-inherit cursor-pointer py-6 flex flex-col gap-6"
-      >
-        <div className="flex flex-col gap-3">
-          <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em] leading-[1.2]">{title}</p>
-          <p className="text-[clamp(14px,1.3vw,20px)] font-normal">{author}</p>
-        </div>
-        <div className="relative w-full">
-          <Image
-            src={image}
-            alt={title}
-            width={1200}
-            height={800}
-            unoptimized
-            className="w-full h-[clamp(200px,22vw,324px)] object-cover block"
-          />
-          <span
-            className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
-            style={{ borderColor }}
-          >
-            {categoryLabel}
-          </span>
-        </div>
-      </Link>
-    )
-  }
-
-  // Default: horizontal layout
-  return (
-    <Link
-      href={`/lectures/${id}`}
-      className="flex-1 no-underline text-inherit cursor-pointer py-6 flex flex-row gap-9 max-[767px]:flex-col max-[767px]:gap-4"
-    >
-      <div className="relative w-[clamp(200px,22vw,327px)] flex-shrink-0 max-[767px]:w-full">
-        <Image
-          src={image}
-          alt={title}
-          width={900}
-          height={900}
-          unoptimized
-          className="w-full h-[clamp(200px,22vw,321px)] object-cover block opacity-50 transition-opacity duration-200 hover:opacity-85 max-[767px]:h-[200px]"
-        />
-        <span
-          className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap"
-          style={{ borderColor }}
-        >
-          {categoryLabel}
-        </span>
-      </div>
-      <div className="flex flex-col gap-6 py-6 px-3 flex-1 max-[767px]:px-0 max-[767px]:py-0">
-        <div className="flex flex-col gap-3">
-          <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em] leading-[1.2]">{title}</p>
-          <p className="text-[clamp(14px,1.3vw,20px)] font-normal">{author}</p>
-        </div>
-        <p className="text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{summary}</p>
-      </div>
-    </Link>
-  )
-}
+const LECTURES_PAGE_SIZE = 20
 
 function SearchIcon() {
   return (
@@ -153,25 +24,48 @@ function SearchIcon() {
 }
 
 export default function LecturesPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('')
   const [themeFilter, setThemeFilter] = useState('')
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [total, setTotal] = useState(0)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim())
+    }, 300)
+
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
     let isMounted = true
+    setLoading(true)
 
     api
-      .getLectures()
+      .getLecturesPage({
+        limit: LECTURES_PAGE_SIZE,
+        offset: 0,
+        search: debouncedSearchQuery,
+        category: themeFilter,
+        sort: sortBy,
+      })
       .then((data) => {
         if (!isMounted) return
-        setLectures(Array.isArray(data) ? data : [])
+        setLectures(Array.isArray(data.items) ? data.items : [])
+        setHasMore(Boolean(data.hasMore))
+        setTotal(Number(data.total ?? 0))
       })
       .catch(() => {
         if (!isMounted) return
         setLectures([])
+        setHasMore(false)
+        setTotal(0)
       })
       .finally(() => {
         if (isMounted) {
@@ -182,38 +76,29 @@ export default function LecturesPage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [debouncedSearchQuery, sortBy, themeFilter, i18n.language])
 
-  const categories = useMemo(() => [...new Set(lectures.map((l) => l.category))], [lectures])
-
-  const hasActiveFilters = !!(searchQuery || sortBy || themeFilter)
-
-  const filteredLectures = useMemo(() => {
-    let result = [...lectures]
-
-    if (themeFilter) {
-      result = result.filter((l) => l.category === themeFilter)
+  async function handleLoadMore() {
+    setLoadingMore(true)
+    try {
+      const data = await api.getLecturesPage({
+        limit: LECTURES_PAGE_SIZE,
+        offset: lectures.length,
+        search: debouncedSearchQuery,
+        category: themeFilter,
+        sort: sortBy,
+      })
+      setLectures((current) => [...current, ...(Array.isArray(data.items) ? data.items : [])])
+      setHasMore(Boolean(data.hasMore))
+      setTotal(Number(data.total ?? 0))
+    } catch {
+      setHasMore(false)
+    } finally {
+      setLoadingMore(false)
     }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(
-        (l) =>
-          l.title.toLowerCase().includes(q) ||
-          l.author.toLowerCase().includes(q) ||
-          l.titleUk.toLowerCase().includes(q) ||
-          l.titleEn.toLowerCase().includes(q) ||
-          l.authorUk.toLowerCase().includes(q) ||
-          l.authorEn.toLowerCase().includes(q),
-      )
-    }
-    if (sortBy === 'titleAZ') {
-      result.sort((a, b) => a.title.localeCompare(b.title, 'uk'))
-    } else if (sortBy === 'titleZA') {
-      result.sort((a, b) => b.title.localeCompare(a.title, 'uk'))
-    }
+  }
 
-    return result
-  }, [themeFilter, searchQuery, sortBy, lectures])
+  const hasActiveFilters = !!(debouncedSearchQuery || sortBy || themeFilter)
 
   const sortOptions = [
     { value: '', label: t('lectures.sortBy') },
@@ -223,7 +108,7 @@ export default function LecturesPage() {
 
   const themeOptions = [
     { value: '', label: t('lectures.allThemes') },
-    ...categories.map((c) => ({
+    ...LECTURE_CATEGORIES.map((c) => ({
       value: c,
       label: t(`lectureCategories.${c}`, { defaultValue: c }),
     })),
@@ -238,11 +123,11 @@ export default function LecturesPage() {
 
       rows.push(
         <div key={`${keyPrefix}-${i}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <ArchiveLectureCard {...left} variant="horizontal" />
+          <LectureCard lecture={left} variant="horizontal" />
           {right && (
             <>
               <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-              <ArchiveLectureCard {...right} variant="horizontal" />
+              <LectureCard lecture={right} variant="horizontal" />
             </>
           )}
         </div>,
@@ -262,9 +147,9 @@ export default function LecturesPage() {
       if (idx + 2 > lectures.length) break
       rows.push(
         <div key={`row-horizontal-a-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <ArchiveLectureCard {...lectures[idx]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx]} variant="horizontal" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 1]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx + 1]} variant="horizontal" />
         </div>,
       )
       idx += 2
@@ -272,9 +157,9 @@ export default function LecturesPage() {
       if (idx + 2 > lectures.length) break
       rows.push(
         <div key={`row-compact-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <ArchiveLectureCard {...lectures[idx]} variant="compact" />
+          <LectureCard lecture={lectures[idx]} variant="compact" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 1]} variant="compact" />
+          <LectureCard lecture={lectures[idx + 1]} variant="compact" />
         </div>,
       )
       idx += 2
@@ -282,9 +167,9 @@ export default function LecturesPage() {
       if (idx + 2 > lectures.length) break
       rows.push(
         <div key={`row-horizontal-b-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <ArchiveLectureCard {...lectures[idx]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx]} variant="horizontal" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 1]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx + 1]} variant="horizontal" />
         </div>,
       )
       idx += 2
@@ -292,11 +177,11 @@ export default function LecturesPage() {
       if (idx + 3 > lectures.length) break
       rows.push(
         <div key={`row-featured-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <ArchiveLectureCard {...lectures[idx]} variant="vertical" />
+          <LectureCard lecture={lectures[idx]} variant="vertical" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 1]} variant="featured" />
+          <LectureCard lecture={lectures[idx + 1]} variant="featured" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 2]} variant="vertical" />
+          <LectureCard lecture={lectures[idx + 2]} variant="vertical" />
         </div>,
       )
       idx += 3
@@ -304,13 +189,13 @@ export default function LecturesPage() {
       if (idx + 4 > lectures.length) break
       rows.push(
         <div key={`row-compact-quad-${idx}`} className="flex border-b border-black max-[767px]:flex-col">
-          <ArchiveLectureCard {...lectures[idx]} variant="compact" />
+          <LectureCard lecture={lectures[idx]} variant="compact" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 1]} variant="compact" />
+          <LectureCard lecture={lectures[idx + 1]} variant="compact" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 2]} variant="compact" />
+          <LectureCard lecture={lectures[idx + 2]} variant="compact" />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <ArchiveLectureCard {...lectures[idx + 3]} variant="compact" />
+          <LectureCard lecture={lectures[idx + 3]} variant="compact" />
         </div>,
       )
       idx += 4
@@ -325,13 +210,13 @@ export default function LecturesPage() {
 
   /* Simple 2-column grid for filtered results */
   const renderFilteredGrid = () => {
-    if (filteredLectures.length === 0) {
+    if (lectures.length === 0) {
       return (
         <p className="py-12 text-[clamp(16px,1.6vw,24px)] text-center opacity-60">{t('lectures.noResults')}</p>
       )
     }
 
-    return renderTwoColumnRows(filteredLectures, 'filtered')
+    return renderTwoColumnRows(lectures, 'filtered')
   }
 
   return (
@@ -339,7 +224,7 @@ export default function LecturesPage() {
       <Navbar />
 
       <Skeleton name="page-lectures" loading={loading}>
-        <div className="flex items-end justify-between px-[clamp(16px,3.2vw,48px)] py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
+        <div className="content-shell flex items-end justify-between py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
           <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
             <span className="text-red">{'//'}</span> {t('lectures.pageTitle')}
           </h1>
@@ -359,9 +244,22 @@ export default function LecturesPage() {
           </div>
         </div>
 
-        <main className="px-[clamp(16px,3.2vw,48px)] border-t border-black">
+        <main className="content-shell border-t border-black">
           {hasActiveFilters ? renderFilteredGrid() : renderDefaultGrid()}
         </main>
+
+        {(hasMore || total > lectures.length) && (
+          <div className="content-shell py-10 flex justify-center">
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-black"
+            >
+              {loadingMore ? t('lectures.loadingMore') : t('lectures.loadMore')}
+            </button>
+          </div>
+        )}
 
         <JoinSection />
         <Footer />

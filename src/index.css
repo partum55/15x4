@@ -40,6 +40,23 @@ body {
   margin-top: auto;
 }
 
+.content-shell {
+  width: min(100% - clamp(32px, 7vw, 128px), 1416px);
+  margin-inline: auto;
+}
+
+.content-shell--wide {
+  width: min(100% - clamp(32px, 7vw, 128px), 1512px);
+  margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+  .content-shell,
+  .content-shell--wide {
+    width: calc(100% - 32px);
+  }
+}
+
 .inner-nav {
   display: flex;
   align-items: center;
@@ -71,4 +88,34 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.text-clamp-1,
+.text-clamp-2,
+.text-clamp-3,
+.text-clamp-4,
+.text-clamp-5 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.text-clamp-1 {
+  -webkit-line-clamp: 1;
+}
+
+.text-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.text-clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+.text-clamp-4 {
+  -webkit-line-clamp: 4;
+}
+
+.text-clamp-5 {
+  -webkit-line-clamp: 5;
 }

@@ -6,6 +6,8 @@ import { getProfileRole, requireContentRole } from '@/lib/authz'
 type Locale = 'uk' | 'en'
 
 function resolveLocale(req: NextRequest): Locale {
+  const queryLocale = req.nextUrl.searchParams.get('locale')
+  if (queryLocale === 'en') return 'en'
   const cookie = req.cookies.get('i18nextLng')?.value
   return cookie === 'en' ? 'en' : 'uk'
 }
@@ -22,6 +24,16 @@ function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
   }
 }
 
+function parsePositiveInt(value: string | null, fallback: number, max: number) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback
+  return Math.min(Math.floor(parsed), max)
+}
+
+function sanitizeSearch(value: string | null) {
+  return value?.replace(/[%,()]/g, ' ').trim() ?? ''
+}
+
 function validCategoryPair(category: string, categoryColor: string) {
   return (
     (category === 'tech' && categoryColor === 'blue') ||
@@ -34,20 +46,51 @@ function validCategoryPair(category: string, categoryColor: string) {
 export async function GET(req: NextRequest) {
   try {
     const locale = resolveLocale(req)
+    const searchParams = req.nextUrl.searchParams
+    const wantsPagination = searchParams.has('limit') || searchParams.has('offset')
+    const limit = parsePositiveInt(searchParams.get('limit'), 20, 100)
+    const offset = parsePositiveInt(searchParams.get('offset'), 0, 100000)
+    const search = sanitizeSearch(searchParams.get('search'))
+    const category = searchParams.get('category')?.trim()
+    const sort = searchParams.get('sort')
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     const role = user ? await getProfileRole(user.id, supabase) : null
-    let query = supabase.from('Lecture').select('*').order('createdAt', { ascending: false })
+    let query = wantsPagination
+      ? supabase.from('Lecture').select('*', { count: 'exact' })
+      : supabase.from('Lecture').select('*')
+
     if (user && canManageContent(role)) {
       query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
     } else {
       query = query.eq('isPublic', true)
     }
 
-    const { data: lectures, error } = await query
+    if (category) {
+      query = query.eq('category', category)
+    }
+
+    if (search) {
+      const pattern = `%${search}%`
+      query = query.or(
+        `titleUk.ilike.${pattern},titleEn.ilike.${pattern},authorUk.ilike.${pattern},authorEn.ilike.${pattern},summaryUk.ilike.${pattern},summaryEn.ilike.${pattern}`,
+      )
+    }
+
+    if (sort === 'titleAZ' || sort === 'titleZA') {
+      query = query.order(locale === 'en' ? 'titleEn' : 'titleUk', { ascending: sort === 'titleAZ' })
+    } else {
+      query = query.order('createdAt', { ascending: false })
+    }
+
+    if (wantsPagination) {
+      query = query.range(offset, offset + limit - 1)
+    }
+
+    const { data: lectures, error, count } = await query
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
@@ -60,6 +103,17 @@ export async function GET(req: NextRequest) {
         userId: lectureRow.userId === user?.id ? lectureRow.userId : undefined,
       }
     })
+
+    if (wantsPagination) {
+      const total = count ?? parsed.length
+      return NextResponse.json({
+        items: parsed,
+        total,
+        limit,
+        offset,
+        hasMore: offset + parsed.length < total,
+      })
+    }
 
     return NextResponse.json(parsed)
   } catch {

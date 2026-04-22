@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORY_COLOR_VAR } from '@/constants/colors'
+import { LECTURE_CATEGORIES } from '@/constants/lectureCategories'
+import { api } from '@/lib/api'
 
 type Lecture = {
   id: string
@@ -23,12 +25,22 @@ type Lecture = {
   user: { id: string; name: string; email: string } | null
 }
 
+const ADMIN_PAGE_SIZE = 100
+
 export default function AdminLecturesPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const { user, loading } = useAuth()
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loadingLectures, setLoadingLectures] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [sortBy, setSortBy] = useState('')
+  const [hasMore, setHasMore] = useState(false)
+  const [total, setTotal] = useState(0)
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -37,18 +49,76 @@ export default function AdminLecturesPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    fetch('/api/admin/lectures')
-      .then(res => res.json())
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim())
+    }, 300)
+
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (loading || !user || user?.profile?.role !== 'admin') return
+
+    let isMounted = true
+    setLoadingLectures(true)
+
+    api.admin.getLectures({
+      limit: ADMIN_PAGE_SIZE,
+      offset: 0,
+      search: debouncedSearchQuery,
+      category: categoryFilter,
+      status: statusFilter,
+      sort: sortBy,
+    })
       .then(data => {
-        if (!data.error) setLectures(data)
-        setLoadingLectures(false)
+        if (!isMounted) return
+        if (!data.error) {
+          setLectures(Array.isArray(data.items) ? data.items : [])
+          setHasMore(Boolean(data.hasMore))
+          setTotal(Number(data.total ?? 0))
+        }
       })
-  }, [])
+      .catch(() => {
+        if (!isMounted) return
+        setLectures([])
+        setHasMore(false)
+        setTotal(0)
+      })
+      .finally(() => {
+        if (isMounted) setLoadingLectures(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [loading, user, debouncedSearchQuery, categoryFilter, statusFilter, sortBy])
+
+  async function handleLoadMore() {
+    setLoadingMore(true)
+    try {
+      const data = await api.admin.getLectures({
+        limit: ADMIN_PAGE_SIZE,
+        offset: lectures.length,
+        search: debouncedSearchQuery,
+        category: categoryFilter,
+        status: statusFilter,
+        sort: sortBy,
+      })
+      if (!data.error) {
+        setLectures(prev => [...prev, ...(Array.isArray(data.items) ? data.items : [])])
+        setHasMore(Boolean(data.hasMore))
+        setTotal(Number(data.total ?? 0))
+      }
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   async function handleDelete(lectureId: string) {
     if (!confirm(t('admin.lectures.confirmDelete'))) return
     await fetch(`/api/admin/lectures/${lectureId}`, { method: 'DELETE' })
     setLectures(prev => prev.filter(l => l.id !== lectureId))
+    setTotal(prev => Math.max(0, prev - 1))
   }
 
   if (loading || !user || user?.profile?.role !== 'admin') {
@@ -76,6 +146,53 @@ export default function AdminLecturesPage() {
             {t('admin.nav.events')}
           </Link>
         </nav>
+
+        <div className="grid grid-cols-[minmax(220px,1fr)_repeat(3,minmax(160px,220px))] gap-3 mb-8 max-[1023px]:grid-cols-2 max-[640px]:grid-cols-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder={t('admin.lectures.search')}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          />
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          >
+            <option value="">{t('admin.lectures.allCategories')}</option>
+            {LECTURE_CATEGORIES.map(category => (
+              <option key={category} value={category}>
+                {t(`lectureCategories.${category}`, { defaultValue: category })}
+              </option>
+            ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          >
+            <option value="">{t('admin.lectures.allStatuses')}</option>
+            <option value="public">{t('admin.lectures.statusPublic')}</option>
+            <option value="draft">{t('admin.lectures.statusDraft')}</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value)}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          >
+            <option value="">{t('admin.lectures.newest')}</option>
+            <option value="oldest">{t('admin.lectures.oldest')}</option>
+            <option value="titleAZ">{t('lectures.titleAZ')}</option>
+            <option value="titleZA">{t('lectures.titleZA')}</option>
+          </select>
+        </div>
+
+        {!loadingLectures && (
+          <p className="mb-4 text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
+            {t('admin.lectures.showing', { count: lectures.length, total })}
+          </p>
+        )}
 
         {loadingLectures ? (
           <p className="text-[clamp(14px,1.3vw,20px)]">Loading...</p>
@@ -129,6 +246,18 @@ export default function AdminLecturesPage() {
                 ))}
               </tbody>
             </table>
+            {(hasMore || total > lectures.length) && (
+              <div className="flex justify-center py-8">
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-black"
+                >
+                  {loadingMore ? t('admin.lectures.loadingMore') : t('admin.lectures.loadMore')}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>

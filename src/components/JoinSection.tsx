@@ -8,27 +8,33 @@ export default function JoinSection() {
 
   return (
     <section className="py-[clamp(32px,4.2vw,64px)]">
-      <div className="px-[clamp(16px,3.2vw,48px)]">
-        <h2 className="text-[clamp(22px,2.4vw,36px)] font-normal text-black uppercase ml-[clamp(0px,25.6%,363px)] mb-[43px] leading-[1.2] max-[1199px]:ml-0 max-[767px]:ml-0 max-[767px]:mb-6">
+      <div className="content-shell">
+        <h2 className="mb-[43px] ml-[calc(25%+33px)] text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.2] text-black max-[1199px]:ml-0 max-[767px]:mb-6">
           <span className="text-red">¡</span> {t('join.title')} <span className="text-red">!</span>
         </h2>
 
-        <div className="flex items-start gap-0 max-[767px]:flex-col max-[767px]:gap-8">
-          <div className="flex-1 flex items-start gap-6 min-w-0 max-[767px]:flex-col max-[767px]:gap-4 max-[767px]:w-full">
-            <p className="flex-1 min-w-0 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.2] text-black">{t('join.ideaText')}</p>
-            <button className="flex-[0_0_clamp(180px,23.1%,327px)] h-[69px] px-6 py-5 border-none cursor-pointer flex items-center justify-between font-sans text-[clamp(14px,1.6vw,24px)] font-normal text-white bg-black max-[1199px]:flex-[0_0_220px] max-[1199px]:text-lg max-[767px]:flex-none max-[767px]:w-full max-[767px]:h-auto max-[767px]:py-4">
+        <div className="grid grid-cols-4 items-start gap-9 max-[1199px]:grid-cols-2 max-[767px]:grid-cols-1 max-[767px]:gap-4">
+          <p className="min-w-0 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.2] text-black">
+            {t('join.ideaText')}
+          </p>
+          <button
+            type="button"
+            className="flex h-[69px] w-full cursor-pointer items-center justify-center gap-[10px] border-none bg-black px-6 py-5 font-sans text-[clamp(14px,1.6vw,24px)] font-normal text-white transition-opacity duration-200 hover:opacity-85 max-[767px]:justify-between"
+          >
               <span>{t('join.ideaButton')}</span>
               <ArrowIcon />
-            </button>
-          </div>
+          </button>
 
-          <div className="flex-1 flex items-start gap-6 min-w-0 max-[767px]:flex-col max-[767px]:gap-4 max-[767px]:w-full">
-            <p className="flex-1 min-w-0 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.2] text-black">{t('join.speakerText')}</p>
-            <button className="flex-[0_0_clamp(180px,23.1%,327px)] h-[69px] px-6 py-5 border-none cursor-pointer flex items-center justify-between font-sans text-[clamp(14px,1.6vw,24px)] font-normal text-white bg-red max-[1199px]:flex-[0_0_220px] max-[1199px]:text-lg max-[767px]:flex-none max-[767px]:w-full max-[767px]:h-auto max-[767px]:py-4">
+          <p className="min-w-0 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.2] text-black">
+            {t('join.speakerText')}
+          </p>
+          <button
+            type="button"
+            className="flex h-[69px] w-full cursor-pointer items-center justify-center gap-[10px] border-none bg-red px-6 py-5 font-sans text-[clamp(14px,1.6vw,24px)] font-normal text-white transition-opacity duration-200 hover:opacity-85 max-[767px]:justify-between"
+          >
               <span>{t('join.speakerButton')}</span>
               <ArrowIcon />
-            </button>
-          </div>
+          </button>
         </div>
       </div>
     </section>

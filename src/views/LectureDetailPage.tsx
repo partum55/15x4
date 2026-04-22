@@ -113,7 +113,7 @@ function resolveLectureVideo(videoUrl?: string): ResolvedLectureVideo | null {
 }
 
 export default function LectureDetailPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const id = params?.id
@@ -135,8 +135,8 @@ export default function LectureDetailPage() {
 
     let isMounted = true
 
-    Promise.all([api.getLecture(id), api.getLectures()])
-      .then(([lectureData, allLectures]) => {
+    Promise.all([api.getLecture(id), api.getLecturesPage({ limit: 5 })])
+      .then(([lectureData, lecturesPage]) => {
         if (!isMounted) return
 
         if (lectureData && !('error' in lectureData)) {
@@ -145,7 +145,7 @@ export default function LectureDetailPage() {
           setLecture(null)
         }
 
-        const lectures = Array.isArray(allLectures) ? allLectures : []
+        const lectures = Array.isArray(lecturesPage.items) ? lecturesPage.items : []
         setRelated(lectures.filter((l) => l.id !== id).slice(0, 4))
       })
       .catch(() => {
@@ -162,7 +162,7 @@ export default function LectureDetailPage() {
     return () => {
       isMounted = false
     }
-  }, [id, bonesMode])
+  }, [id, bonesMode, i18n.language])
 
   if (!bonesMode && !loading && !lecture) {
     return (

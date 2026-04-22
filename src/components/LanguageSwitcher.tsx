@@ -11,6 +11,7 @@ export default function LanguageSwitcher() {
   const toggleLanguage = () => {
     const newLang = currentLang === 'uk' ? 'en' : 'uk'
     window.localStorage.setItem('i18nextLng', newLang)
+    document.cookie = `i18nextLng=${newLang}; path=/; max-age=31536000; sameSite=lax`
     void i18n.changeLanguage(newLang).then(() => {
       router.refresh()
     })

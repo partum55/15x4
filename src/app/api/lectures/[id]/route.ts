@@ -6,6 +6,8 @@ import { getProfileRole, requireContentRole } from '@/lib/authz'
 type Locale = 'uk' | 'en'
 
 function resolveLocale(req: NextRequest): Locale {
+  const queryLocale = req.nextUrl.searchParams.get('locale')
+  if (queryLocale === 'en') return 'en'
   const cookie = req.cookies.get('i18nextLng')?.value
   return cookie === 'en' ? 'en' : 'uk'
 }

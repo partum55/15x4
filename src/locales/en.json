@@ -40,7 +40,8 @@
     "register": "register",
     "allCities": "all cities",
     "dateAsc": "oldest first",
-    "dateDesc": "newest first"
+    "dateDesc": "newest first",
+    "noResults": "No events found"
   },
   "lectures": {
     "pageTitle": "LECTURES",
@@ -50,7 +51,9 @@
     "allThemes": "all themes",
     "titleAZ": "title A–Z",
     "titleZA": "title Z–A",
-    "noResults": "No lectures found"
+    "noResults": "No lectures found",
+    "loadMore": "load more",
+    "loadingMore": "loading..."
   },
   "lectureCategories": {
     "tech": "Technical",
@@ -70,6 +73,11 @@
     "back": "events",
     "register": "register",
     "talks": "Talks",
+    "date": "date",
+    "time": "time",
+    "about": "about event",
+    "registrationSoon": "registration soon",
+    "noTalks": "Talks for this event have not been added yet",
     "notFound": "Event not found"
   },
   "about": {
@@ -116,9 +124,12 @@
       "passwordLabel": "password",
       "submitBtn": "log in",
       "googleBtn": "sign in with Google",
+      "googleLoading": "opening Google...",
+      "or": "or",
       "noAccount": "don't have an account?",
       "register": "register",
-      "errorInvalid": "Wrong crendentials",
+      "submitting": "signing in...",
+      "errorInvalid": "Wrong email or password",
       "errorOAuth": "Unable to sign in with Google. Please try again.",
       "errorRequired": "this field is required"
     },
@@ -136,11 +147,15 @@
       "passwordLabel": "password",
       "passwordConfirmLabel": "confirm password",
       "submitBtn": "create account",
+      "submitting": "creating...",
+      "googleBtn": "create with Google",
+      "googleLoading": "opening Google...",
       "checkEmail": "// CHECK YOUR EMAIL",
       "confirmationSent": "We've sent a confirmation email. Please check your inbox.",
       "hasAccount": "already have an account?",
       "loginLink": "log in",
       "errorGeneric": "Unable to create account. Please try again.",
+      "errorOAuth": "Unable to create an account with Google. Please try again.",
       "errorEmailTaken": "this email is already registered",
       "errorPasswordMismatch": "passwords do not match",
       "errorRequired": "this field is required",
@@ -306,7 +321,17 @@
       "owner": "owner",
       "delete": "delete",
       "confirmDelete": "delete this lecture?",
-      "empty": "no lectures found"
+      "empty": "no lectures found",
+      "search": "search by title or author",
+      "allCategories": "all categories",
+      "allStatuses": "all statuses",
+      "statusPublic": "public",
+      "statusDraft": "drafts",
+      "newest": "newest first",
+      "oldest": "oldest first",
+      "showing": "showing {{count}} of {{total}}",
+      "loadMore": "load 100 more",
+      "loadingMore": "loading..."
     },
     "events": {
       "title": "// ALL EVENTS",
