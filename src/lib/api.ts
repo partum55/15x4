@@ -72,8 +72,39 @@ export type Event = {
   lectures?: EventLecture[]
 }
 
+export type PaginatedResponse<T> = {
+  items: T[]
+  total: number
+  limit: number
+  offset: number
+  hasMore: boolean
+}
+
+export type LectureListParams = {
+  limit?: number
+  offset?: number
+  search?: string
+  category?: string
+  sort?: string
+}
+
 const json = (res: Response) => res.json()
 const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+const currentLocale = () => {
+  if (typeof window === 'undefined') return null
+  const stored = window.localStorage.getItem('i18nextLng')
+  return stored?.startsWith('en') ? 'en' : stored?.startsWith('uk') ? 'uk' : null
+}
+const withQuery = (url: string, params?: Record<string, string | number | undefined>) => {
+  const searchParams = new URLSearchParams()
+  const locale = currentLocale()
+  if (locale) searchParams.set('locale', locale)
+  Object.entries(params ?? {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') searchParams.set(key, String(value))
+  })
+  const query = searchParams.toString()
+  return query ? `${url}?${query}` : url
+}
 const post = (url: string, body?: object) =>
   fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then(json)
 const put = (url: string, body: object) =>
@@ -86,14 +117,16 @@ const del = (url: string) =>
 export const api = {
   updateProfile: (body: { name?: string }) => patch('/api/profile', body),
 
-  getLectures: () => fetch('/api/lectures').then(json).then((data) => asArray<Lecture>(data)),
-  getLecture: (id: string) => fetch(`/api/lectures/${id}`).then(json),
+  getLectures: (params?: LectureListParams) => fetch(withQuery('/api/lectures', params)).then(json).then((data) => asArray<Lecture>(data)),
+  getLecturesPage: (params?: LectureListParams) =>
+    fetch(withQuery('/api/lectures', params)).then(json).then((data) => data as PaginatedResponse<Lecture>),
+  getLecture: (id: string) => fetch(withQuery(`/api/lectures/${id}`)).then(json),
   createLecture: (body: object) => post('/api/lectures', body),
   updateLecture: (id: string, body: object) => put(`/api/lectures/${id}`, body),
   deleteLecture: (id: string) => del(`/api/lectures/${id}`),
 
-  getEvents: () => fetch('/api/events').then(json).then((data) => asArray<Event>(data)),
-  getEvent: (id: string) => fetch(`/api/events/${id}`).then(json),
+  getEvents: () => fetch(withQuery('/api/events')).then(json).then((data) => asArray<Event>(data)),
+  getEvent: (id: string) => fetch(withQuery(`/api/events/${id}`)).then(json),
   createEvent: (body: object) => post('/api/events', body),
   updateEvent: (id: string, body: object) => put(`/api/events/${id}`, body),
   deleteEvent: (id: string) => del(`/api/events/${id}`),
@@ -105,7 +138,7 @@ export const api = {
     getUsers: () => fetch('/api/admin/users').then(json),
     updateUser: (id: string, body: { role?: string }) => patch(`/api/admin/users/${id}`, body),
     deleteUser: (id: string) => del(`/api/admin/users/${id}`),
-    getLectures: () => fetch('/api/admin/lectures').then(json),
+    getLectures: (params?: LectureListParams & { status?: string }) => fetch(withQuery('/api/admin/lectures', params)).then(json),
     deleteLecture: (id: string) => del(`/api/admin/lectures/${id}`),
     getEvents: () => fetch('/api/admin/events').then(json),
     approveEvent: (id: string) => patch(`/api/admin/events/${id}`, {}),

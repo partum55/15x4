@@ -2,79 +2,17 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from 'boneyard-js/react'
-import type { EventLecture, Event } from '@/lib/api'
+import type { Event } from '@/lib/api'
 import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
 import ChevronIcon from '../components/ChevronIcon'
 import FilterDropdown from '../components/FilterDropdown'
 import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'
+import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
-import { CATEGORY_COLOR_VAR } from '../constants/colors'
-
-type EventLectureCardProps = EventLecture & {
-  isHovered?: boolean
-}
-
-function EventLectureCard({
-  id, title, author, category, categoryColor, image, summary,
-  isHovered = false,
-}: EventLectureCardProps) {
-  const { t } = useTranslation()
-  const [hovered, setHovered] = useState(false)
-  const showHoverState = isHovered || hovered
-
-  const bgColor = CATEGORY_COLOR_VAR[categoryColor] || 'var(--color-red)'
-  const hasImage = image && image.length > 0
-  const categoryLabel = t(`lectureCategories.${category}`, { defaultValue: category })
-
-  return (
-    <Link
-      href={`/lectures/${id}`}
-      className="flex gap-9 no-underline text-inherit transition-colors duration-200 max-[1199px]:gap-6 max-[767px]:flex-col max-[767px]:gap-4"
-      style={showHoverState ? { backgroundColor: bgColor } : undefined}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div className="relative w-[clamp(200px,22vw,327px)] flex-shrink-0 max-[767px]:w-full">
-        {hasImage ? (
-          <Image
-            src={image}
-            alt={title}
-            width={900}
-            height={900}
-            unoptimized
-            className="w-full h-[clamp(200px,22vw,321px)] object-cover block opacity-50 max-[767px]:h-[200px]"
-          />
-        ) : (
-          <div
-            className="w-full h-[clamp(80px,7.5vw,111px)] max-[767px]:h-[100px]"
-            style={{ backgroundColor: bgColor }}
-          />
-        )}
-        <span
-          className="absolute top-3 left-3 bg-white border-2 px-6 py-2 text-[clamp(13px,1.3vw,20px)] font-normal text-black whitespace-nowrap transition-colors duration-200"
-          style={{
-            borderColor: bgColor,
-            backgroundColor: showHoverState ? bgColor : 'var(--color-white)',
-          }}
-        >
-          {categoryLabel}
-        </span>
-      </div>
-      <div className="flex flex-col gap-9 py-6 px-3 flex-1 max-[767px]:px-0 max-[767px]:py-0">
-        <div className="flex flex-col gap-3">
-          <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em] leading-[1.2]">{title}</p>
-          <p className="text-[clamp(14px,1.3vw,20px)] font-normal">{author}</p>
-        </div>
-        <p className="text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{summary}</p>
-      </div>
-    </Link>
-  )
-}
 
 type EventSectionProps = {
   event: Event
@@ -85,50 +23,79 @@ type EventSectionProps = {
 }
 
 function EventSection({ event, isExpanded, onToggle, detailsLabel, registerLabel }: EventSectionProps) {
-  return (
-    <div className="flex flex-col gap-9">
-      <div className="w-full h-px bg-black" />
+  const registerHref = event.registrationUrl?.trim() || `/events/${event.id}`
+  const isExternalRegistration = registerHref.startsWith('http')
+  const lectures = event.lectures ?? []
 
-      <div className="flex items-start justify-between pt-9 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:gap-6">
-        <div className="flex flex-col gap-9">
-          <div className="flex items-center justify-between gap-6 min-w-[clamp(200px,22vw,327px)]">
-            <span className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.title} [{event.date}]</span>
-            <span className="text-[clamp(16px,1.6vw,24px)] font-normal">{event.time}</span>
+  const registerClassName = "flex h-[69px] w-[clamp(220px,22.7vw,327px)] items-center justify-center gap-[10px] bg-black px-6 py-5 font-sans text-[clamp(14px,1.6vw,24px)] text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:w-full"
+  const registerContent = (
+    <>
+      <span>{registerLabel}</span>
+      <ArrowIcon />
+    </>
+  )
+
+  return (
+    <section className="border-t border-black">
+      <div className="flex items-start justify-between gap-6 py-6 max-[767px]:flex-col max-[767px]:gap-5">
+        <div className="flex w-[clamp(220px,22.7vw,327px)] flex-col gap-6 max-[767px]:w-full">
+          <div className="flex items-center justify-between gap-6">
+            <span className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">
+              {event.city} [{event.date}]
+            </span>
+            <span className="text-[clamp(14px,1.3vw,20px)] font-normal">{event.time}</span>
           </div>
-          <p className="text-[clamp(14px,1.3vw,20px)] font-normal max-w-[clamp(200px,22vw,327px)] leading-[1.4]">{event.location}</p>
+          <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
         </div>
 
-        <div className="flex items-center gap-9 max-[1199px]:gap-6 max-[767px]:flex-col max-[767px]:w-full max-[767px]:gap-4">
+        <div className="flex items-center gap-9 max-[1199px]:gap-6 max-[767px]:w-full max-[767px]:flex-col max-[767px]:gap-4">
           <button
-            className="flex items-center justify-center gap-[10px] px-6 py-5 border border-red bg-transparent font-sans text-[clamp(16px,1.6vw,24px)] text-black cursor-pointer min-w-[clamp(200px,22vw,327px)] transition-colors duration-200 hover:bg-red hover:text-white max-[767px]:w-full max-[767px]:min-w-0"
+            type="button"
+            className="flex h-[69px] w-[clamp(220px,22.7vw,327px)] cursor-pointer items-center justify-center gap-[10px] border border-red bg-transparent px-6 py-5 font-sans text-[clamp(14px,1.6vw,24px)] text-black transition-colors duration-200 hover:bg-red hover:text-white max-[767px]:w-full"
             onClick={onToggle}
+            aria-expanded={isExpanded}
           >
             <span>{detailsLabel}</span>
             <ChevronIcon direction={isExpanded ? 'up' : 'down'} />
           </button>
-          <Link
-            href={`/events/${event.id}`}
-            className="flex items-center justify-center gap-[10px] px-6 py-5 bg-black font-sans text-[clamp(16px,1.6vw,24px)] text-white no-underline min-w-[clamp(200px,22vw,327px)] transition-opacity duration-200 hover:opacity-85 max-[767px]:w-full max-[767px]:min-w-0"
-          >
-            <span>{registerLabel}</span>
-            <ArrowIcon />
-          </Link>
+          {isExternalRegistration ? (
+            <a href={registerHref} target="_blank" rel="noopener noreferrer" className={registerClassName}>
+              {registerContent}
+            </a>
+          ) : (
+            <Link href={registerHref} className={registerClassName}>
+              {registerContent}
+            </Link>
+          )}
         </div>
       </div>
 
       {isExpanded && (
         <div className="grid grid-cols-2 gap-9 pb-9 max-[1199px]:gap-6 max-[767px]:grid-cols-1">
-            {(event.lectures ?? []).map((lecture) => (
-            <EventLectureCard key={lecture.id} {...lecture} />
+          {lectures.length > 0 ? (
+            lectures.map((lecture) => (
+              <LectureCard key={lecture.id} lecture={lecture} variant="event" />
+            ))
+          ) : (
+            <p className="col-span-2 py-8 text-[clamp(14px,1.4vw,20px)] opacity-60 max-[767px]:col-span-1">
+              {event.title}
+            </p>
+          )}
+        </div>
+      )}
+      {!isExpanded && lectures.length > 0 && (
+        <div className="grid grid-cols-2 gap-x-9 gap-y-6 pb-9 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
+          {lectures.slice(0, 4).map((lecture) => (
+            <LectureCard key={lecture.id} lecture={lecture} variant="compact" />
           ))}
         </div>
       )}
-    </div>
+    </section>
   )
 }
 
 export default function EventsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set())
   const [sortOrder, setSortOrder] = useState('')
   const [cityFilter, setCityFilter] = useState('')
@@ -158,10 +125,10 @@ export default function EventsPage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [i18n.language])
 
-  const cities = useMemo(() => [...new Set(events.map((e) => e.city))], [events])
-  const times = useMemo(() => [...new Set(events.map((e) => e.time))].sort(), [events])
+  const cities = useMemo(() => [...new Set(events.map((e) => e.city).filter(Boolean))], [events])
+  const times = useMemo(() => [...new Set(events.map((e) => e.time).filter(Boolean))].sort(), [events])
 
   const filteredEvents = useMemo(() => {
     let result = [...events]
@@ -222,29 +189,35 @@ export default function EventsPage() {
       <Navbar />
 
       <Skeleton name="page-events" loading={loading}>
-        <div className="flex items-end justify-between px-[clamp(16px,3.2vw,48px)] py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
-          <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
+        <div className="content-shell grid grid-cols-2 items-end gap-9 py-6 max-[900px]:grid-cols-1 max-[900px]:gap-4">
+          <h1 className="ml-[calc(50%-327px)] text-[clamp(28px,3.2vw,48px)] font-normal leading-none text-black max-[1199px]:ml-0">
             <span className="text-red">{'//'}</span> {t('events.pageTitle')}
           </h1>
-          <div className="flex items-center gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
+          <div className="flex items-center justify-between gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
             <FilterDropdown label={t('events.sortBy')} options={sortOptions} value={sortOrder} onChange={setSortOrder} />
             <FilterDropdown label={t('events.city')} options={cityOptions} value={cityFilter} onChange={setCityFilter} />
             <FilterDropdown label={t('events.time')} options={timeOptions} value={timeFilter} onChange={setTimeFilter} />
           </div>
         </div>
 
-        <main className="px-[clamp(16px,3.2vw,48px)]">
-          {filteredEvents.map((event) => (
-            <EventSection
-              key={event.id}
-              event={event}
-              isExpanded={expandedEvents.has(event.id)}
-              onToggle={() => toggleEvent(event.id)}
-              detailsLabel={t('events.details')}
-              registerLabel={t('events.register')}
-            />
-          ))}
-          <div className="w-full h-px bg-black" />
+        <main className="content-shell">
+          {filteredEvents.length > 0 ? (
+            filteredEvents.map((event) => (
+              <EventSection
+                key={event.id}
+                event={event}
+                isExpanded={expandedEvents.has(event.id)}
+                onToggle={() => toggleEvent(event.id)}
+                detailsLabel={t('events.details')}
+                registerLabel={t('events.register')}
+              />
+            ))
+          ) : (
+            <div className="border-t border-black py-12 text-center text-[clamp(16px,1.6vw,24px)] opacity-60">
+              {t('events.noResults')}
+            </div>
+          )}
+          <div className="h-px w-full bg-black" />
         </main>
 
         <JoinSection />

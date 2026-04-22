@@ -98,7 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: {
+        redirectTo,
+        queryParams: {
+          prompt: 'select_account',
+        },
+      },
     })
     if (error) return { error: 'AUTH_OAUTH_FAILED' }
     return {}

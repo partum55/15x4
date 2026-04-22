@@ -25,6 +25,9 @@ export default function I18nProvider({ children }: { children: React.ReactNode }
     if (nextLang && i18n.language !== nextLang) {
       void i18n.changeLanguage(nextLang)
     }
+    if (nextLang) {
+      document.cookie = `i18nextLng=${nextLang}; path=/; max-age=31536000; sameSite=lax`
+    }
   }, [])
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>

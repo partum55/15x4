@@ -40,7 +40,8 @@
     "register": "реєстрація",
     "allCities": "усі міста",
     "dateAsc": "спочатку старіші",
-    "dateDesc": "спочатку новіші"
+    "dateDesc": "спочатку новіші",
+    "noResults": "Подій не знайдено"
   },
   "lectures": {
     "pageTitle": "ЛЕКЦІЇ",
@@ -50,7 +51,9 @@
     "allThemes": "усі теми",
     "titleAZ": "назва А–Я",
     "titleZA": "назва Я–А",
-    "noResults": "Лекцій не знайдено"
+    "noResults": "Лекцій не знайдено",
+    "loadMore": "завантажити ще",
+    "loadingMore": "завантажуємо..."
   },
   "lectureCategories": {
     "tech": "Технічна",
@@ -70,6 +73,11 @@
     "back": "події",
     "register": "реєстрація",
     "talks": "Доповіді",
+    "date": "дата",
+    "time": "час",
+    "about": "про подію",
+    "registrationSoon": "реєстрація скоро",
+    "noTalks": "Доповіді для цієї події ще не додано",
     "notFound": "Подію не знайдено"
   },
   "about": {
@@ -116,9 +124,12 @@
       "passwordLabel": "пароль",
       "submitBtn": "увійти",
       "googleBtn": "увійти через Google",
+      "googleLoading": "відкриваємо Google...",
+      "or": "або",
       "noAccount": "ще немає акаунту?",
       "register": "зареєструватись",
-      "errorInvalid": "Wrong crendentials",
+      "submitting": "входимо...",
+      "errorInvalid": "Неправильна пошта або пароль",
       "errorOAuth": "Не вдалося увійти через Google. Спробуйте ще раз.",
       "errorRequired": "це поле обов'язкове"
     },
@@ -136,11 +147,15 @@
       "passwordLabel": "пароль",
       "passwordConfirmLabel": "підтвердити пароль",
       "submitBtn": "створити акаунт",
+      "submitting": "створюємо...",
+      "googleBtn": "створити через Google",
+      "googleLoading": "відкриваємо Google...",
       "checkEmail": "// ПЕРЕВІРТЕ ПОШТУ",
       "confirmationSent": "Ми надіслали лист для підтвердження. Перевірте пошту.",
       "hasAccount": "вже є акаунт?",
       "loginLink": "увійти",
       "errorGeneric": "Не вдалося створити акаунт. Спробуйте ще раз.",
+      "errorOAuth": "Не вдалося створити акаунт через Google. Спробуйте ще раз.",
       "errorEmailTaken": "ця пошта вже зареєстрована",
       "errorPasswordMismatch": "паролі не співпадають",
       "errorRequired": "це поле обов'язкове",
@@ -306,7 +321,17 @@
       "owner": "власник",
       "delete": "видалити",
       "confirmDelete": "видалити цю лекцію?",
-      "empty": "лекцій не знайдено"
+      "empty": "лекцій не знайдено",
+      "search": "пошук за назвою або автором",
+      "allCategories": "усі категорії",
+      "allStatuses": "усі статуси",
+      "statusPublic": "публічні",
+      "statusDraft": "чернетки",
+      "newest": "спочатку новіші",
+      "oldest": "спочатку старіші",
+      "showing": "показано {{count}} з {{total}}",
+      "loadMore": "завантажити ще 100",
+      "loadingMore": "завантажуємо..."
     },
     "events": {
       "title": "// ВСІ ПОДІЇ",
