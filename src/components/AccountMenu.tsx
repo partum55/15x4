@@ -53,10 +53,15 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
     router.push('/')
   }
 
+  function handleLoginClick() {
+    router.push('/login')
+  }
+
   if (!user) {
     return (
-      <Link
-        href="/login"
+      <button
+        type="button"
+        onClick={handleLoginClick}
         aria-label={t('account.menu.signIn')}
         className="bg-transparent border-none cursor-pointer p-0 flex items-center transition-opacity duration-150 hover:opacity-75"
       >
@@ -66,7 +71,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
         >
           <UserOutlineIcon variant={variant} />
         </span>
-      </Link>
+      </button>
     )
   }
 
