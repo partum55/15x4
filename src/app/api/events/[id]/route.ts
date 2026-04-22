@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { canManageContent } from '@/lib/roles'
+import { getProfileRole, requireContentRole } from '@/lib/authz'
 
 type Locale = 'uk' | 'en'
 
@@ -46,10 +48,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const {
       data: { user },
     } = await supabase.auth.getUser()
+    const role = user ? await getProfileRole(user.id, supabase) : null
 
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (!event.isPublic && event.userId !== user?.id) {
+    if (!event.isPublic && (!user || event.userId !== user.id || !canManageContent(role))) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
@@ -82,6 +85,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     } = await supabase.auth.getUser()
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const access = await requireContentRole(user.id, supabase)
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
+    }
 
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -185,6 +193,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const access = await requireContentRole(user.id, supabase)
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
+    }
+
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (event.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -209,6 +222,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     } = await supabase.auth.getUser()
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const access = await requireContentRole(user.id, supabase)
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
+    }
 
     const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })

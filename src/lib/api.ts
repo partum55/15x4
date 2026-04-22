@@ -103,7 +103,7 @@ export const api = {
 
   admin: {
     getUsers: () => fetch('/api/admin/users').then(json),
-    updateUser: (id: string, body: { status?: string; role?: string }) => patch(`/api/admin/users/${id}`, body),
+    updateUser: (id: string, body: { role?: string }) => patch(`/api/admin/users/${id}`, body),
     deleteUser: (id: string) => del(`/api/admin/users/${id}`),
     getLectures: () => fetch('/api/admin/lectures').then(json),
     deleteLecture: (id: string) => del(`/api/admin/lectures/${id}`),

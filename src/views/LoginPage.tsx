@@ -13,7 +13,7 @@ export default function LoginPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signIn } = useAuth()
+  const { signIn, signInWithGoogle } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -39,6 +39,14 @@ export default function LoginPage() {
 
     const redirect = searchParams.get('redirect') ?? '/'
     router.push(redirect)
+  }
+
+  async function handleGoogleLogin() {
+    const redirect = searchParams.get('redirect') ?? '/'
+    const result = await signInWithGoogle(redirect)
+    if (result.error) {
+      setErrors({ form: t('auth.login.errorOAuth') })
+    }
   }
 
   return (
@@ -77,6 +85,15 @@ export default function LoginPage() {
               {t('auth.login.submitBtn')}
             </button>
           </form>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="mt-4 px-6 py-4 bg-white text-black border border-black font-sans text-[clamp(14px,1.4vw,20px)] font-normal uppercase cursor-pointer w-full transition-colors duration-200 hover:bg-black hover:text-white flex items-center justify-center gap-3"
+          >
+            <span className="text-[18px] leading-none" aria-hidden="true">G</span>
+            {t('auth.login.googleBtn')}
+          </button>
 
           <p className="mt-6 text-[clamp(13px,1.2vw,18px)] text-black">
             {t('auth.login.noAccount')}{' '}

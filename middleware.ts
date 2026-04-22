@@ -6,6 +6,7 @@ import {
   type RateLimitConfig,
   type RateLimitResult,
 } from '@/lib/rate-limit'
+import { canManageContent } from '@/lib/roles'
 
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
@@ -99,6 +100,8 @@ export async function middleware(request: NextRequest) {
   // Protected routes that require authentication
   const protectedRoutes = ['/account', '/admin', '/lectures/new', '/lectures/edit', '/events/new', '/events/edit']
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  const contentRoutes = ['/account/lectures', '/account/events']
+  const isContentRoute = contentRoutes.some(route => pathname.startsWith(route))
 
   // Auth routes (login/register) - redirect if already logged in
   const authRoutes = ['/login', '/register']
@@ -115,6 +118,20 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
+  }
+
+  if (isContentRoute && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!canManageContent(profile?.role)) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/account/settings'
+      return NextResponse.redirect(url)
+    }
   }
 
   // Admin routes require admin role - check via profile

@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import { useAuth } from '@/context/AuthContext'
+import { PROFILE_ROLES, type ProfileRole } from '@/lib/roles'
 
 type User = {
   id: string
   name: string
   email: string
-  status: string
-  role: string
+  role: ProfileRole
   createdAt: string
 }
 
@@ -38,23 +38,13 @@ export default function AdminUsersPage() {
       })
   }, [])
 
-  async function handleApprove(userId: string) {
+  async function handleSetRole(userId: string, role: ProfileRole) {
     await fetch(`/api/admin/users/${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'approved' }),
+      body: JSON.stringify({ role }),
     })
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: 'approved' } : u))
-  }
-
-  async function handleToggleRole(userId: string, currentRole: string) {
-    const newRole = currentRole === 'admin' ? 'user' : 'admin'
-    await fetch(`/api/admin/users/${userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: newRole }),
-    })
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
   }
 
   async function handleDelete(userId: string) {
@@ -100,7 +90,6 @@ export default function AdminUsersPage() {
                 <tr className="border-b-2 border-black">
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.users.name')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.users.email')}</th>
-                  <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.users.status')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.users.role')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.users.createdAt')}</th>
                   <th className="text-right p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.users.actions')}</th>
@@ -113,16 +102,9 @@ export default function AdminUsersPage() {
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{u.email}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
                       <span className={`px-2 py-1 text-[clamp(11px,1vw,14px)] ${
-                        u.status === 'approved' ? 'bg-green text-white' :
-                        u.status === 'pending_approval' ? 'bg-orange text-white' :
-                        'bg-black/20'
-                      }`}>
-                        {u.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
-                      <span className={`px-2 py-1 text-[clamp(11px,1vw,14px)] ${
-                        u.role === 'admin' ? 'bg-red text-white' : 'bg-black/10'
+                        u.role === 'admin' ? 'bg-red text-white' :
+                        u.role === 'lector' ? 'bg-blue text-white' :
+                        'bg-black/10'
                       }`}>
                         {u.role}
                       </span>
@@ -132,29 +114,24 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex gap-2 justify-end flex-wrap">
-                        {u.status === 'pending_approval' && (
-                          <button
-                            onClick={() => handleApprove(u.id)}
-                            className="px-3 py-1 bg-green text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
-                          >
-                            {t('admin.users.approve')}
-                          </button>
-                        )}
                         {u.id !== user.id && (
-                          <>
+                          PROFILE_ROLES.filter(role => role !== u.role).map(role => (
                             <button
-                              onClick={() => handleToggleRole(u.id, u.role)}
+                              key={role}
+                              onClick={() => handleSetRole(u.id, role)}
                               className="px-3 py-1 bg-blue text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
                             >
-                              {u.role === 'admin' ? t('admin.users.makeUser') : t('admin.users.makeAdmin')}
+                              {t(`admin.users.makeRole.${role}`)}
                             </button>
-                            <button
-                              onClick={() => handleDelete(u.id)}
-                              className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
-                            >
-                              {t('admin.users.delete')}
-                            </button>
-                          </>
+                          ))
+                        )}
+                        {u.id !== user.id && (
+                          <button
+                            onClick={() => handleDelete(u.id)}
+                            className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
+                          >
+                            {t('admin.users.delete')}
+                          </button>
                         )}
                       </div>
                     </td>

@@ -2,13 +2,13 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { ProfileRole } from '@/lib/roles'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 type Profile = {
   id: string
   name: string
-  role: 'user' | 'admin'
-  status: 'pending_approval' | 'approved'
+  role: ProfileRole
 }
 
 type User = {
@@ -21,6 +21,7 @@ type AuthContextType = {
   user: User | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error?: string }>
+  signInWithGoogle: (next?: string) => Promise<{ error?: string }>
   signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>
   signOut: () => Promise<void>
   refresh: () => Promise<void>
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = useCallback(async (supabaseUser: SupabaseUser): Promise<User> => {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, name, role, status')
+      .select('id, name, role')
       .eq('id', supabaseUser.id)
       .single()
 
@@ -87,13 +88,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {}
   }, [supabase])
 
+  const signInWithGoogle = useCallback(async (next = '/') => {
+    const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/'
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    })
+    if (error) return { error: 'AUTH_OAUTH_FAILED' }
+    return {}
+  }, [supabase])
+
   const signUp = useCallback(async (email: string, password: string, name: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name },
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
     if (error) return { error: 'AUTH_SIGNUP_FAILED' }
@@ -106,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase])
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, refresh }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, signOut, refresh }}>
       {children}
     </AuthContext.Provider>
   )

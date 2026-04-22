@@ -115,9 +115,11 @@
       "emailLabel": "email",
       "passwordLabel": "password",
       "submitBtn": "log in",
+      "googleBtn": "sign in with Google",
       "noAccount": "don't have an account?",
       "register": "register",
       "errorInvalid": "Wrong crendentials",
+      "errorOAuth": "Unable to sign in with Google. Please try again.",
       "errorRequired": "this field is required"
     },
     "password": {
@@ -155,11 +157,6 @@
       "confirming": "Confirming your email...",
       "success": "Email confirmed! Redirecting...",
       "error": "Invalid or expired confirmation link."
-    },
-    "waitApproval": {
-      "title": "// ALMOST THERE",
-      "message": "Your account is pending review by our team. We'll notify you by email when it's approved.",
-      "logout": "log out"
     }
   },
   "account": {
@@ -289,13 +286,14 @@
       "title": "// USERS",
       "name": "name",
       "email": "email",
-      "status": "status",
       "role": "role",
       "createdAt": "registered",
       "actions": "actions",
-      "approve": "approve",
-      "makeAdmin": "make admin",
-      "makeUser": "make user",
+      "makeRole": {
+        "user": "make user",
+        "lector": "make lector",
+        "admin": "make admin"
+      },
       "delete": "delete",
       "confirmDelete": "delete this user?",
       "empty": "no users found"
@@ -325,7 +323,7 @@
       "users": "users",
       "lectures": "lectures",
       "events": "events",
-      "pending": "pending approval"
+      "lectors": "lectors"
     },
     "nav": {
       "dashboard": "dashboard",

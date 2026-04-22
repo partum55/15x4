@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest) {
       .from('profiles')
       .update({ name: name.trim() })
       .eq('id', user.id)
-      .select('id, name, role, status')
+      .select('id, name, role')
       .single()
 
     if (error || !profile) {
