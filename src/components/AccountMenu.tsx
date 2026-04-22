@@ -101,7 +101,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   const canManageOwnContent = canManageContent(user.profile?.role)
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative z-[80]" ref={menuRef}>
       <button
         type="button"
         className="relative z-[70] bg-transparent border-none cursor-pointer p-1 flex items-center transition-opacity duration-150 hover:opacity-75"
@@ -118,28 +118,28 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute top-[calc(100%+12px)] right-0 min-w-[220px] bg-black text-white flex flex-col z-[200] max-[767px]:fixed max-[767px]:top-auto max-[767px]:right-0 max-[767px]:left-0 max-[767px]:min-w-full">
-          <div className="px-6 pt-[14px] pb-3 flex flex-col gap-0.5">
-            <span className="text-[clamp(13px,1.2vw,18px)] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">{displayName}</span>
-            <span className="text-[clamp(11px,1vw,14px)] font-normal text-white opacity-50 whitespace-nowrap overflow-hidden text-ellipsis">{user.email}</span>
+        <div className="absolute top-[calc(100%+12px)] right-0 z-[300] flex w-[min(280px,calc(100vw-32px))] flex-col border border-white/15 bg-black text-white shadow-[0_20px_60px_rgba(0,0,0,0.45)] max-[767px]:fixed max-[767px]:top-[84px] max-[767px]:right-4 max-[767px]:left-4 max-[767px]:w-auto">
+          <div className="px-5 pt-4 pb-3 flex flex-col gap-0.5">
+            <span className="text-[15px] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">{displayName}</span>
+            <span className="text-[13px] font-normal text-white/55 whitespace-nowrap overflow-hidden text-ellipsis">{user.email}</span>
           </div>
           <div className="h-px bg-[rgba(255,255,241,0.12)]" />
-          <Link href="/account/settings" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+          <Link href="/account/settings" className="block px-5 py-3 font-sans text-[15px] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10" onClick={() => setOpen(false)}>
             {t('account.menu.settings')}
           </Link>
           {canManageOwnContent && (
             <>
-              <Link href="/account/lectures" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+              <Link href="/account/lectures" className="block px-5 py-3 font-sans text-[15px] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10" onClick={() => setOpen(false)}>
                 {t('account.menu.myLectures')}
               </Link>
-              <Link href="/account/events" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+              <Link href="/account/events" className="block px-5 py-3 font-sans text-[15px] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10" onClick={() => setOpen(false)}>
                 {t('account.menu.myEvents')}
               </Link>
               <div className="h-px bg-[rgba(255,255,241,0.12)]" />
-              <Link href="/account/lectures/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+              <Link href="/account/lectures/new" className="block px-5 py-3 font-sans text-[15px] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10" onClick={() => setOpen(false)}>
                 {t('account.menu.addLecture')}
               </Link>
-              <Link href="/account/events/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+              <Link href="/account/events/new" className="block px-5 py-3 font-sans text-[15px] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10" onClick={() => setOpen(false)}>
                 {t('account.menu.addEvent')}
               </Link>
             </>
@@ -147,7 +147,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
           {user.profile?.role === 'admin' && (
             <>
               <div className="h-px bg-[rgba(255,255,241,0.12)]" />
-              <Link href="/admin" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-orange no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+              <Link href="/admin" className="block px-5 py-3 font-sans text-[15px] font-normal text-orange no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10" onClick={() => setOpen(false)}>
                 {t('account.menu.admin')}
               </Link>
             </>
@@ -155,7 +155,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
           <div className="h-px bg-[rgba(255,255,241,0.12)]" />
           <button
             type="button"
-            className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-red bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)] disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
+            className="block px-5 py-3 font-sans text-[15px] font-normal text-red bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
             onClick={handleLogout}
             disabled={loggingOut}
             aria-busy={loggingOut}
