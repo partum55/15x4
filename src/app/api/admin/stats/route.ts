@@ -9,21 +9,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const [usersResult, lecturesResult, eventsResult, pendingResult] = await Promise.all([
+    const [usersResult, lecturesResult, eventsResult, lectorsResult] = await Promise.all([
       supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true }),
       supabaseAdmin.from('Lecture').select('id', { count: 'exact', head: true }),
       supabaseAdmin.from('Event').select('id', { count: 'exact', head: true }),
       supabaseAdmin
         .from('profiles')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending_approval'),
+        .eq('role', 'lector'),
     ])
 
     return NextResponse.json({
       users: usersResult.count ?? 0,
       lectures: lecturesResult.count ?? 0,
       events: eventsResult.count ?? 0,
-      pending: pendingResult.count ?? 0,
+      lectors: lectorsResult.count ?? 0,
     })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

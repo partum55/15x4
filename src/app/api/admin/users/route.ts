@@ -12,7 +12,7 @@ export async function GET() {
     // Get profiles with user emails from auth.users
     const { data: profiles, error } = await supabaseAdmin
       .from('profiles')
-      .select('id, name, status, role, created_at')
+      .select('id, name, role, created_at')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -28,7 +28,6 @@ export async function GET() {
       id: p.id,
       name: p.name,
       email: emailMap.get(p.id) ?? '',
-      status: p.status,
       role: p.role,
       createdAt: p.created_at,
     }))

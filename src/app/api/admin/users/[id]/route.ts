@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendApprovalEmail } from '@/lib/email'
 import { requireAdminSession } from '@/lib/admin'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { isProfileRole } from '@/lib/roles'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,11 +12,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const { id } = await params
     const body = await req.json()
-    const { status, role } = body
+    const { role } = body
 
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .select('id, name, status')
+      .select('id')
       .eq('id', id)
       .maybeSingle()
 
@@ -24,17 +24,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const wasApproved = existingProfile.status !== 'approved' && status === 'approved'
-
-    const data: { status?: string; role?: string } = {}
-    if (status) data.status = status
-    if (role) data.role = role
+    if (!isProfileRole(role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
 
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
-      .update(data)
+      .update({ role })
       .eq('id', id)
-      .select('id, name, status, role')
+      .select('id, name, role')
       .single()
 
     if (error || !profile) {
@@ -43,15 +41,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // Get user email from auth
     const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(id)
-
-    // Send approval email if user was just approved
-    if (wasApproved && authUser?.email) {
-      try {
-        await sendApprovalEmail(authUser.email, profile.name)
-      } catch (emailError) {
-        console.error('Failed to send approval email:', emailError)
-      }
-    }
 
     return NextResponse.json({
       ...profile,

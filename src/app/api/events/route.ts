@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { canManageContent } from '@/lib/roles'
+import { getProfileRole, requireContentRole } from '@/lib/authz'
 
 type Locale = 'uk' | 'en'
 
@@ -60,34 +61,6 @@ function attachLectures(
   }))
 }
 
-async function ensureApprovedUser(userId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('status')
-    .eq('id', userId)
-    .maybeSingle()
-
-  let profileStatus = profile?.status ?? null
-  if (!profileStatus) {
-    const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
-      .from('profiles')
-      .select('status')
-      .eq('id', userId)
-      .maybeSingle()
-
-    if (adminProfileError) {
-      return { ok: false, error: 'Failed to verify account status', status: 500 as const }
-    }
-    profileStatus = adminProfile?.status ?? null
-  }
-
-  if (profileStatus !== 'approved') {
-    return { ok: false, error: 'Account not approved', status: 403 as const }
-  }
-
-  return { ok: true as const }
-}
-
 export async function GET(req: NextRequest) {
   try {
     const locale = resolveLocale(req)
@@ -96,8 +69,9 @@ export async function GET(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
+    const role = user ? await getProfileRole(user.id, supabase) : null
     let query = supabase.from('Event').select('*').order('createdAt', { ascending: false })
-    if (user) {
+    if (user && canManageContent(role)) {
       query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
     } else {
       query = query.eq('isPublic', true)
@@ -138,6 +112,11 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const access = await requireContentRole(user.id, supabase)
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
+    }
 
     const body = await req.json()
     const {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { canManageContent } from '@/lib/roles'
+import { getProfileRole, requireContentRole } from '@/lib/authz'
 
 type Locale = 'uk' | 'en'
 
@@ -37,10 +39,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const {
       data: { user },
     } = await supabase.auth.getUser()
+    const role = user ? await getProfileRole(user.id, supabase) : null
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (!lecture.isPublic && lecture.userId !== user?.id) {
+    if (!lecture.isPublic && (!user || lecture.userId !== user.id || !canManageContent(role))) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
@@ -63,6 +66,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     } = await supabase.auth.getUser()
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const access = await requireContentRole(user.id, supabase)
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
+    }
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -149,6 +157,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     } = await supabase.auth.getUser()
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const access = await requireContentRole(user.id, supabase)
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status })
+    }
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })

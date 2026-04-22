@@ -11,7 +11,7 @@ type Stats = {
   users: number
   lectures: number
   events: number
-  pending: number
+  lectors: number
 }
 
 export default function AdminDashboard() {
@@ -78,8 +78,8 @@ export default function AdminDashboard() {
           </Link>
 
           <Link href="/admin/users" className="border border-orange p-8 no-underline text-inherit hover:bg-orange hover:text-white transition-colors">
-            <p className="text-[clamp(32px,3.5vw,56px)] font-bold mb-2 text-orange">{stats?.pending ?? '...'}</p>
-            <p className="text-[clamp(14px,1.3vw,20px)] uppercase">{t('admin.stats.pending')}</p>
+            <p className="text-[clamp(32px,3.5vw,56px)] font-bold mb-2 text-orange">{stats?.lectors ?? '...'}</p>
+            <p className="text-[clamp(14px,1.3vw,20px)] uppercase">{t('admin.stats.lectors')}</p>
           </Link>
         </div>
       </main>

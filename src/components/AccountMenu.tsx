@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { canManageContent } from '@/lib/roles'
 
 type AccountMenuProps = {
   variant?: 'light' | 'dark'
@@ -71,6 +72,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
 
   const displayName = user.profile?.name ?? user.email
   const initial = displayName.charAt(0).toUpperCase()
+  const canManageOwnContent = canManageContent(user.profile?.role)
 
   return (
     <div className="relative" ref={menuRef}>
@@ -97,19 +99,23 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
           <Link href="/account/settings" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
             {t('account.menu.settings')}
           </Link>
-          <Link href="/account/lectures" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
-            {t('account.menu.myLectures')}
-          </Link>
-          <Link href="/account/events" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
-            {t('account.menu.myEvents')}
-          </Link>
-          <div className="h-px bg-[rgba(255,255,241,0.12)]" />
-          <Link href="/account/lectures/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
-            {t('account.menu.addLecture')}
-          </Link>
-          <Link href="/account/events/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
-            {t('account.menu.addEvent')}
-          </Link>
+          {canManageOwnContent && (
+            <>
+              <Link href="/account/lectures" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+                {t('account.menu.myLectures')}
+              </Link>
+              <Link href="/account/events" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+                {t('account.menu.myEvents')}
+              </Link>
+              <div className="h-px bg-[rgba(255,255,241,0.12)]" />
+              <Link href="/account/lectures/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+                {t('account.menu.addLecture')}
+              </Link>
+              <Link href="/account/events/new" className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={() => setOpen(false)}>
+                {t('account.menu.addEvent')}
+              </Link>
+            </>
+          )}
           {user.profile?.role === 'admin' && (
             <>
               <div className="h-px bg-[rgba(255,255,241,0.12)]" />

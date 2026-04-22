@@ -1,12 +1,13 @@
 'use client'
 
 import { useAuth } from '@/context/AuthContext'
+import type { ProfileRole } from '@/lib/roles'
 
 type CurrentUser = {
   id: string
   name: string
   email: string
-  status: 'pending_approval' | 'approved'
+  role: ProfileRole
 }
 
 export function useCurrentUser() {
@@ -17,7 +18,7 @@ export function useCurrentUser() {
     id: user.id,
     name: user.profile.name,
     email: user.email,
-    status: user.profile.status,
+    role: user.profile.role,
   } : null
 
   return { user: mappedUser, loading }
