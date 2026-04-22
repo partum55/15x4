@@ -39,6 +39,7 @@ export default function LoginPage() {
 
     const redirect = searchParams.get('redirect') ?? '/'
     router.push(redirect)
+    router.refresh()
   }
 
   async function handleGoogleLogin() {
