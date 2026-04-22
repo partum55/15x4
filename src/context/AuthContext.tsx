@@ -28,6 +28,12 @@ type AuthContextType = {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
+const SITE_URL = 'https://15x4.vercel.app'
+
+function getAuthCallbackURL(next?: string) {
+  const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : '/'
+  return `${SITE_URL}/auth/callback?next=${encodeURIComponent(safeNext)}`
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -94,8 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, fetchProfile])
 
   const signInWithGoogle = useCallback(async (next = '/') => {
-    const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/'
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
+    const redirectTo = getAuthCallbackURL(next)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -115,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       options: {
         data: { name },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: getAuthCallbackURL(),
       },
     })
     if (error) return { error: 'AUTH_SIGNUP_FAILED' }

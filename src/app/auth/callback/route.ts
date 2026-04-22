@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
+const SITE_URL = 'https://15x4.vercel.app'
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const nextParam = searchParams.get('next') ?? '/'
   const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
@@ -40,20 +42,10 @@ export async function GET(request: Request) {
         console.error('Failed to ensure user profile:', err)
       }
 
-      // Use origin for redirect to handle both local and production
-      const forwardedHost = request.headers.get('x-forwarded-host')
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      } else {
-        return NextResponse.redirect(`${origin}${next}`)
-      }
+      return NextResponse.redirect(`${SITE_URL}${next}`)
     }
   }
 
   // Return to login with error
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
+  return NextResponse.redirect(`${SITE_URL}/login?error=auth_callback_error`)
 }
