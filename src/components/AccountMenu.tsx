@@ -34,6 +34,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { user, loading, signOut } = useAuth()
 
@@ -49,9 +50,15 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   }, [open])
 
   async function handleLogout() {
-    await signOut()
-    setOpen(false)
-    router.push('/')
+    if (loggingOut) return
+    setLoggingOut(true)
+    try {
+      await signOut()
+      setOpen(false)
+      router.push('/')
+    } finally {
+      setLoggingOut(false)
+    }
   }
 
   function handleLoginClick() {
@@ -77,7 +84,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
         type="button"
         onClick={handleLoginClick}
         aria-label={t('account.menu.signIn')}
-        className="bg-transparent border-none cursor-pointer p-0 flex items-center transition-opacity duration-150 hover:opacity-75"
+        className="relative z-[70] bg-transparent border-none cursor-pointer p-1 flex items-center transition-opacity duration-150 hover:opacity-75"
       >
         <span
           className={`w-[clamp(28px,2.2vw,36px)] h-[clamp(28px,2.2vw,36px)] rounded-full flex items-center justify-center ${variant === 'dark' ? 'border border-white text-white' : 'border border-black text-black'}`}
@@ -96,9 +103,11 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   return (
     <div className="relative" ref={menuRef}>
       <button
-        className="bg-transparent border-none cursor-pointer p-0 flex items-center transition-opacity duration-150 hover:opacity-75"
+        type="button"
+        className="relative z-[70] bg-transparent border-none cursor-pointer p-1 flex items-center transition-opacity duration-150 hover:opacity-75"
         onClick={() => setOpen(v => !v)}
         aria-label="Account menu"
+        aria-expanded={open}
       >
         <span
           className={`w-[clamp(28px,2.2vw,36px)] h-[clamp(28px,2.2vw,36px)] rounded-full flex items-center justify-center text-[clamp(12px,1.1vw,17px)] font-bold ${variant === 'dark' ? 'border border-white text-white' : 'border border-black text-black'}`}
@@ -144,8 +153,14 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
             </>
           )}
           <div className="h-px bg-[rgba(255,255,241,0.12)]" />
-          <button className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-red bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)]" onClick={handleLogout}>
-            {t('account.menu.logout')}
+          <button
+            type="button"
+            className="block px-6 py-3 font-sans text-[clamp(13px,1.2vw,18px)] font-normal text-red bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-[rgba(255,255,241,0.08)] disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            aria-busy={loggingOut}
+          >
+            {loggingOut ? `${t('account.menu.logout')}...` : t('account.menu.logout')}
           </button>
         </div>
       )}

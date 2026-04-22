@@ -20,6 +20,7 @@ export default function MyLecturesPage() {
   const { t } = useTranslation()
   const { user } = useCurrentUser()
   const [lectures, setLectures] = useState<Lecture[]>([])
+  const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     api.getLectures().then((all) => {
@@ -28,9 +29,23 @@ export default function MyLecturesPage() {
   }, [user?.id])
 
   async function handleDelete(id: string) {
+    if (deletingLectureIds.has(id)) return
     if (!window.confirm(t('myLectures.deleteConfirm'))) return
-    await api.deleteLecture(id)
-    setLectures(prev => prev.filter(l => l.id !== id))
+    setDeletingLectureIds(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
+    try {
+      await api.deleteLecture(id)
+      setLectures(prev => prev.filter(l => l.id !== id))
+    } finally {
+      setDeletingLectureIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
   }
 
   return (
@@ -73,10 +88,13 @@ export default function MyLecturesPage() {
                     {t('myLectures.editBtn')}
                   </Link>
                   <button
-                    className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100"
+                    type="button"
+                    className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100 disabled:cursor-wait disabled:opacity-45 disabled:animate-pulse"
                     onClick={() => handleDelete(lecture.id)}
+                    disabled={deletingLectureIds.has(lecture.id)}
+                    aria-busy={deletingLectureIds.has(lecture.id)}
                   >
-                    {t('myLectures.deleteBtn')}
+                    {deletingLectureIds.has(lecture.id) ? `${t('myLectures.deleteBtn')}...` : t('myLectures.deleteBtn')}
                   </button>
                 </div>
               </li>

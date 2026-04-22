@@ -45,7 +45,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (!lecture.isPublic && (!user || lecture.userId !== user.id || !canManageContent(role))) {
+    const canReadPrivate = Boolean(user && (lecture.userId === user.id || canManageContent(role)))
+    if (!lecture.isPublic && !canReadPrivate) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
@@ -76,7 +77,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (lecture.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (lecture.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
     const {
@@ -167,7 +168,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (lecture.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (lecture.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { error } = await supabase.from('Lecture').delete().eq('id', id)
     if (error) {

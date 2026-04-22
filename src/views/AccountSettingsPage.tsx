@@ -22,6 +22,7 @@ export default function AccountSettingsPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password])
   const passwordsMatch = password.length > 0 && passwordConfirm.length > 0 && password === passwordConfirm
@@ -39,31 +40,33 @@ export default function AccountSettingsPage() {
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
+    if (saving) return
     setError('')
-
-    if (passwordConfirm && !password) {
-      setError(t('account.settings.errorPasswordRequired'))
-      return
-    }
-
-    if (password) {
-      if (!passwordConfirm) {
-        setError(t('account.settings.errorPasswordConfirmRequired'))
-        return
-      }
-
-      if (password !== passwordConfirm) {
-        setError(t('account.settings.errorPasswordMismatch'))
-        return
-      }
-
-      if (!passwordStrength.isStrong) {
-        setError(t('account.settings.errorPasswordWeak'))
-        return
-      }
-    }
+    setSaving(true)
 
     try {
+      if (passwordConfirm && !password) {
+        setError(t('account.settings.errorPasswordRequired'))
+        return
+      }
+
+      if (password) {
+        if (!passwordConfirm) {
+          setError(t('account.settings.errorPasswordConfirmRequired'))
+          return
+        }
+
+        if (password !== passwordConfirm) {
+          setError(t('account.settings.errorPasswordMismatch'))
+          return
+        }
+
+        if (!passwordStrength.isStrong) {
+          setError(t('account.settings.errorPasswordWeak'))
+          return
+        }
+      }
+
       // Update name in profiles
       const newName = name.trim() || user?.name
       if (newName && newName !== user?.name) {
@@ -86,6 +89,8 @@ export default function AccountSettingsPage() {
       setTimeout(() => setSaved(false), 2000)
     } catch {
       setError(t('account.settings.errorSave'))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -159,9 +164,11 @@ export default function AccountSettingsPage() {
             <div className="flex items-center gap-4 mt-2">
               <button
                 type="submit"
-                className="px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.4vw,20px)] font-normal uppercase cursor-pointer transition-opacity duration-200 hover:opacity-85 flex-shrink-0 w-auto"
+                disabled={saving}
+                aria-busy={saving}
+                className="px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.4vw,20px)] font-normal uppercase cursor-pointer transition-opacity duration-200 hover:opacity-85 flex-shrink-0 w-auto disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
               >
-                {t('account.settings.saveBtn')}
+                {saving ? `${t('account.settings.saveBtn')}...` : t('account.settings.saveBtn')}
               </button>
               {saved && (
                 <span className="text-[clamp(13px,1.2vw,18px)] text-black opacity-60">

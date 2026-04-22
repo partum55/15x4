@@ -56,6 +56,7 @@ export default function RegisterPage() {
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
+    if (submitting || googleLoading) return
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
 
@@ -70,6 +71,7 @@ export default function RegisterPage() {
   }
 
   async function handleGoogleRegistration() {
+    if (googleLoading || submitting) return
     const redirect = redirectParam ?? '/'
     setGoogleLoading(true)
     const result = await signInWithGoogle(redirect)
@@ -130,7 +132,8 @@ export default function RegisterPage() {
             type="button"
             onClick={handleGoogleRegistration}
             disabled={googleLoading || submitting}
-            className="px-6 py-4 bg-white text-black border border-black font-sans text-[clamp(14px,1.2vw,18px)] font-normal uppercase cursor-pointer w-full transition-colors duration-200 hover:bg-black hover:text-white flex items-center justify-center gap-3 disabled:cursor-wait disabled:opacity-60"
+            aria-busy={googleLoading}
+            className="px-6 py-4 bg-white text-black border border-black font-sans text-[clamp(14px,1.2vw,18px)] font-normal uppercase cursor-pointer w-full transition-colors duration-200 hover:bg-black hover:text-white flex items-center justify-center gap-3 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
           >
             <span className="text-[18px] leading-none font-bold" aria-hidden="true">G</span>
             {googleLoading ? t('auth.register.googleLoading') : t('auth.register.googleBtn')}
@@ -205,7 +208,8 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={submitting || googleLoading}
-              className="mt-2 px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.2vw,18px)] font-normal uppercase cursor-pointer w-full transition-opacity duration-200 hover:opacity-85 disabled:cursor-wait disabled:opacity-60"
+              aria-busy={submitting}
+              className="mt-2 px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.2vw,18px)] font-normal uppercase cursor-pointer w-full transition-opacity duration-200 hover:opacity-85 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
             >
               {submitting ? t('auth.register.submitting') : t('auth.register.submitBtn')}
             </button>

@@ -41,6 +41,7 @@ export default function AdminLecturesPage() {
   const [sortBy, setSortBy] = useState('')
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
+  const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -94,6 +95,7 @@ export default function AdminLecturesPage() {
   }, [loading, user, debouncedSearchQuery, categoryFilter, statusFilter, sortBy])
 
   async function handleLoadMore() {
+    if (loadingMore) return
     setLoadingMore(true)
     try {
       const data = await api.admin.getLectures({
@@ -115,10 +117,25 @@ export default function AdminLecturesPage() {
   }
 
   async function handleDelete(lectureId: string) {
+    if (deletingLectureIds.has(lectureId)) return
     if (!confirm(t('admin.lectures.confirmDelete'))) return
-    await fetch(`/api/admin/lectures/${lectureId}`, { method: 'DELETE' })
-    setLectures(prev => prev.filter(l => l.id !== lectureId))
-    setTotal(prev => Math.max(0, prev - 1))
+    setDeletingLectureIds(prev => {
+      const next = new Set(prev)
+      next.add(lectureId)
+      return next
+    })
+    try {
+      const res = await fetch(`/api/admin/lectures/${lectureId}`, { method: 'DELETE' })
+      if (!res.ok) return
+      setLectures(prev => prev.filter(l => l.id !== lectureId))
+      setTotal(prev => Math.max(0, prev - 1))
+    } finally {
+      setDeletingLectureIds(prev => {
+        const next = new Set(prev)
+        next.delete(lectureId)
+        return next
+      })
+    }
   }
 
   if (loading || !user || user?.profile?.role !== 'admin') {
@@ -235,12 +252,23 @@ export default function AdminLecturesPage() {
                       {l.user?.name || '—'}
                     </td>
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => handleDelete(l.id)}
-                        className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80"
-                      >
-                        {t('admin.lectures.delete')}
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/account/lectures/${l.id}/edit`}
+                          className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:opacity-70"
+                        >
+                          {t('admin.lectures.edit', { defaultValue: 'edit' })}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(l.id)}
+                          disabled={deletingLectureIds.has(l.id)}
+                          aria-busy={deletingLectureIds.has(l.id)}
+                          className="px-3 py-1 bg-red text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
+                        >
+                          {deletingLectureIds.has(l.id) ? `${t('admin.lectures.delete')}...` : t('admin.lectures.delete')}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -252,7 +280,7 @@ export default function AdminLecturesPage() {
                   type="button"
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-black"
+                  className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:animate-pulse disabled:hover:bg-transparent disabled:hover:text-black"
                 >
                   {loadingMore ? t('admin.lectures.loadingMore') : t('admin.lectures.loadMore')}
                 </button>

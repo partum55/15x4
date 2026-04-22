@@ -57,6 +57,7 @@ export default function AddEditLecturePage() {
   const [formError, setFormError] = useState('')
   const [events, setEvents] = useState<Event[]>([])
   const [translating, setTranslating] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     api.getEvents().then((rows) => setEvents(rows))
@@ -115,6 +116,7 @@ export default function AddEditLecturePage() {
   }
 
   async function handleTranslateAll() {
+    if (translating || saving) return
     setTranslating(true)
     try {
       const useUkAsSource =
@@ -162,6 +164,7 @@ export default function AddEditLecturePage() {
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
+    if (saving || translating) return
     setFormError('')
     const e = validate()
     if (Object.keys(e).length) {
@@ -192,13 +195,20 @@ export default function AddEditLecturePage() {
       authorBioEn: form.authorBioEn.trim() || undefined,
     }
 
-    const result = isEdit && id ? await api.updateLecture(id, body) : await api.createLecture(body)
-    if (result?.error) {
-      setFormError(result.error)
-      return
-    }
+    setSaving(true)
+    try {
+      const result = isEdit && id ? await api.updateLecture(id, body) : await api.createLecture(body)
+      if (result?.error) {
+        setFormError(result.error)
+        return
+      }
 
-    router.push('/account/lectures')
+      router.push('/account/lectures')
+    } catch {
+      setFormError(t('addLecture.errorSave'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -218,9 +228,10 @@ export default function AddEditLecturePage() {
             <div className="flex justify-end">
               <button
                 type="button"
-                className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-not-allowed"
+                className="h-[42px] min-w-[128px] px-5 rounded-full border border-black bg-white text-[11px] font-medium tracking-[0.08em] uppercase transition-colors duration-150 hover:bg-black hover:text-white disabled:opacity-45 disabled:cursor-wait disabled:animate-pulse"
                 onClick={handleTranslateAll}
-                disabled={translating}
+                disabled={translating || saving}
+                aria-busy={translating}
               >
                 {translating ? '...' : 'Translate'}
               </button>
@@ -306,9 +317,11 @@ export default function AddEditLecturePage() {
             <div className="flex items-center gap-6 mt-2 pt-6 border-t border-black">
               <button
                 type="submit"
-                className="flex items-center gap-3 px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.3vw,20px)] font-normal uppercase cursor-pointer transition-opacity duration-200 hover:opacity-85"
+                disabled={saving || translating}
+                aria-busy={saving}
+                className="flex items-center gap-3 px-6 py-4 bg-black text-white border-none font-sans text-[clamp(14px,1.3vw,20px)] font-normal uppercase cursor-pointer transition-opacity duration-200 hover:opacity-85 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
               >
-                <span>{isEdit ? t('addLecture.submitBtnEdit') : t('addLecture.submitBtnNew')}</span>
+                <span>{saving ? '...' : isEdit ? t('addLecture.submitBtnEdit') : t('addLecture.submitBtnNew')}</span>
                 <ArrowIcon />
               </button>
               <Link
