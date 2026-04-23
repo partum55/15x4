@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { canManageContent } from '@/lib/roles'
+import { buildLoginHref } from '@/lib/auth'
 
 type AccountMenuProps = {
   variant?: 'light' | 'dark'
@@ -62,10 +63,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   }
 
   function handleLoginClick() {
-    const redirect = pathname && !pathname.startsWith('/login') && !pathname.startsWith('/register')
-      ? `?redirect=${encodeURIComponent(pathname)}`
-      : ''
-    router.push(`/login${redirect}`)
+    router.push(buildLoginHref(pathname))
   }
 
   if (loading) {
@@ -98,7 +96,8 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
 
   const displayName = user.profile?.name ?? user.email
   const initial = displayName.charAt(0).toUpperCase()
-  const canManageOwnContent = canManageContent(user.profile?.role)
+  const role = user.profile?.role ?? null
+  const canManageOwnContent = canManageContent(role)
 
   return (
     <div className="relative z-[80]" ref={menuRef}>

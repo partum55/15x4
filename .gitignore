@@ -39,8 +39,5 @@ next-env.d.ts
 AGENTS.md
 CLAUDE.md
 
-# local supabase migrations
-supabase/migrations/*.sql
-
 .vscode/
 .idea/

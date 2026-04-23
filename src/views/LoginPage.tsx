@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
+import { buildRegisterHref, normalizeRedirectTarget, resolvePostAuthRedirect } from '@/lib/auth'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -22,9 +23,8 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({})
   const callbackError = searchParams.get('error') === 'auth_callback_error' ? t('auth.login.errorOAuth') : ''
   const formError = errors.form ?? callbackError
-  const rawRedirectParam = searchParams.get('redirect')
-  const redirectParam = rawRedirectParam?.startsWith('/') && !rawRedirectParam.startsWith('//') ? rawRedirectParam : null
-  const registerHref = redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register'
+  const redirectParam = normalizeRedirectTarget(searchParams.get('redirect'))
+  const registerHref = buildRegisterHref(redirectParam)
 
   function validate() {
     const e: typeof errors = {}
@@ -47,16 +47,14 @@ export default function LoginPage() {
       return
     }
 
-    const redirect = redirectParam ?? '/'
-    router.push(redirect)
+    router.push(resolvePostAuthRedirect(result.user?.profile?.role, redirectParam))
     router.refresh()
   }
 
   async function handleGoogleLogin() {
     if (googleLoading || submitting) return
-    const redirect = redirectParam ?? '/'
     setGoogleLoading(true)
-    const result = await signInWithGoogle(redirect)
+    const result = await signInWithGoogle(redirectParam ?? '/')
     setGoogleLoading(false)
     if (result.error) {
       setErrors({ form: t('auth.login.errorOAuth') })

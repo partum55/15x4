@@ -7,18 +7,17 @@ type CurrentUser = {
   id: string
   name: string
   email: string
-  role: ProfileRole
+  role: ProfileRole | null
 }
 
 export function useCurrentUser() {
   const { user, loading } = useAuth()
   
-  // Map new user shape to expected shape
-  const mappedUser: CurrentUser | null = user && user.profile ? {
+  const mappedUser: CurrentUser | null = user ? {
     id: user.id,
-    name: user.profile.name,
+    name: user.profile?.name ?? user.email,
     email: user.email,
-    role: user.profile.role,
+    role: user.profile?.role ?? null,
   } : null
 
   return { user: mappedUser, loading }
