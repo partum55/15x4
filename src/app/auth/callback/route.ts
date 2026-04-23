@@ -1,51 +1,28 @@
 import { NextResponse } from 'next/server'
+import { resolvePostAuthRedirect, normalizeRedirectTarget } from '@/lib/auth'
+import { buildAuthUser } from '@/lib/auth-server'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
-
-const SITE_URL = 'https://15x4.vercel.app'
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
+  const requestUrl = new URL(request.url)
+  const { searchParams } = requestUrl
   const code = searchParams.get('code')
-  const nextParam = searchParams.get('next') ?? '/'
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
+  const next = normalizeRedirectTarget(searchParams.get('next'))
 
   if (code) {
     const supabase = await createClient()
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
-      try {
-        const userId = data.user.id
-        const metadata = data.user.user_metadata ?? {}
-        const userName =
-          metadata.name ||
-          metadata.full_name ||
-          data.user.email?.split('@')[0] ||
-          'User'
-
-        const { data: existingProfile } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .eq('id', userId)
-          .maybeSingle()
-
-        if (!existingProfile) {
-          await supabaseAdmin
-            .from('profiles')
-            .insert({
-              id: userId,
-              name: userName,
-              role: 'user',
-            })
-        }
-      } catch (err) {
-        console.error('Failed to ensure user profile:', err)
-      }
-
-      return NextResponse.redirect(`${SITE_URL}${next}`)
+      const user = await buildAuthUser(data.user, supabase)
+      const destination = resolvePostAuthRedirect(user.profile?.role, next)
+      return NextResponse.redirect(new URL(destination, requestUrl.origin))
     }
   }
 
-  // Return to login with error
-  return NextResponse.redirect(`${SITE_URL}/login?error=auth_callback_error`)
+  const loginUrl = new URL('/login', requestUrl.origin)
+  loginUrl.searchParams.set('error', 'auth_callback_error')
+  if (next && next !== '/') {
+    loginUrl.searchParams.set('redirect', next)
+  }
+  return NextResponse.redirect(loginUrl)
 }

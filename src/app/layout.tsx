@@ -4,18 +4,21 @@ import I18nProvider from '@/components/I18nProvider'
 import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { getServerAuthUser } from '@/lib/auth-server'
 
 export const metadata = {
   title: '15x4',
   description: 'Science lectures for everyone',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const initialUser = await getServerAuthUser()
+
   return (
     <html lang="uk">
       <body>
         <I18nProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
         </I18nProvider>
         <Analytics />
         <SpeedInsights />

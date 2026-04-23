@@ -9,6 +9,7 @@ import FormField from '../components/FormField'
 import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
 import { evaluatePasswordStrength } from '../lib/password-strength'
+import { buildLoginHref, normalizeRedirectTarget } from '@/lib/auth'
 
 export default function RegisterPage() {
   const { t } = useTranslation()
@@ -25,9 +26,8 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<{
     name?: string; email?: string; password?: string; passwordConfirm?: string; form?: string
   }>({})
-  const rawRedirectParam = searchParams.get('redirect')
-  const redirectParam = rawRedirectParam?.startsWith('/') && !rawRedirectParam.startsWith('//') ? rawRedirectParam : null
-  const loginHref = redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login'
+  const redirectParam = normalizeRedirectTarget(searchParams.get('redirect'))
+  const loginHref = buildLoginHref(redirectParam)
 
   const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password])
   const passwordsMatch = passwordConfirm.length > 0 && password === passwordConfirm
@@ -72,9 +72,8 @@ export default function RegisterPage() {
 
   async function handleGoogleRegistration() {
     if (googleLoading || submitting) return
-    const redirect = redirectParam ?? '/'
     setGoogleLoading(true)
-    const result = await signInWithGoogle(redirect)
+    const result = await signInWithGoogle(redirectParam ?? '/')
     setGoogleLoading(false)
     if (result.error) {
       setErrors({ form: t('auth.register.errorOAuth') })

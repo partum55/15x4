@@ -6,7 +6,8 @@ import {
   type RateLimitConfig,
   type RateLimitResult,
 } from '@/lib/rate-limit'
-import { canManageContent } from '@/lib/roles'
+import { buildRequestRedirectTarget, canAccessPath, getDefaultAuthenticatedPath, getRouteAccessLevel, isAuthRoute, normalizeRedirectTarget, resolvePostAuthRedirect } from '@/lib/auth'
+import { isProfileRole } from '@/lib/roles'
 
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
@@ -68,10 +69,11 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired
-  const { data: { user } } = await supabase.auth.getUser()
+  const authState = await supabase.auth.getUser().then(({ data }) => data)
+  const { user } = authState
 
   const { pathname } = request.nextUrl
+  const routeAccessLevel = getRouteAccessLevel(pathname)
 
   const limitConfig = resolveRateLimitConfig(pathname, request.method.toUpperCase())
   if (limitConfig) {
@@ -97,56 +99,32 @@ export async function middleware(request: NextRequest) {
     applyRateLimitHeaders(supabaseResponse, result)
   }
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/account', '/admin', '/lectures/new', '/lectures/edit', '/events/new', '/events/edit']
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const contentRoutes = ['/account/lectures', '/account/events']
-  const isContentRoute = contentRoutes.some(route => pathname.startsWith(route))
+  let role = null
 
-  // Auth routes (login/register) - redirect if already logged in
-  const authRoutes = ['/login', '/register']
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
 
-  if (isProtectedRoute && !user) {
+    role = isProfileRole(profile?.role) ? profile.role : null
+  }
+
+  if ((routeAccessLevel === 'authenticated' || routeAccessLevel === 'manager' || routeAccessLevel === 'admin') && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    url.searchParams.set('redirect', pathname)
+    url.searchParams.set('redirect', buildRequestRedirectTarget(pathname, request.nextUrl.search))
     return NextResponse.redirect(url)
   }
 
-  if (isAuthRoute && user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+  if (isAuthRoute(pathname) && user) {
+    const redirectTarget = normalizeRedirectTarget(request.nextUrl.searchParams.get('redirect'))
+    return NextResponse.redirect(new URL(resolvePostAuthRedirect(role, redirectTarget), request.url))
   }
 
-  if (isContentRoute && user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!canManageContent(profile?.role)) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/account/settings'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // Admin routes require admin role - check via profile
-  if (pathname.startsWith('/admin') && user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      const url = request.nextUrl.clone()
-      url.pathname = '/account'
-      return NextResponse.redirect(url)
-    }
+  if (user && !canAccessPath(role, pathname)) {
+    return NextResponse.redirect(new URL(getDefaultAuthenticatedPath(role), request.url))
   }
 
   return supabaseResponse

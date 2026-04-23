@@ -2,25 +2,12 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { ProfileRole } from '@/lib/roles'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
-
-type Profile = {
-  id: string
-  name: string
-  role: ProfileRole
-}
-
-type User = {
-  id: string
-  email: string
-  profile: Profile | null
-}
+import type { AuthUser } from '@/lib/auth'
 
 type AuthContextType = {
-  user: User | null
+  user: AuthUser | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: string }>
+  signIn: (email: string, password: string) => Promise<{ error?: string; user?: AuthUser | null }>
   signInWithGoogle: (next?: string) => Promise<{ error?: string }>
   signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>
   signOut: () => Promise<void>
@@ -28,76 +15,94 @@ type AuthContextType = {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
-const SITE_URL = 'https://15x4.vercel.app'
+
+function getSiteOrigin() {
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+
+  return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+}
 
 function getAuthCallbackURL(next?: string) {
   const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : '/'
-  return `${SITE_URL}/auth/callback?next=${encodeURIComponent(safeNext)}`
+  return `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent(safeNext)}`
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+async function fetchCurrentUser() {
+  const response = await fetch('/api/profile', {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  })
+
+  if (response.status === 401) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch current user')
+  }
+
+  return response.json() as Promise<AuthUser>
+}
+
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode
+  initialUser: AuthUser | null
+}) {
+  const [user, setUser] = useState<AuthUser | null>(initialUser)
+  const [loading, setLoading] = useState(false)
   const supabase = createClient()
 
-  const fetchProfile = useCallback(async (supabaseUser: SupabaseUser): Promise<User> => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, name, role')
-      .eq('id', supabaseUser.id)
-      .single()
-
-    return {
-      id: supabaseUser.id,
-      email: supabaseUser.email!,
-      profile: profile as Profile | null,
+  const refresh = useCallback(async (showLoader = true) => {
+    if (showLoader) {
+      setLoading(true)
     }
-  }, [supabase])
 
-  const refresh = useCallback(async () => {
     try {
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser()
-      if (supabaseUser) {
-        const userData = await fetchProfile(supabaseUser)
-        setUser(userData)
-      } else {
-        setUser(null)
-      }
+      const currentUser = await fetchCurrentUser()
+      setUser(currentUser)
     } catch {
       setUser(null)
     } finally {
       setLoading(false)
     }
-  }, [supabase, fetchProfile])
+  }, [])
 
   useEffect(() => {
-    refresh()
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const userData = await fetchProfile(session.user)
-          setUser(userData)
-        } else if (event === 'SIGNED_OUT') {
+      (event) => {
+        if (event === 'SIGNED_OUT') {
           setUser(null)
+          setLoading(false)
+          return
         }
-        setLoading(false)
+
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          void refresh(false)
+        }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase, refresh, fetchProfile])
+  }, [supabase, refresh])
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error: 'AUTH_INVALID_CREDENTIALS' }
     if (data.user) {
-      const userData = await fetchProfile(data.user)
+      const userData = await fetchCurrentUser()
       setUser(userData)
+      setLoading(false)
+      return { user: userData }
     }
     setLoading(false)
     return {}
-  }, [supabase, fetchProfile])
+  }, [supabase])
 
   const signInWithGoogle = useCallback(async (next = '/') => {
     const redirectTo = getAuthCallbackURL(next)
@@ -115,15 +120,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase])
 
   const signUp = useCallback(async (email: string, password: string, name: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name },
-        emailRedirectTo: getAuthCallbackURL(),
+        emailRedirectTo: getAuthCallbackURL('/account/settings'),
       },
     })
     if (error) return { error: 'AUTH_SIGNUP_FAILED' }
+    if (data.session) {
+      const currentUser = await fetchCurrentUser()
+      setUser(currentUser)
+    }
     return {}
   }, [supabase])
 
