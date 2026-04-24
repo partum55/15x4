@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canManageContent } from '@/lib/roles'
 import { getProfileRole, requireContentRole } from '@/lib/authz'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeDateInput, normalizeTimeInput } from '@/lib/date-time'
 
 type Locale = 'uk' | 'en'
@@ -68,18 +68,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     } = await supabase.auth.getUser()
     const role = user ? await getProfileRole(user.id, supabase) : null
 
-    const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
+    const queryClient = role === 'admin' ? supabaseAdmin : supabase
+    const { data: event } = await queryClient.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    const canReadPrivate = Boolean(user && (event.userId === user.id || canManageContent(role)))
+    const canReadPrivate = Boolean(user && (event.userId === user.id || role === 'admin'))
     if (!event.isPublic && !canReadPrivate) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    const { data: lectures, error: lecturesError } = await supabase
+    let lecturesQuery = queryClient
       .from('Lecture')
       .select('*')
       .eq('eventId', id)
       .order('slot', { ascending: true })
+
+    if (!canReadPrivate) {
+      lecturesQuery = lecturesQuery.eq('isPublic', true)
+    }
+
+    const { data: lectures, error: lecturesError } = await lecturesQuery
 
     if (lecturesError) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -87,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({
       ...mapEventRow(event as Record<string, unknown>, locale),
-      userId: event.userId === user?.id ? event.userId : undefined,
+      userId: event.userId === user?.id || role === 'admin' ? event.userId : undefined,
       lectures: (lectures ?? []).map((lecture) => mapLectureRow(lecture as Record<string, unknown>, locale)),
     })
   } catch {
@@ -110,7 +117,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: access.error }, { status: access.status })
     }
 
-    const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
+    const queryClient = access.role === 'admin' ? supabaseAdmin : supabase
+    const { data: event } = await queryClient.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const ownerId = String(event.userId ?? user.id)
@@ -129,7 +137,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await queryClient
       .from('Event')
       .update({
         titleUk: String(titleUk).trim(),
@@ -191,13 +199,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Invalid lecture payload' }, { status: 400 })
     }
 
-    const { error: deleteLecturesError } = await supabase.from('Lecture').delete().eq('eventId', id)
+    const { error: deleteLecturesError } = await queryClient.from('Lecture').delete().eq('eventId', id)
     if (deleteLecturesError) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     if (preparedLectures.length > 0) {
-      const { error: insertLecturesError } = await supabase.from('Lecture').insert(preparedLectures)
+      const { error: insertLecturesError } = await queryClient.from('Lecture').insert(preparedLectures)
       if (insertLecturesError) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
       }
@@ -225,11 +233,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: access.error }, { status: access.status })
     }
 
-    const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
+    const queryClient = access.role === 'admin' ? supabaseAdmin : supabase
+    const { data: event } = await queryClient.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { error } = await supabase.from('Event').delete().eq('id', id)
+    const { error } = await queryClient.from('Event').delete().eq('id', id)
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
@@ -255,7 +264,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: access.error }, { status: access.status })
     }
 
-    const { data: event } = await supabase.from('Event').select('*').eq('id', id).maybeSingle()
+    const queryClient = access.role === 'admin' ? supabaseAdmin : supabase
+    const { data: event } = await queryClient.from('Event').select('*').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -286,7 +296,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       isPublic: false,
     }
 
-    const { data: existing } = await supabase
+    const { data: existing } = await queryClient
       .from('Lecture')
       .select('id')
       .eq('eventId', id)
@@ -294,8 +304,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .maybeSingle()
 
     const query = existing
-      ? supabase.from('Lecture').update(lecturePayload).eq('id', existing.id)
-      : supabase.from('Lecture').insert(lecturePayload)
+      ? queryClient.from('Lecture').update(lecturePayload).eq('id', existing.id)
+      : queryClient.from('Lecture').insert(lecturePayload)
 
     const { data: saved, error } = await query.select('*').single()
     if (error || !saved) {

@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const { signUp, signInWithGoogle } = useAuth()
 
   const [name, setName] = useState('')
+  const [city, setCity] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
@@ -24,7 +25,7 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [errors, setErrors] = useState<{
-    name?: string; email?: string; password?: string; passwordConfirm?: string; form?: string
+    name?: string; city?: string; email?: string; password?: string; passwordConfirm?: string; form?: string
   }>({})
   const redirectParam = normalizeRedirectTarget(searchParams.get('redirect'))
   const loginHref = buildLoginHref(redirectParam)
@@ -46,6 +47,7 @@ export default function RegisterPage() {
   function validate() {
     const e: typeof errors = {}
     if (!name.trim()) e.name = t('auth.register.errorRequired')
+    if (!city.trim()) e.city = t('auth.register.errorRequired')
     if (!email.trim()) e.email = t('auth.register.errorRequired')
     if (!password) e.password = t('auth.register.errorRequired')
     else if (!passwordStrength.isStrong) e.password = t('auth.register.errorPasswordWeak')
@@ -61,7 +63,7 @@ export default function RegisterPage() {
     if (Object.keys(e).length) { setErrors(e); return }
 
     setSubmitting(true)
-    const result = await signUp(email.trim(), password, name.trim())
+    const result = await signUp(email.trim(), password, name.trim(), city.trim())
     setSubmitting(false)
     if (result.error) {
       setErrors({ form: t('auth.register.errorGeneric') })
@@ -160,6 +162,15 @@ export default function RegisterPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 autoComplete="email"
+              />
+            </FormField>
+
+            <FormField label={t('auth.register.cityLabel')} error={errors.city}>
+              <input
+                type="text"
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                autoComplete="address-level2"
               />
             </FormField>
 

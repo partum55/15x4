@@ -3,6 +3,7 @@ import { canManageContent, type ProfileRole } from '@/lib/roles'
 export type AuthProfile = {
   id: string
   name: string
+  city: string
   role: ProfileRole
 }
 

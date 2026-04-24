@@ -162,12 +162,12 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div className="mb-4 flex h-9 items-center justify-between gap-3">
+        <div className="mb-4 flex h-9 items-center justify-between gap-3 px-[clamp(16px,2vw,28px)]">
           <CategoryBadge label={categoryLabel} color={color} active={hovered} thin />
           <span className="text-clamp-1 flex-shrink-0 text-right text-[clamp(13px,1.3vw,20px)] font-normal transition-colors duration-200">{lecture.author}</span>
         </div>
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="popular" active={hovered} />
-        <div className="mt-5 flex h-[clamp(104px,8.7vw,126px)] flex-col gap-4 overflow-hidden">
+        <div className="mt-5 flex h-[clamp(104px,8.7vw,126px)] flex-col gap-4 overflow-hidden px-[clamp(16px,2vw,28px)]">
           <p className="text-clamp-2 text-[clamp(15px,1.35vw,21px)] font-normal uppercase leading-[1.15] tracking-[-0.04em]">{lecture.title}</p>
           {hasSummary && (
             <p className="text-clamp-3 text-[clamp(13px,1.25vw,19px)] font-normal leading-[1.25]">{lecture.summary}</p>
@@ -186,7 +186,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div className="flex h-[86px] flex-col gap-3 overflow-hidden">
+        <div className="flex h-[86px] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
           <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
           <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>
         </div>
@@ -205,12 +205,12 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseLeave={() => setHovered(false)}
       >
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="vertical" active={hovered} />
-        <div className="flex h-[86px] flex-col gap-2 overflow-hidden">
+        <div className="flex h-[86px] flex-col gap-2 overflow-hidden px-[clamp(16px,2vw,28px)]">
           <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
           <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>
         </div>
         {hasSummary && (
-          <p className="text-clamp-3 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{lecture.summary}</p>
+          <p className="text-clamp-3 px-[clamp(16px,2vw,28px)] text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{lecture.summary}</p>
         )}
       </Link>
     )
@@ -218,8 +218,8 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
 
   const textBlock = (
     <div className={joinClassNames(
-      'flex min-w-0 flex-1 flex-col overflow-hidden px-3 py-6 transition-colors duration-200 max-[767px]:px-0',
-      isCompact ? 'h-[clamp(136px,10vw,152px)] justify-center gap-4 max-[767px]:h-auto max-[767px]:min-h-[136px] max-[767px]:py-0' : 'h-[321px] gap-6 max-[767px]:h-auto max-[767px]:py-0',
+      'flex min-w-0 flex-1 flex-col overflow-hidden px-[clamp(16px,2vw,28px)] py-6 transition-colors duration-200',
+      isCompact ? 'h-[clamp(136px,10vw,152px)] justify-center gap-4 max-[767px]:h-auto max-[767px]:min-h-[136px] max-[767px]:py-5' : 'h-[321px] gap-6 max-[767px]:h-auto max-[767px]:py-5',
     )}>
       <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
       <p className="text-clamp-1 min-h-[1.3em] text-[clamp(14px,1.3vw,20px)] font-normal leading-[1.3]">{lecture.author}</p>
@@ -239,7 +239,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseLeave={() => setHovered(false)}
       >
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="detail" active={hovered} />
-        <div className="flex h-[clamp(160px,20vw,260px)] min-w-0 flex-col gap-5 overflow-hidden px-3 py-1 transition-colors duration-200 group-hover:bg-[var(--lecture-card-color)] max-[900px]:h-auto max-[900px]:px-0">
+        <div className="flex h-[clamp(160px,20vw,260px)] min-w-0 flex-col gap-5 overflow-hidden px-[clamp(16px,2vw,28px)] py-3 transition-colors duration-200 group-hover:bg-[var(--lecture-card-color)] max-[900px]:h-auto">
           <div className="flex flex-col gap-2">
             <p className="text-clamp-2 text-[clamp(18px,1.6vw,24px)] font-normal uppercase leading-[1.15] tracking-[-0.04em]">{lecture.title}</p>
             <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>

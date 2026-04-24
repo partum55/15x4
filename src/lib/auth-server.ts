@@ -9,6 +9,7 @@ import type { AuthProfile, AuthUser } from '@/lib/auth'
 type ProfileRow = {
   id: string
   name: string | null
+  city: string | null
   role: string | null
 }
 
@@ -29,6 +30,7 @@ function mapProfileRow(row: ProfileRow | null, fallbackName: string): AuthProfil
   return {
     id: row.id,
     name: row.name?.trim() || fallbackName,
+    city: row.city?.trim() || '',
     role: row.role,
   }
 }
@@ -36,7 +38,7 @@ function mapProfileRow(row: ProfileRow | null, fallbackName: string): AuthProfil
 async function readProfileRow(userId: string, supabase: SupabaseClient): Promise<ProfileRow | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('id, name, role')
+    .select('id, name, city, role')
     .eq('id', userId)
     .maybeSingle()
 
@@ -57,7 +59,7 @@ export async function ensureAuthProfile(
   const adminProfile = mapProfileRow(
     ((await supabaseAdmin
       .from('profiles')
-      .select('id, name, role')
+      .select('id, name, city, role')
       .eq('id', user.id)
       .maybeSingle()).data as ProfileRow | null) ?? null,
     fallbackName,

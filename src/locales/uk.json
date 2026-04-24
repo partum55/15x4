@@ -13,7 +13,9 @@
   },
   "upcomingEvents": {
     "title": "МАЙБУТНІ ПОДІЇ",
-    "register": "реєстрація"
+    "register": "реєстрація",
+    "allCities": "усі міста",
+    "noEvents": "Немає майбутніх подій"
   },
   "popularLectures": {
     "title": "ПОПУЛЯРНІ ЛЕКЦІЇ",
@@ -143,6 +145,7 @@
     "register": {
       "title": "// СТВОРИТИ АКАУНТ",
       "nameLabel": "повне ім'я",
+      "cityLabel": "місто",
       "emailLabel": "електронна пошта",
       "passwordLabel": "пароль",
       "passwordConfirmLabel": "підтвердити пароль",
@@ -178,6 +181,7 @@
     "settings": {
       "title": "// НАЛАШТУВАННЯ АКАУНТУ",
       "nameLabel": "повне ім'я",
+      "cityLabel": "місто",
       "emailLabel": "електронна пошта",
       "passwordLabel": "новий пароль",
       "passwordConfirmLabel": "підтвердити новий пароль",

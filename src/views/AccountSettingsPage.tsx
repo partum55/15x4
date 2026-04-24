@@ -18,6 +18,7 @@ export default function AccountSettingsPage() {
   const supabase = createClient()
 
   const [name, setName] = useState('')
+  const [city, setCity] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [saved, setSaved] = useState(false)
@@ -69,8 +70,13 @@ export default function AccountSettingsPage() {
 
       // Update name in profiles
       const newName = name.trim() || user?.name
-      if (newName && newName !== user?.name) {
-        await api.updateProfile({ name: newName })
+      const newCity = city.trim() || user?.city || ''
+      const profileUpdates: { name?: string; city?: string } = {}
+      if (newName && newName !== user?.name) profileUpdates.name = newName
+      if (newCity !== (user?.city ?? '')) profileUpdates.city = newCity
+
+      if (Object.keys(profileUpdates).length > 0) {
+        await api.updateProfile(profileUpdates)
         await refresh()
       }
 
@@ -117,6 +123,15 @@ export default function AccountSettingsPage() {
 
             <FormField label={t('account.settings.emailLabel')}>
               <input type="email" value={user?.email ?? ''} readOnly className="opacity-50 cursor-not-allowed" />
+            </FormField>
+
+            <FormField label={t('account.settings.cityLabel')}>
+              <input
+                type="text"
+                value={city || user?.city || ''}
+                onChange={e => setCity(e.target.value)}
+                autoComplete="address-level2"
+              />
             </FormField>
 
             <FormField label={t('account.settings.passwordLabel')}>

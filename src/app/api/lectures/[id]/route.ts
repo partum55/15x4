@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canManageContent } from '@/lib/roles'
 import { getProfileRole, requireContentRole } from '@/lib/authz'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 type Locale = 'uk' | 'en'
 
@@ -43,9 +43,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     } = await supabase.auth.getUser()
     const role = user ? await getProfileRole(user.id, supabase) : null
 
-    const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
+    const queryClient = role === 'admin' ? supabaseAdmin : supabase
+    const { data: lecture } = await queryClient.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    const canReadPrivate = Boolean(user && (lecture.userId === user.id || canManageContent(role)))
+    const canReadPrivate = Boolean(user && (lecture.userId === user.id || role === 'admin'))
     if (!lecture.isPublic && !canReadPrivate) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const mapped = mapLectureRow(lecture as Record<string, unknown>, locale)
     return NextResponse.json({
       ...mapped,
-      userId: lecture.userId === user?.id ? lecture.userId : undefined,
+      userId: lecture.userId === user?.id || role === 'admin' ? lecture.userId : undefined,
     })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -75,7 +76,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: access.error }, { status: access.status })
     }
 
-    const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
+    const queryClient = access.role === 'admin' ? supabaseAdmin : supabase
+    const { data: lecture } = await queryClient.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (lecture.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -133,7 +135,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       eventPhotosUrl: eventPhotosUrl !== undefined ? (eventPhotosUrl ? String(eventPhotosUrl).trim() : null) : lecture.eventPhotosUrl,
     }
 
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await queryClient
       .from('Lecture')
       .update(data)
       .eq('id', id)
@@ -166,11 +168,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: access.error }, { status: access.status })
     }
 
-    const { data: lecture } = await supabase.from('Lecture').select('*').eq('id', id).maybeSingle()
+    const queryClient = access.role === 'admin' ? supabaseAdmin : supabase
+    const { data: lecture } = await queryClient.from('Lecture').select('*').eq('id', id).maybeSingle()
     if (!lecture) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (lecture.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { error } = await supabase.from('Lecture').delete().eq('id', id)
+    const { error } = await queryClient.from('Lecture').delete().eq('id', id)
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }

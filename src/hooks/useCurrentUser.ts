@@ -6,6 +6,7 @@ import type { ProfileRole } from '@/lib/roles'
 type CurrentUser = {
   id: string
   name: string
+  city: string
   email: string
   role: ProfileRole | null
 }
@@ -16,6 +17,7 @@ export function useCurrentUser() {
   const mappedUser: CurrentUser | null = user ? {
     id: user.id,
     name: user.profile?.name ?? user.email,
+    city: user.profile?.city ?? '',
     email: user.email,
     role: user.profile?.role ?? null,
   } : null

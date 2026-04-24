@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canManageContent } from '@/lib/roles'
-import { getProfileRole, requireContentRole } from '@/lib/authz'
+import { requireContentRole } from '@/lib/authz'
 
 type Locale = 'uk' | 'en'
 
@@ -47,6 +46,7 @@ export async function GET(req: NextRequest) {
   try {
     const locale = resolveLocale(req)
     const searchParams = req.nextUrl.searchParams
+    const scope = searchParams.get('scope')
     const wantsPagination = searchParams.has('limit') || searchParams.has('offset')
     const limit = parsePositiveInt(searchParams.get('limit'), 20, 100)
     const offset = parsePositiveInt(searchParams.get('offset'), 0, 100000)
@@ -58,17 +58,15 @@ export async function GET(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    const role = user ? await getProfileRole(user.id, supabase) : null
     let query = wantsPagination
       ? supabase.from('Lecture').select('*', { count: 'exact' })
       : supabase.from('Lecture').select('*')
 
-    if (role !== 'admin') {
-      if (user && canManageContent(role)) {
-        query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
-      } else {
-        query = query.eq('isPublic', true)
-      }
+    if (scope === 'mine') {
+      if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      query = query.eq('userId', user.id)
+    } else {
+      query = query.eq('isPublic', true)
     }
 
     if (category) {
@@ -102,7 +100,7 @@ export async function GET(req: NextRequest) {
       const mapped = mapLectureRow(lectureRow, locale)
       return {
         ...mapped,
-        userId: lectureRow.userId === user?.id || role === 'admin' ? lectureRow.userId : undefined,
+        userId: lectureRow.userId === user?.id ? lectureRow.userId : undefined,
       }
     })
 
