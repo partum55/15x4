@@ -51,7 +51,7 @@ export default function MyLecturesPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar variant="light" />
-      <main className="flex-1 px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
+      <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)]">
         <div className="flex items-center justify-between mb-6 gap-4">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black">{t('myLectures.title')}</h1>
           <Link

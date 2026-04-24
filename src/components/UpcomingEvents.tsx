@@ -9,11 +9,13 @@ import ArrowIcon from './ArrowIcon'
 import type { Event } from '@/lib/api'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime } from '../lib/date-time'
+import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 export default function UpcomingEvents() {
   const { t } = useTranslation()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const skeletonLoading = useMinimumSkeleton(loading)
 
   useEffect(() => {
     let isMounted = true
@@ -42,7 +44,7 @@ export default function UpcomingEvents() {
   const visibleEvents = Array.isArray(events) ? events.slice(0, 1) : []
 
   return (
-    <Skeleton name="home-upcoming-events" loading={loading}>
+    <Skeleton name="home-upcoming-events" loading={skeletonLoading} className="min-h-[420px]">
       <section className="pt-[clamp(32px,4.2vw,64px)]" id="events">
         <div className="content-shell">
           <h2 className="text-[clamp(22px,2.4vw,36px)] font-normal text-black ml-[clamp(0px,25.6%,363px)] mb-6 leading-[1.2] max-[1199px]:ml-0">

@@ -1,7 +1,7 @@
 import './globals.css'
-import '../bones/registry'
 import I18nProvider from '@/components/I18nProvider'
 import { AuthProvider } from '@/context/AuthContext'
+import BoneyardClient from '@/components/BoneyardClient'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { getServerAuthUser } from '@/lib/auth-server'
@@ -17,6 +17,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="uk">
       <body>
+        <BoneyardClient />
         <I18nProvider>
           <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
         </I18nProvider>
