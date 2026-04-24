@@ -296,6 +296,10 @@
     "errorLecturesLimit": "an event can have at most 4 lectures",
     "errorSave": "failed to save event"
   },
+  "profile": {
+    "completionPrompt": "Add your city to see nearby events →",
+    "completionLink": "account settings"
+  },
   "validation": {
     "required": "this field is required"
   },
