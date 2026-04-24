@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
+import { CATEGORY_COLOR_VAR } from '../constants/colors'
 import { LECTURE_CATEGORIES, getLectureCategoryColor, normalizeLectureCategory } from '../constants/lectureCategories'
 import type { Event } from '@/lib/api'
 
@@ -211,11 +212,18 @@ export default function AddEditLecturePage() {
     }
   }
 
+  const selectedEvent = events.find((event) => event.id === form.eventId)
+  const previewTitle = form.titleUk.trim() || form.titleEn.trim() || t('addLecture.titleLabel')
+  const previewAuthor = form.authorUk.trim() || form.authorEn.trim() || t('addLecture.authorLabel')
+  const previewSummary = form.summaryUk.trim() || form.summaryEn.trim() || t('addLecture.summaryLabel')
+  const previewCategory = form.category.trim()
+  const previewCategoryColor = getLectureCategoryColor(previewCategory)
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar variant="light" />
       <main className="flex-1 px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
-        <div className="w-full max-w-[900px]">
+        <div className="w-full max-w-[1360px]">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">
             {isEdit ? t('addLecture.titleEdit') : t('addLecture.titleNew')}
           </h1>
@@ -224,6 +232,7 @@ export default function AddEditLecturePage() {
             <p className="text-[clamp(13px,1.2vw,18px)] text-red mb-4 px-4 py-3 border border-red">{formError}</p>
           )}
 
+          <div className="grid grid-cols-[minmax(0,900px)_minmax(300px,380px)] gap-[clamp(24px,3vw,48px)] items-start max-[1100px]:grid-cols-1">
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
             <div className="flex justify-end">
               <button
@@ -332,6 +341,39 @@ export default function AddEditLecturePage() {
               </Link>
             </div>
           </form>
+          <aside className="sticky top-6 border border-black bg-white max-[1100px]:static">
+            <div
+              className="aspect-[16/10] bg-black/10 bg-cover bg-center border-b border-black"
+              style={form.image.trim() ? { backgroundImage: `url(${form.image.trim()})` } : undefined}
+              aria-label={t('addLecture.imageLabel')}
+            />
+            <div className="p-5 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className="px-2 py-1 text-[11px] uppercase text-white"
+                  style={{
+                    backgroundColor: previewCategoryColor
+                      ? CATEGORY_COLOR_VAR[previewCategoryColor]
+                      : 'var(--color-black)',
+                  }}
+                >
+                  {previewCategory ? t(`lectureCategories.${previewCategory}`, { defaultValue: previewCategory }) : t('addLecture.categoryLabel')}
+                </span>
+                <span className="text-[12px] uppercase text-black/50">#{form.slot || '1'}</span>
+              </div>
+              <h2 className="text-[clamp(20px,2vw,30px)] font-normal tracking-[-0.04em] uppercase text-black leading-none">
+                {previewTitle}
+              </h2>
+              <p className="text-[clamp(13px,1.2vw,18px)] text-black/70">{previewAuthor}</p>
+              {selectedEvent && (
+                <p className="text-[12px] uppercase text-black/50">
+                  {selectedEvent.titleUk || selectedEvent.titleEn || selectedEvent.cityUk}
+                </p>
+              )}
+              <p className="text-[clamp(13px,1.2vw,16px)] leading-snug text-black">{previewSummary}</p>
+            </div>
+          </aside>
+          </div>
         </div>
       </main>
     </div>

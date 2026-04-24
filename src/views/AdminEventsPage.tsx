@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -28,12 +28,18 @@ type Event = {
   _count: { lectures: number }
 }
 
+const EVENTS_PAGE_SIZE = 20
+
 export default function AdminEventsPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const { user, loading } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [sortBy, setSortBy] = useState('')
+  const [page, setPage] = useState(1)
   const [approvingEventIds, setApprovingEventIds] = useState<Set<string>>(new Set())
   const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
 
@@ -60,6 +66,47 @@ export default function AdminEventsPage() {
       isMounted = false
     }
   }, [loading, user])
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, statusFilter, sortBy])
+
+  const filteredEvents = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    const rows = events.filter((row) => {
+      const searchValues = [
+        row.title,
+        row.titleUk,
+        row.titleEn,
+        row.city,
+        row.cityUk,
+        row.cityEn,
+        row.location,
+        row.locationUk,
+        row.locationEn,
+        row.user?.name ?? '',
+        row.user?.email ?? '',
+      ]
+      const matchesSearch = !query || searchValues.some((value) => value.toLowerCase().includes(query))
+      const matchesStatus =
+        !statusFilter ||
+        (statusFilter === 'public' && row.isPublic) ||
+        (statusFilter === 'draft' && !row.isPublic)
+      return matchesSearch && matchesStatus
+    })
+
+    return rows.sort((a, b) => {
+      if (sortBy === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime()
+      if (sortBy === 'titleAZ') return a.title.localeCompare(b.title, 'uk')
+      if (sortBy === 'titleZA') return b.title.localeCompare(a.title, 'uk')
+      if (sortBy === 'created') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+  }, [events, searchQuery, statusFilter, sortBy])
+
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / EVENTS_PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paginatedEvents = filteredEvents.slice((safePage - 1) * EVENTS_PAGE_SIZE, safePage * EVENTS_PAGE_SIZE)
 
   async function handleDelete(eventId: string) {
     if (deletingEventIds.has(eventId)) return
@@ -128,9 +175,45 @@ export default function AdminEventsPage() {
           <span className="text-[clamp(14px,1.3vw,20px)] font-bold text-red">{t('admin.nav.events')}</span>
         </nav>
 
+        <div className="grid grid-cols-[minmax(220px,1fr)_repeat(2,minmax(150px,220px))] gap-3 mb-8 max-[860px]:grid-cols-2 max-[640px]:grid-cols-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder={t('admin.events.search', { defaultValue: 'пошук за назвою, містом або власником' })}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          />
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          >
+            <option value="">{t('admin.events.allStatuses', { defaultValue: 'усі статуси' })}</option>
+            <option value="public">{t('admin.events.statusPublic', { defaultValue: 'публічні' })}</option>
+            <option value="draft">{t('admin.events.statusDraft', { defaultValue: 'чернетки' })}</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value)}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          >
+            <option value="">{t('admin.events.newest', { defaultValue: 'спочатку найближчі' })}</option>
+            <option value="oldest">{t('admin.events.oldest', { defaultValue: 'спочатку найдавніші' })}</option>
+            <option value="created">{t('admin.events.created', { defaultValue: 'спочатку створені нещодавно' })}</option>
+            <option value="titleAZ">{t('lectures.titleAZ')}</option>
+            <option value="titleZA">{t('lectures.titleZA')}</option>
+          </select>
+        </div>
+
+        {!loadingEvents && (
+          <p className="mb-4 text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
+            {t('admin.events.showing', { defaultValue: 'показано {{count}} з {{total}}', count: paginatedEvents.length, total: filteredEvents.length })}
+          </p>
+        )}
+
         {loadingEvents ? (
           <p className="text-[clamp(14px,1.3vw,20px)]">Loading...</p>
-        ) : events.length === 0 ? (
+        ) : filteredEvents.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.events.empty')}</p>
         ) : (
           <div className="overflow-x-auto">
@@ -147,7 +230,7 @@ export default function AdminEventsPage() {
                 </tr>
               </thead>
               <tbody>
-                {events.map(e => (
+                {paginatedEvents.map(e => (
                   <tr key={e.id} className="border-b border-black/20 hover:bg-black/5">
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
                       <Link href={`/events/${e.id}`} className="text-black hover:underline">
@@ -197,6 +280,29 @@ export default function AdminEventsPage() {
                 ))}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-4 py-8 max-[640px]:flex-col max-[640px]:items-stretch">
+                <button
+                  type="button"
+                  onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                  disabled={safePage === 1}
+                  className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
+                >
+                  {t('admin.pagination.prev', { defaultValue: 'назад' })}
+                </button>
+                <span className="text-center text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
+                  {safePage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={safePage === totalPages}
+                  className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
+                >
+                  {t('admin.pagination.next', { defaultValue: 'далі' })}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>

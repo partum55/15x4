@@ -8,7 +8,8 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
-import { normalizeDateInput, normalizeTimeInput } from '../lib/date-time'
+import { CATEGORY_COLOR_VAR } from '../constants/colors'
+import { formatEventDate, formatEventTime, normalizeDateInput, normalizeTimeInput } from '../lib/date-time'
 import {
   LECTURE_CATEGORIES,
   getLectureCategoryColor,
@@ -326,11 +327,18 @@ export default function AddEditEventPage() {
     }
   }
 
+  const previewTitle = form.titleUk.trim() || form.titleEn.trim() || t('addEvent.titleUkLabel')
+  const previewCity = form.cityUk.trim() || form.cityEn.trim() || t('addEvent.cityLabel')
+  const previewLocation = form.locationUk.trim() || form.locationEn.trim() || t('addEvent.locationLabel')
+  const previewDescription = form.descriptionUk.trim() || form.descriptionEn.trim() || t('addEvent.descriptionUkLabel')
+  const previewDate = form.date ? formatEventDate(form.date) : t('addEvent.dateLabel')
+  const previewTime = form.time ? formatEventTime(form.time) : t('addEvent.timeLabel')
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar variant="light" />
       <main className="flex-1 px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
-        <div className="w-full max-w-[960px]">
+        <div className="w-full max-w-[1400px]">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">
             {isEdit ? t('addEvent.titleEdit') : t('addEvent.titleNew')}
           </h1>
@@ -339,6 +347,7 @@ export default function AddEditEventPage() {
             <p className="text-[clamp(13px,1.2vw,18px)] text-red mb-4 px-4 py-3 border border-red">{formError}</p>
           )}
 
+          <div className="grid grid-cols-[minmax(0,960px)_minmax(320px,390px)] gap-[clamp(24px,3vw,48px)] items-start max-[1120px]:grid-cols-1">
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
             <div className="flex justify-end">
               <button
@@ -495,6 +504,50 @@ export default function AddEditEventPage() {
               </Link>
             </div>
           </form>
+          <aside className="sticky top-6 border border-black bg-white max-[1120px]:static">
+            <div
+              className="aspect-[16/10] bg-black/10 bg-cover bg-center border-b border-black"
+              style={form.image.trim() ? { backgroundImage: `url(${form.image.trim()})` } : undefined}
+              aria-label={t('addEvent.imageLabel')}
+            />
+            <div className="p-5 flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[12px] uppercase text-black/50">{previewCity}</span>
+                <span className="text-[12px] uppercase text-black/50">{previewTime}</span>
+              </div>
+              <h2 className="text-[clamp(22px,2.2vw,34px)] font-normal tracking-[-0.04em] uppercase text-black leading-none">
+                {previewTitle}
+              </h2>
+              <div className="flex flex-col gap-1 text-[clamp(13px,1.2vw,17px)] text-black/70">
+                <span>{previewDate}</span>
+                <span>{previewLocation}</span>
+              </div>
+              <p className="text-[clamp(13px,1.2vw,16px)] leading-snug text-black">{previewDescription}</p>
+              {lectures.length > 0 && (
+                <div className="flex flex-col gap-2 pt-3 border-t border-black/20">
+                  {lectures.slice(0, 4).map((lecture, index) => {
+                    const categoryColor = getLectureCategoryColor(lecture.category)
+                    return (
+                      <div key={lecture.tempId} className="flex items-center gap-3">
+                        <span
+                          className="w-3 h-3 shrink-0"
+                          style={{
+                            backgroundColor: categoryColor
+                              ? CATEGORY_COLOR_VAR[categoryColor]
+                              : 'var(--color-black)',
+                          }}
+                        />
+                        <span className="text-[13px] uppercase text-black truncate">
+                          {lecture.titleUk.trim() || lecture.titleEn.trim() || `${t('addEvent.lectureTitleLabel')} ${index + 1}`}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </aside>
+          </div>
         </div>
       </main>
     </div>

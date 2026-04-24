@@ -311,7 +311,12 @@
       },
       "delete": "delete",
       "confirmDelete": "delete this user?",
-      "empty": "no users found"
+      "empty": "no users found",
+      "search": "search by name or email",
+      "allRoles": "all roles",
+      "newest": "newest first",
+      "oldest": "oldest first",
+      "showing": "showing {{count}} of {{total}}"
     },
     "lectures": {
       "title": "// ALL LECTURES",
@@ -342,7 +347,19 @@
       "approve": "approve",
       "delete": "delete",
       "confirmDelete": "delete this event?",
-      "empty": "no events found"
+      "empty": "no events found",
+      "search": "search by title, city, or owner",
+      "allStatuses": "all statuses",
+      "statusPublic": "public",
+      "statusDraft": "drafts",
+      "newest": "nearest first",
+      "oldest": "oldest first",
+      "created": "recently created",
+      "showing": "showing {{count}} of {{total}}"
+    },
+    "pagination": {
+      "prev": "previous",
+      "next": "next"
     },
     "stats": {
       "users": "users",
