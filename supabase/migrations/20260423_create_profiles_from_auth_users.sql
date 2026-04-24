@@ -6,6 +6,36 @@ REVOKE ALL ON SCHEMA private FROM PUBLIC;
 REVOKE ALL ON SCHEMA private FROM anon;
 REVOKE ALL ON SCHEMA private FROM authenticated;
 
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name text NOT NULL DEFAULT '',
+  role text NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'lector', 'admin')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT ON public.profiles TO authenticated;
+REVOKE UPDATE ON public.profiles FROM authenticated;
+GRANT UPDATE(name) ON public.profiles TO authenticated;
+
+DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own_name" ON public.profiles;
+
+CREATE POLICY "profiles_select_own"
+ON public.profiles
+FOR SELECT
+TO authenticated
+USING (auth.uid() = id);
+
+CREATE POLICY "profiles_update_own_name"
+ON public.profiles
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
+
 CREATE OR REPLACE FUNCTION private.handle_new_profile_for_auth_user()
 RETURNS trigger
 LANGUAGE plpgsql
