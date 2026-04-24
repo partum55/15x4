@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
+import { normalizeDateInput, normalizeTimeInput } from '../lib/date-time'
 import {
   LECTURE_CATEGORIES,
   getLectureCategoryColor,
@@ -100,10 +101,10 @@ export default function AddEditEventPage() {
           descriptionEn: data.descriptionEn ?? '',
           cityUk: data.cityUk ?? '',
           cityEn: data.cityEn ?? '',
-          date: data.date ?? '',
+          date: normalizeDateInput(data.date),
           locationUk: data.locationUk ?? '',
           locationEn: data.locationEn ?? '',
-          time: data.time ?? '',
+          time: normalizeTimeInput(data.time),
           image: data.image ?? '',
           registrationUrl: data.registrationUrl ?? '',
         })
@@ -268,10 +269,10 @@ export default function AddEditEventPage() {
       descriptionEn: form.descriptionEn.trim(),
       cityUk: form.cityUk.trim(),
       cityEn: form.cityEn.trim(),
-      date: form.date.trim(),
+      date: normalizeDateInput(form.date),
       locationUk: form.locationUk.trim(),
       locationEn: form.locationEn.trim(),
-      time: form.time.trim(),
+      time: normalizeTimeInput(form.time),
       image: form.image.trim(),
       registrationUrl: form.registrationUrl.trim() || null,
       lectures: lectures.map((lecture, index) => ({
@@ -388,12 +389,12 @@ export default function AddEditEventPage() {
             </div>
 
             <FormField label={t('addEvent.dateLabel')} error={errors.date}>
-              <input type="text" value={form.date} onChange={e => setField('date', e.target.value)} placeholder="10/05" />
+              <input type="date" value={form.date} onChange={e => setField('date', e.target.value)} />
             </FormField>
 
             <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
               <FormField label={t('addEvent.timeLabel')} error={errors.time}>
-                <input type="text" value={form.time} onChange={e => setField('time', e.target.value)} placeholder="19:00" />
+                <input type="time" value={form.time} onChange={e => setField('time', e.target.value)} />
               </FormField>
               <FormField label={t('addEvent.imageLabel')}>
                 <input type="text" value={form.image} onChange={e => setField('image', e.target.value)} placeholder="https://" />

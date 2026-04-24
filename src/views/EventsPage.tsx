@@ -13,6 +13,7 @@ import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
+import { compareEventDates, formatEventDate, formatEventTime } from '../lib/date-time'
 
 type EventSectionProps = {
   event: Event
@@ -41,9 +42,9 @@ function EventSection({ event, isExpanded, onToggle, detailsLabel, registerLabel
         <div className="flex w-[clamp(220px,22.7vw,327px)] flex-col gap-6 max-[767px]:w-full">
           <div className="flex items-center justify-between gap-6">
             <span className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">
-              {event.city} [{event.date}]
+              {event.city} [{formatEventDate(event.date)}]
             </span>
-            <span className="text-[clamp(14px,1.3vw,20px)] font-normal">{event.time}</span>
+            <span className="text-[clamp(14px,1.3vw,20px)] font-normal">{formatEventTime(event.time)}</span>
           </div>
           <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
         </div>
@@ -141,15 +142,11 @@ export default function EventsPage() {
     }
     if (sortOrder === 'dateAsc') {
       result.sort((a, b) => {
-        const [da, ma] = a.date.split('/').map(Number)
-        const [db, mb] = b.date.split('/').map(Number)
-        return ma * 100 + da - (mb * 100 + db)
+        return compareEventDates(a.date, b.date)
       })
     } else if (sortOrder === 'dateDesc') {
       result.sort((a, b) => {
-        const [da, ma] = a.date.split('/').map(Number)
-        const [db, mb] = b.date.split('/').map(Number)
-        return mb * 100 + db - (ma * 100 + da)
+        return compareEventDates(b.date, a.date)
       })
     }
 
@@ -181,7 +178,7 @@ export default function EventsPage() {
 
   const timeOptions = [
     { value: '', label: t('events.time') },
-    ...times.map((time) => ({ value: time, label: time })),
+    ...times.map((time) => ({ value: time, label: formatEventTime(time) })),
   ]
 
   return (

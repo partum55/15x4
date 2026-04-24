@@ -87,7 +87,7 @@ function MediaBlock({
   const imageHeight = variant === 'featured'
     ? 'h-[clamp(220px,22.5vw,324px)]'
     : variant === 'popular'
-      ? 'h-[clamp(160px,20.9vw,300px)]'
+      ? 'h-[clamp(150px,17.4vw,250px)]'
       : variant === 'detail'
         ? 'h-[clamp(160px,20vw,260px)]'
         : variant === 'compact' || variant === 'swatch'
@@ -108,7 +108,11 @@ function MediaBlock({
           width={variant === 'featured' ? 1200 : 900}
           height={variant === 'featured' ? 800 : 900}
           unoptimized
-          className={joinClassNames('block w-full object-cover opacity-50 transition-opacity duration-200 group-hover:opacity-70 max-[767px]:h-[200px]', imageHeight)}
+          className={joinClassNames(
+            'block w-full object-cover transition-opacity duration-200 max-[767px]:h-[200px]',
+            variant === 'popular' ? 'opacity-100 group-hover:opacity-55' : 'opacity-50 group-hover:opacity-70',
+            imageHeight,
+          )}
         />
       ) : (
         <div className={joinClassNames('w-full', imageHeight)} />
@@ -151,22 +155,22 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
       <Link
         href={`/lectures/${lecture.id}`}
         className={joinClassNames(
-          'group flex min-w-0 flex-1 cursor-pointer flex-col py-12 text-inherit no-underline transition-colors duration-200 ease-in max-[1199px]:py-8 max-[767px]:border-b max-[767px]:border-black max-[767px]:py-6 last:max-[767px]:border-b-0',
+          'group flex min-w-0 flex-1 cursor-pointer flex-col py-8 text-inherit no-underline transition-colors duration-200 ease-in max-[1199px]:py-6 max-[767px]:border-b max-[767px]:border-black max-[767px]:py-5 last:max-[767px]:border-b-0',
           className,
         )}
         style={style}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div className="mb-6 flex h-10 items-center justify-between gap-2">
+        <div className="mb-4 flex h-9 items-center justify-between gap-3">
           <CategoryBadge label={categoryLabel} color={color} active={hovered} thin />
-          <span className="text-clamp-1 flex-shrink-0 text-right text-[clamp(13px,1.3vw,20px)] font-normal">{lecture.author}</span>
+          <span className="text-clamp-1 flex-shrink-0 text-right text-[clamp(13px,1.3vw,20px)] font-normal transition-colors duration-200">{lecture.author}</span>
         </div>
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="popular" active={hovered} />
-        <div className="mt-6 flex h-[clamp(128px,10vw,156px)] flex-col gap-6 overflow-hidden">
-          <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
+        <div className="mt-5 flex h-[clamp(104px,8.7vw,126px)] flex-col gap-4 overflow-hidden">
+          <p className="text-clamp-2 text-[clamp(15px,1.35vw,21px)] font-normal uppercase leading-[1.15] tracking-[-0.04em]">{lecture.title}</p>
           {hasSummary && (
-            <p className="text-clamp-3 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.2]">{lecture.summary}</p>
+            <p className="text-clamp-3 text-[clamp(13px,1.25vw,19px)] font-normal leading-[1.25]">{lecture.summary}</p>
           )}
         </div>
       </Link>

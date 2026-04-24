@@ -17,9 +17,9 @@ function LectureRow({ left, right }: LectureRowProps) {
     <div className="flex flex-col">
       <div className="w-full h-px bg-black" />
       <div className="flex items-stretch max-[767px]:flex-col">
-        <LectureCard lecture={left} variant="popular" />
-        <div className="w-px bg-black flex-shrink-0 mx-[18px] max-[767px]:hidden" />
-        <LectureCard lecture={right} variant="popular" />
+        <LectureCard lecture={left} variant="popular" className="pr-[18px] max-[767px]:pr-0" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard lecture={right} variant="popular" className="pl-[18px] max-[767px]:pl-0" />
       </div>
       <div className="w-full h-px bg-black" />
     </div>

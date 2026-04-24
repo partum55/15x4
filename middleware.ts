@@ -6,6 +6,7 @@ import {
   type RateLimitConfig,
   type RateLimitResult,
 } from '@/lib/rate-limit'
+import { getSupabaseConfig } from '@/lib/supabase/env'
 import { buildRequestRedirectTarget, canAccessPath, getDefaultAuthenticatedPath, getRouteAccessLevel, isAuthRoute, normalizeRedirectTarget, resolvePostAuthRedirect } from '@/lib/auth'
 import { isProfileRole } from '@/lib/roles'
 
@@ -49,10 +50,11 @@ function applyRateLimitHeaders(response: NextResponse, result: RateLimitResult) 
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
+  const { url, key } = getSupabaseConfig()
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    url,
+    key,
     {
       cookies: {
         getAll() {

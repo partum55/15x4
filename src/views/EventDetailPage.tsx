@@ -12,6 +12,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
+import { formatEventDate, formatEventTime } from '../lib/date-time'
 
 function eventDescription(event: Event, language: string) {
   if (language.startsWith('en')) {
@@ -107,11 +108,11 @@ export default function EventDetailPage() {
                 <div className="grid max-w-[690px] grid-cols-3 gap-6 border-t border-black pt-6 max-[767px]:grid-cols-1">
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.date')}</p>
-                    <p className="text-[clamp(18px,1.6vw,24px)]">{event.date}</p>
+                    <p className="text-[clamp(18px,1.6vw,24px)]">{formatEventDate(event.date)}</p>
                   </div>
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.time')}</p>
-                    <p className="text-[clamp(18px,1.6vw,24px)]">{event.time}</p>
+                    <p className="text-[clamp(18px,1.6vw,24px)]">{formatEventTime(event.time)}</p>
                   </div>
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.talks')}</p>
@@ -124,7 +125,7 @@ export default function EventDetailPage() {
                 {event.image ? (
                   <Image
                     src={event.image}
-                    alt={`${event.city} ${event.date}`}
+                    alt={`${event.city} ${formatEventDate(event.date)}`}
                     width={1200}
                     height={900}
                     unoptimized
@@ -197,7 +198,7 @@ export default function EventDetailPage() {
             <section className="content-shell pb-[clamp(32px,4.2vw,64px)]">
               <div className="flex items-center justify-between gap-6 border-t border-black pt-6 max-[767px]:flex-col max-[767px]:items-stretch">
                 <p className="text-[clamp(18px,1.6vw,24px)] uppercase tracking-[-0.04em]">
-                  {event.city} [{event.date}]
+                  {event.city} [{formatEventDate(event.date)}]
                 </p>
                 <div className="flex gap-6 max-[767px]:flex-col max-[767px]:gap-4">
                   <Link
