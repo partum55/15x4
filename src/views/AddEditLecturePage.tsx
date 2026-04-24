@@ -61,7 +61,14 @@ export default function AddEditLecturePage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    api.getEvents().then((rows) => setEvents(rows))
+    Promise.all([api.getEvents(), api.getMyEvents()])
+      .then(([publicEvents, ownEvents]) => {
+        const byId = new Map<string, Event>()
+        for (const event of [...ownEvents, ...publicEvents]) {
+          byId.set(event.id, event)
+        }
+        setEvents([...byId.values()])
+      })
   }, [])
 
   useEffect(() => {
@@ -84,6 +91,14 @@ export default function AddEditLecturePage() {
           authorBioEn: data.authorBioEn ?? '',
           videoUrl: data.videoUrl ?? '',
         })
+
+        if (data.eventId) {
+          api.getEvent(data.eventId).then((event: Event & { error?: string }) => {
+            if (!event?.error) {
+              setEvents((prev) => prev.some((item) => item.id === event.id) ? prev : [event, ...prev])
+            }
+          })
+        }
       }
     })
   }, [id])

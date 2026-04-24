@@ -86,6 +86,11 @@ export type LectureListParams = {
   search?: string
   category?: string
   sort?: string
+  scope?: string
+}
+
+export type EventListParams = {
+  scope?: string
 }
 
 const json = (res: Response) => res.json()
@@ -115,7 +120,7 @@ const del = (url: string) =>
   fetch(url, { method: 'DELETE' }).then(json)
 
 export const api = {
-  updateProfile: (body: { name?: string }) => patch('/api/profile', body),
+  updateProfile: (body: { name?: string; city?: string }) => patch('/api/profile', body),
 
   getLectures: (params?: LectureListParams) => fetch(withQuery('/api/lectures', params)).then(json).then((data) => asArray<Lecture>(data)),
   getLecturesPage: (params?: LectureListParams) =>
@@ -125,11 +130,13 @@ export const api = {
   updateLecture: (id: string, body: object) => put(`/api/lectures/${id}`, body),
   deleteLecture: (id: string) => del(`/api/lectures/${id}`),
 
-  getEvents: () => fetch(withQuery('/api/events')).then(json).then((data) => asArray<Event>(data)),
+  getEvents: (params?: EventListParams) => fetch(withQuery('/api/events', params)).then(json).then((data) => asArray<Event>(data)),
+  getMyEvents: () => fetch(withQuery('/api/events', { scope: 'mine' })).then(json).then((data) => asArray<Event>(data)),
   getEvent: (id: string) => fetch(withQuery(`/api/events/${id}`)).then(json),
   createEvent: (body: object) => post('/api/events', body),
   updateEvent: (id: string, body: object) => put(`/api/events/${id}`, body),
   deleteEvent: (id: string) => del(`/api/events/${id}`),
+  getMyLectures: () => fetch(withQuery('/api/lectures', { scope: 'mine' })).then(json).then((data) => asArray<Lecture>(data)),
 
   translateText: (body: { text: string; sourceLanguage: 'uk' | 'en'; targetLanguage: 'uk' | 'en' }) =>
     post('/api/ai/translate', body),

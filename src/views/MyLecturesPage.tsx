@@ -23,9 +23,8 @@ export default function MyLecturesPage() {
   const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    api.getLectures().then((all) => {
-      setLectures(all.filter((l) => l.userId === user?.id))
-    })
+    if (!user?.id) return
+    api.getMyLectures().then(setLectures)
   }, [user?.id])
 
   async function handleDelete(id: string) {

@@ -26,17 +26,29 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name } = body
+    const { name, city } = body
 
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    if (name !== undefined && (typeof name !== 'string' || name.trim().length === 0)) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
+
+    if (city !== undefined && typeof city !== 'string') {
+      return NextResponse.json({ error: 'City is invalid' }, { status: 400 })
+    }
+
+    const updates: { name?: string; city?: string } = {}
+    if (name !== undefined) updates.name = name.trim()
+    if (city !== undefined) updates.city = city.trim()
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
     }
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .update({ name: name.trim() })
+      .update(updates)
       .eq('id', user.id)
-      .select('id, name, role')
+      .select('id, name, city, role')
       .single()
 
     if (error || !profile) {

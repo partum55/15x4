@@ -13,7 +13,9 @@
   },
   "upcomingEvents": {
     "title": "UPCOMING EVENTS",
-    "register": "register"
+    "register": "register",
+    "allCities": "all cities",
+    "noEvents": "No upcoming events"
   },
   "popularLectures": {
     "title": "POPULAR LECTURES",
@@ -143,6 +145,7 @@
     "register": {
       "title": "// CREATE ACCOUNT",
       "nameLabel": "full name",
+      "cityLabel": "city",
       "emailLabel": "email",
       "passwordLabel": "password",
       "passwordConfirmLabel": "confirm password",
@@ -178,6 +181,7 @@
     "settings": {
       "title": "// ACCOUNT SETTINGS",
       "nameLabel": "full name",
+      "cityLabel": "city",
       "emailLabel": "email",
       "passwordLabel": "new password",
       "passwordConfirmLabel": "confirm new password",

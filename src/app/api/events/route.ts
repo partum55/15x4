@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { canManageContent } from '@/lib/roles'
-import { getProfileRole, requireContentRole } from '@/lib/authz'
+import { requireContentRole } from '@/lib/authz'
 import { normalizeDateInput, normalizeTimeInput } from '@/lib/date-time'
 
 type Locale = 'uk' | 'en'
@@ -82,19 +81,18 @@ function attachLectures(
 export async function GET(req: NextRequest) {
   try {
     const locale = resolveLocale(req)
+    const scope = req.nextUrl.searchParams.get('scope')
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    const role = user ? await getProfileRole(user.id, supabase) : null
     let query = supabase.from('Event').select('*').order('createdAt', { ascending: false })
-    if (role !== 'admin') {
-      if (user && canManageContent(role)) {
-        query = query.or(`isPublic.eq.true,userId.eq.${user.id}`)
-      } else {
-        query = query.eq('isPublic', true)
-      }
+    if (scope === 'mine') {
+      if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      query = query.eq('userId', user.id)
+    } else {
+      query = query.eq('isPublic', true)
     }
 
     const { data: events, error } = await query
@@ -103,8 +101,16 @@ export async function GET(req: NextRequest) {
     }
 
     const eventIds = events.map((event) => event.id)
-    const { data: lectures, error: lecturesError } = eventIds.length
-      ? await supabase.from('Lecture').select('*').in('eventId', eventIds)
+    let lecturesQuery = eventIds.length
+      ? supabase.from('Lecture').select('*').in('eventId', eventIds)
+      : null
+
+    if (lecturesQuery && scope !== 'mine') {
+      lecturesQuery = lecturesQuery.eq('isPublic', true)
+    }
+
+    const { data: lectures, error: lecturesError } = lecturesQuery
+      ? await lecturesQuery
       : { data: [] as Array<Record<string, unknown>>, error: null }
 
     if (lecturesError) {
@@ -113,7 +119,7 @@ export async function GET(req: NextRequest) {
 
     const sanitizedEvents = (events as Array<Record<string, unknown>>).map((event) => ({
       ...event,
-      userId: event.userId === user?.id || role === 'admin' ? event.userId : undefined,
+      userId: event.userId === user?.id ? event.userId : undefined,
     }))
 
     return NextResponse.json(

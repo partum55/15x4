@@ -9,7 +9,7 @@ type AuthContextType = {
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error?: string; user?: AuthUser | null }>
   signInWithGoogle: (next?: string) => Promise<{ error?: string }>
-  signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>
+  signUp: (email: string, password: string, name: string, city: string) => Promise<{ error?: string }>
   signOut: () => Promise<void>
   refresh: () => Promise<void>
 }
@@ -119,12 +119,12 @@ export function AuthProvider({
     return {}
   }, [supabase])
 
-  const signUp = useCallback(async (email: string, password: string, name: string) => {
+  const signUp = useCallback(async (email: string, password: string, name: string, city: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name },
+        data: { name, city },
         emailRedirectTo: getAuthCallbackURL('/account/settings'),
       },
     })

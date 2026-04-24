@@ -17,9 +17,8 @@ export default function MyEventsPage() {
   const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    api.getEvents().then((all) => {
-      setEvents(all.filter((e) => e.userId === user?.id))
-    })
+    if (!user?.id) return
+    api.getMyEvents().then(setEvents)
   }, [user?.id])
 
   async function handleDelete(id: string) {
