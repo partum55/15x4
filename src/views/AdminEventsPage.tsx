@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import { useAuth } from '@/context/AuthContext'
+import { formatEventDate, formatEventTime } from '@/lib/date-time'
 
 type Event = {
   id: string
@@ -153,7 +154,7 @@ export default function AdminEventsPage() {
                         {e.title}
                       </Link>
                     </td>
-                    <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e.date}</td>
+                    <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{formatEventDate(e.date)} · {formatEventTime(e.time)}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e.location}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e._count.lectures}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">

@@ -8,6 +8,7 @@ import { Skeleton } from 'boneyard-js/react'
 import ArrowIcon from './ArrowIcon'
 import type { Event } from '@/lib/api'
 import { api } from '../lib/api'
+import { formatEventDate, formatEventTime } from '../lib/date-time'
 
 export default function UpcomingEvents() {
   const { t } = useTranslation()
@@ -56,9 +57,9 @@ export default function UpcomingEvents() {
                   {/* Col 1: info */}
                   <div className="flex w-[clamp(220px,23.1%,327px)] flex-shrink-0 flex-col justify-between py-6 max-[900px]:w-full max-[767px]:pb-4">
                     <div className="flex flex-col gap-6">
-                      <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.city} [{event.date}]</p>
+                      <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.city} [{formatEventDate(event.date)}]</p>
                       <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
-                      <p className="text-[clamp(13px,1.3vw,20px)] font-normal">{event.time}</p>
+                      <p className="text-[clamp(13px,1.3vw,20px)] font-normal">{formatEventTime(event.time)}</p>
                     </div>
                     {event.registrationUrl?.trim().startsWith('http') ? (
                       <a
@@ -99,10 +100,14 @@ export default function UpcomingEvents() {
                   {/* Col 3: talks */}
                   <div className="flex min-w-0 flex-1 flex-col gap-5 py-6 max-[900px]:col-start-2 max-[900px]:row-span-2 max-[767px]:w-full max-[767px]:gap-3 max-[767px]:pt-4">
                     {(event.lectures ?? []).slice(0, 4).map((lecture) => (
-                      <div key={lecture.id} className="flex items-baseline justify-between gap-4">
+                      <Link
+                        key={lecture.id}
+                        href={`/lectures/${lecture.id}`}
+                        className="group flex items-baseline justify-between gap-4 text-black no-underline transition-colors duration-200 hover:text-red"
+                      >
                         <span className="text-clamp-1 min-w-0 flex-1 text-[clamp(14px,1.6vw,24px)] font-normal">{lecture.title}</span>
                         <span className="text-clamp-1 max-w-[40%] flex-shrink-0 text-right text-[clamp(12px,1.3vw,20px)] font-normal">{lecture.author}</span>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>

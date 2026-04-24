@@ -168,7 +168,8 @@ export default function LectureDetailPage() {
     return (
       <div className="page min-h-screen">
         <Navbar />
-        <div className="px-[clamp(16px,3.2vw,48px)] py-16 text-2xl">{t('lectureDetail.notFound')}</div>
+        <main className="content-shell border-t border-black py-16 text-2xl">{t('lectureDetail.notFound')}</main>
+        <Footer />
       </div>
     )
   }
@@ -179,7 +180,7 @@ export default function LectureDetailPage() {
 
       <Skeleton name="page-lecture-detail" loading={bonesMode || loading}>
         {lecture && (
-          <main className="px-[clamp(16px,3.2vw,48px)] pb-[clamp(48px,6vw,96px)]">
+          <main className="content-shell border-t border-black pt-[clamp(28px,4.2vw,64px)] pb-[clamp(48px,6vw,96px)]">
         {/* Title */}
         <h1 className="text-[clamp(24px,3.2vw,48px)] font-bold text-center uppercase tracking-[0.03em] mb-[clamp(24px,3vw,48px)] leading-[1.1]">
           {lecture.title.toUpperCase()}
@@ -359,7 +360,7 @@ export default function LectureDetailPage() {
               </div>
 
               {related.length > 0 && (
-                <div className="grid grid-cols-4 gap-0 border-t border-black max-[1023px]:grid-cols-2">
+                <div className="grid grid-cols-4 gap-0 border-y border-black max-[1023px]:grid-cols-2">
                   {related.map((r) => (
                     <Link
                       key={r.id}

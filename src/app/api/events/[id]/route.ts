@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { canManageContent } from '@/lib/roles'
 import { getProfileRole, requireContentRole } from '@/lib/authz'
+import { normalizeDateInput, normalizeTimeInput } from '@/lib/date-time'
 
 type Locale = 'uk' | 'en'
 
@@ -40,6 +41,21 @@ function validCategoryPair(category: string, categoryColor: string) {
     (category === 'artes' && categoryColor === 'red') ||
     (category === 'wild-card' && categoryColor === 'orange')
   )
+}
+
+function isValidDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [year, month, day] = value.split('-').map(Number)
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  )
+}
+
+function isValidTime(value: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -102,7 +118,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const body = await req.json()
     const { titleUk, titleEn, descriptionUk, descriptionEn, cityUk, cityEn, date, locationUk, locationEn, time, image, registrationUrl, lectures } = body
 
-    if (!titleUk || !cityUk || !date || !locationUk || !time || !image) {
+    const normalizedDate = normalizeDateInput(String(date ?? ''))
+    const normalizedTime = normalizeTimeInput(String(time ?? ''))
+
+    if (!titleUk || !cityUk || !normalizedDate || !locationUk || !normalizedTime || !image) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (!isValidDate(normalizedDate) || !isValidTime(normalizedTime)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -115,10 +138,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         descriptionEn: String(descriptionEn ?? '').trim(),
         cityUk: String(cityUk).trim(),
         cityEn: String(cityEn ?? '').trim(),
-        date: String(date).trim(),
+        date: normalizedDate,
         locationUk: String(locationUk).trim(),
         locationEn: String(locationEn ?? '').trim(),
-        time: String(time).trim(),
+        time: normalizedTime,
         image: String(image).trim(),
         registrationUrl: registrationUrl ? String(registrationUrl).trim() : null,
       })

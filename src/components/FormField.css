@@ -9,10 +9,9 @@
   font-size: clamp(14px, 1.3vw, 20px);
   font-weight: 400;
   color: var(--color-black);
+  color-scheme: light;
   outline: none;
   transition: border-color 0.15s;
-  appearance: none;
-  -webkit-appearance: none;
 }
 
 .form-field-control input:focus,
