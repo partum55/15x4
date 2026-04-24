@@ -98,6 +98,7 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
   const initial = displayName.charAt(0).toUpperCase()
   const role = user.profile?.role ?? null
   const canManageOwnContent = canManageContent(role)
+  const profileIncomplete = !user.profile?.city
 
   return (
     <div className="relative z-[80]" ref={menuRef}>
@@ -109,10 +110,13 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
         aria-expanded={open}
       >
         <span
-          className={`w-[clamp(28px,2.2vw,36px)] h-[clamp(28px,2.2vw,36px)] rounded-full flex items-center justify-center text-[clamp(12px,1.1vw,17px)] font-bold ${variant === 'dark' ? 'border border-white text-white' : 'border border-black text-black'}`}
+          className={`relative w-[clamp(28px,2.2vw,36px)] h-[clamp(28px,2.2vw,36px)] rounded-full flex items-center justify-center text-[clamp(12px,1.1vw,17px)] font-bold ${variant === 'dark' ? 'border border-white text-white' : 'border border-black text-black'}`}
           style={{ borderWidth: '1.5px' }}
         >
           {initial}
+          {profileIncomplete && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red border border-white" aria-hidden="true" />
+          )}
         </span>
       </button>
 
@@ -123,6 +127,15 @@ export default function AccountMenu({ variant = 'light' }: AccountMenuProps) {
             <span className="text-[13px] font-normal text-white/55 whitespace-nowrap overflow-hidden text-ellipsis">{user.email}</span>
           </div>
           <div className="h-px bg-[rgba(255,255,241,0.12)]" />
+          {profileIncomplete && (
+            <Link
+              href="/account/settings"
+              className="block px-5 py-2.5 font-sans text-[12px] font-normal text-red no-underline bg-white/5 cursor-pointer w-full transition-colors duration-150 hover:bg-white/10"
+              onClick={() => setOpen(false)}
+            >
+              {t('profile.completionPrompt')} {t('profile.completionLink')}
+            </Link>
+          )}
           <Link href="/account/settings" className="block px-5 py-3 font-sans text-[15px] font-normal text-white no-underline bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 whitespace-nowrap hover:bg-white/10" onClick={() => setOpen(false)}>
             {t('account.menu.settings')}
           </Link>

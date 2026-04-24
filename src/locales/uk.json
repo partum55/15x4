@@ -296,6 +296,10 @@
     "errorLecturesLimit": "у події може бути максимум 4 лекції",
     "errorSave": "не вдалося зберегти подію"
   },
+  "profile": {
+    "completionPrompt": "Додайте місто, щоб бачити події поруч →",
+    "completionLink": "налаштування акаунту"
+  },
   "validation": {
     "required": "це поле обов'язкове"
   },
