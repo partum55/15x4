@@ -13,6 +13,7 @@ import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime } from '../lib/date-time'
+import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 function eventDescription(event: Event, language: string) {
   if (language.startsWith('en')) {
@@ -30,6 +31,7 @@ export default function EventDetailPage() {
   const bonesMode = searchParams.get('bones') === '1'
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(!bonesMode)
+  const skeletonLoading = useMinimumSkeleton(bonesMode || loading)
 
   useEffect(() => {
     if (!id) return
@@ -85,7 +87,7 @@ export default function EventDetailPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-event-detail" loading={bonesMode || loading}>
+      <Skeleton name="page-event-detail" loading={skeletonLoading} className="min-h-[720px]">
         {event && (
           <main>
             <section className="content-shell grid grid-cols-[1fr_minmax(320px,49%)] gap-9 border-b border-black py-[clamp(28px,4.2vw,64px)] max-[900px]:grid-cols-1">

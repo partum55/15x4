@@ -11,6 +11,7 @@ import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { LECTURE_CATEGORIES } from '../constants/lectureCategories'
+import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 const LECTURES_PAGE_SIZE = 20
 
@@ -31,6 +32,7 @@ export default function LecturesPage() {
   const [themeFilter, setThemeFilter] = useState('')
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
@@ -69,6 +71,7 @@ export default function LecturesPage() {
       })
       .finally(() => {
         if (isMounted) {
+          setHasLoaded(true)
           setLoading(false)
         }
       })
@@ -99,6 +102,8 @@ export default function LecturesPage() {
   }
 
   const hasActiveFilters = !!(debouncedSearchQuery || sortBy || themeFilter)
+  const showInitialSkeleton = loading && !hasLoaded
+  const skeletonLoading = useMinimumSkeleton(showInitialSkeleton)
 
   const sortOptions = [
     { value: '', label: t('lectures.sortBy') },
@@ -223,7 +228,7 @@ export default function LecturesPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-lectures" loading={loading}>
+      <Skeleton name="page-lectures" loading={skeletonLoading} className="min-h-[620px]">
         <div className="content-shell flex items-end justify-between py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
           <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
             <span className="text-red">{'//'}</span> {t('lectures.pageTitle')}

@@ -14,6 +14,7 @@ import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { compareEventDates, formatEventDate, formatEventTime } from '../lib/date-time'
+import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 type EventSectionProps = {
   event: Event
@@ -103,6 +104,7 @@ export default function EventsPage() {
   const [timeFilter, setTimeFilter] = useState('')
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -119,6 +121,7 @@ export default function EventsPage() {
       })
       .finally(() => {
         if (isMounted) {
+          setHasLoaded(true)
           setLoading(false)
         }
       })
@@ -180,12 +183,14 @@ export default function EventsPage() {
     { value: '', label: t('events.time') },
     ...times.map((time) => ({ value: time, label: formatEventTime(time) })),
   ]
+  const showInitialSkeleton = loading && !hasLoaded
+  const skeletonLoading = useMinimumSkeleton(showInitialSkeleton)
 
   return (
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-events" loading={loading}>
+      <Skeleton name="page-events" loading={skeletonLoading} className="min-h-[620px]">
         <div className="content-shell grid grid-cols-2 items-end gap-9 py-6 max-[900px]:grid-cols-1 max-[900px]:gap-4">
           <h1 className="ml-[calc(50%-327px)] text-[clamp(28px,3.2vw,48px)] font-normal leading-none text-black max-[1199px]:ml-0">
             <span className="text-red">{'//'}</span> {t('events.pageTitle')}

@@ -11,6 +11,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { api } from '../lib/api'
 import { CATEGORY_BORDER_CLASS as badgeBorderClass } from '../constants/colors'
+import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 type ResolvedLectureVideo = {
   kind: 'iframe' | 'file'
@@ -121,6 +122,7 @@ export default function LectureDetailPage() {
   const [lecture, setLecture] = useState<Lecture | null>(null)
   const [related, setRelated] = useState<Lecture[]>([])
   const [loading, setLoading] = useState(!bonesMode)
+  const skeletonLoading = useMinimumSkeleton(bonesMode || loading)
   const [openedVideoLectureId, setOpenedVideoLectureId] = useState<string | null>(null)
   const lectureCategoryLabel = lecture
     ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
@@ -178,7 +180,7 @@ export default function LectureDetailPage() {
     <div className="page min-h-screen">
       <Navbar />
 
-      <Skeleton name="page-lecture-detail" loading={bonesMode || loading}>
+      <Skeleton name="page-lecture-detail" loading={skeletonLoading} className="min-h-[720px]">
         {lecture && (
           <main className="content-shell border-t border-black pt-[clamp(28px,4.2vw,64px)] pb-[clamp(48px,6vw,96px)]">
         {/* Title */}
