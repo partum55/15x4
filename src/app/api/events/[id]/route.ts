@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getProfileRole, requireContentRole } from '@/lib/authz'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeDateInput, normalizeTimeInput } from '@/lib/date-time'
+import { findCityOption } from '@/constants/cities'
 
 type Locale = 'uk' | 'en'
 
@@ -140,8 +141,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const normalizedDate = normalizeDateInput(String(date ?? ''))
     const normalizedTime = normalizeTimeInput(String(time ?? ''))
+    const cityOption = findCityOption(String(cityUk ?? '')) ?? findCityOption(String(cityEn ?? ''))
 
-    if (!titleUk || !cityUk || !normalizedDate || !locationUk || !normalizedTime || !image) {
+    if (!titleUk || !cityOption || !normalizedDate || !locationUk || !normalizedTime || !image) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -164,8 +166,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         titleEn: String(titleEn ?? '').trim(),
         descriptionUk: String(descriptionUk ?? '').trim(),
         descriptionEn: String(descriptionEn ?? '').trim(),
-        cityUk: String(cityUk).trim(),
-        cityEn: String(cityEn ?? '').trim(),
+        city: cityOption.id,
+        cityUk: cityOption.uk,
+        cityEn: cityOption.en,
         date: normalizedDate,
         locationUk: String(locationUk).trim(),
         locationEn: String(locationEn ?? '').trim(),

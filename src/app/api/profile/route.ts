@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerAuthUser } from '@/lib/auth-server'
 import { createClient } from '@/lib/supabase/server'
+import { findCityOption } from '@/constants/cities'
 
 export async function GET() {
   try {
@@ -32,13 +33,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    if (city !== undefined && typeof city !== 'string') {
+    const cityOption = city !== undefined && typeof city === 'string' ? findCityOption(city) : null
+
+    if (city !== undefined && (typeof city !== 'string' || !cityOption)) {
       return NextResponse.json({ error: 'City is invalid' }, { status: 400 })
     }
 
     const updates: { name?: string; city?: string } = {}
     if (name !== undefined) updates.name = name.trim()
-    if (city !== undefined) updates.city = city.trim()
+    if (city !== undefined && cityOption) updates.city = cityOption.id
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
