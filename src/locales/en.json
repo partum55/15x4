@@ -233,7 +233,8 @@
   },
   "common": {
     "loading": "loading...",
-    "translate": "translate"
+    "translate": "translate",
+    "translationError": "translation failed. check the translation API key or try again later"
   },
   "addLecture": {
     "titleNew": "// ADD LECTURE",

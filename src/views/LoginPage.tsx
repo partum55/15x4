@@ -61,6 +61,14 @@ export default function LoginPage() {
     }
   }
 
+  function setField(field: 'email' | 'password', value: string) {
+    if (field === 'email') setEmail(value)
+    if (field === 'password') setPassword(value)
+    if (errors[field]) {
+      setErrors((current) => ({ ...current, [field]: undefined }))
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar variant="light" />
@@ -108,19 +116,20 @@ export default function LoginPage() {
             </div>
 
             <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
-              <FormField label={t('auth.login.emailLabel')} error={errors.email}>
+              <FormField label={t('auth.login.emailLabel')} error={errors.email} required>
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={e => setField('email', e.target.value)}
                   autoComplete="email"
+                  required
                 />
               </FormField>
 
-              <FormField label={t('auth.login.passwordLabel')} error={errors.password}>
+              <FormField label={t('auth.login.passwordLabel')} error={errors.password} required>
                 <PasswordInput
                   value={password}
-                  onChange={setPassword}
+                  onChange={(value) => setField('password', value)}
                   autoComplete="current-password"
                 />
               </FormField>
