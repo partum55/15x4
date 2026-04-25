@@ -379,7 +379,7 @@ export default function AddEditEventPage() {
   const previewCity = form.cityUk.trim() || form.cityEn.trim() || t('addEvent.cityLabel')
   const previewLocation = form.locationUk.trim() || form.locationEn.trim() || t('addEvent.locationLabel')
   const previewDescription = form.descriptionUk.trim() || form.descriptionEn.trim() || t('addEvent.descriptionUkLabel')
-  const previewDate = form.date ? formatEventDate(form.date) : t('addEvent.dateLabel')
+  const previewDate = form.date ? formatEventDate(form.date, true) : t('addEvent.dateLabel')
   const previewTime = form.time ? formatEventTime(form.time) : t('addEvent.timeLabel')
 
   return (

@@ -237,7 +237,7 @@ export default function AdminEventsPage() {
                         {e.title}
                       </Link>
                     </td>
-                    <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{formatEventDate(e.date)} · {formatEventTime(e.time)}</td>
+                    <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{formatEventDate(e.date, true)} · {formatEventTime(e.time)}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e.location}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e._count.lectures}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">

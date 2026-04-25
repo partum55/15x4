@@ -67,7 +67,7 @@ export default function MyEventsPage() {
                 <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <p className="text-[clamp(14px,1.4vw,20px)] font-normal uppercase tracking-[-0.03em] text-black whitespace-nowrap overflow-hidden text-ellipsis">{event.city}</p>
                   <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
-                    {formatEventDate(event.date)} · {formatEventTime(event.time)} · {event.location}
+                    {formatEventDate(event.date, true)} · {formatEventTime(event.time)} · {event.location}
                   </p>
                   <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
                     {t('myEvents.lectureCount', { count: event.lectures?.length ?? 0 })}

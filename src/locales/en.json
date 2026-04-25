@@ -44,7 +44,9 @@
     "allCities": "all cities",
     "dateAsc": "oldest first",
     "dateDesc": "newest first",
-    "noResults": "No events found"
+    "noResults": "No events found",
+    "loadMore": "load more",
+    "loadingMore": "loading..."
   },
   "lectures": {
     "pageTitle": "LECTURES",

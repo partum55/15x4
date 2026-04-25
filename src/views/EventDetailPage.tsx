@@ -12,7 +12,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
-import { formatEventDate, formatEventTime } from '../lib/date-time'
+import { formatEventDate, formatEventTime, isEventPast } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 function eventDescription(event: Event, language: string) {
@@ -82,6 +82,10 @@ export default function EventDetailPage() {
   const description = event ? eventDescription(event, i18n.language) : ''
   const lectures = event?.lectures ?? []
   const registerHref = event?.registrationUrl?.trim()
+  const registrationClosed = event ? isEventPast(event.date, event.time) : false
+  const registrationAvailable = Boolean(registerHref) && !registrationClosed
+  const activeRegisterClassName = "flex h-[69px] min-w-[220px] items-center justify-center gap-[10px] bg-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:w-full"
+  const disabledRegisterClassName = "flex h-[69px] min-w-[220px] cursor-not-allowed items-center justify-center gap-[10px] border border-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] opacity-40 max-[767px]:w-full"
 
   return (
     <div className="page">
@@ -110,7 +114,7 @@ export default function EventDetailPage() {
                 <div className="grid max-w-[690px] grid-cols-3 gap-6 border-t border-black pt-6 max-[767px]:grid-cols-1">
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.date')}</p>
-                    <p className="text-[clamp(18px,1.6vw,24px)]">{formatEventDate(event.date)}</p>
+                    <p className="text-[clamp(18px,1.6vw,24px)]">{formatEventDate(event.date, true)}</p>
                   </div>
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.time')}</p>
@@ -127,7 +131,7 @@ export default function EventDetailPage() {
                 {event.image ? (
                   <Image
                     src={event.image}
-                    alt={`${event.city} ${formatEventDate(event.date)}`}
+                    alt={`${event.city} ${formatEventDate(event.date, true)}`}
                     width={1200}
                     height={900}
                     unoptimized
@@ -139,16 +143,21 @@ export default function EventDetailPage() {
 
                 <div className="grid grid-cols-[1fr_auto] gap-6 max-[767px]:grid-cols-1">
                   <p className="text-[clamp(15px,1.4vw,20px)] leading-[1.35]">{event.location}</p>
-                  {registerHref ? (
+                  {registrationAvailable && registerHref ? (
                     <a
                       href={registerHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-[69px] min-w-[220px] items-center justify-center gap-[10px] bg-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:w-full"
+                      className={activeRegisterClassName}
                     >
                       <span>{t('eventDetail.register')}</span>
                       <ArrowIcon />
                     </a>
+                  ) : registrationClosed ? (
+                    <span className={disabledRegisterClassName} aria-disabled="true">
+                      <span>{t('eventDetail.register')}</span>
+                      <ArrowIcon />
+                    </span>
                   ) : (
                     <span className="flex h-[69px] min-w-[220px] items-center justify-center border border-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] opacity-50 max-[767px]:w-full">
                       {t('eventDetail.registrationSoon')}
@@ -200,7 +209,7 @@ export default function EventDetailPage() {
             <section className="content-shell pb-[clamp(32px,4.2vw,64px)]">
               <div className="flex items-center justify-between gap-6 border-t border-black pt-6 max-[767px]:flex-col max-[767px]:items-stretch">
                 <p className="text-[clamp(18px,1.6vw,24px)] uppercase tracking-[-0.04em]">
-                  {event.city} [{formatEventDate(event.date)}]
+                  {event.city} [{formatEventDate(event.date, true)}]
                 </p>
                 <div className="flex gap-6 max-[767px]:flex-col max-[767px]:gap-4">
                   <Link
@@ -209,17 +218,22 @@ export default function EventDetailPage() {
                   >
                     {t('eventDetail.back')}
                   </Link>
-                  {registerHref && (
+                  {registrationAvailable && registerHref ? (
                     <a
                       href={registerHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-[69px] min-w-[220px] items-center justify-center gap-[10px] bg-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:w-full"
+                      className={activeRegisterClassName}
                     >
                       <span>{t('eventDetail.register')}</span>
                       <ArrowIcon />
                     </a>
-                  )}
+                  ) : registrationClosed ? (
+                    <span className={disabledRegisterClassName} aria-disabled="true">
+                      <span>{t('eventDetail.register')}</span>
+                      <ArrowIcon />
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </section>

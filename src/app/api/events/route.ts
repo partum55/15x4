@@ -16,6 +16,7 @@ function resolveLocale(req: NextRequest): Locale {
 function mapEventRow(row: Record<string, unknown>, locale: Locale) {
   return {
     ...row,
+    cityId: row.city,
     title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
     city: locale === 'en' ? row.cityEn ?? row.cityUk : row.cityUk ?? row.cityEn,
     location: locale === 'en' ? row.locationEn ?? row.locationUk : row.locationUk ?? row.locationEn,
@@ -62,6 +63,39 @@ function isValidHttpUrl(value: string) {
   } catch { return false }
 }
 
+function parsePositiveInt(value: string | null, fallback: number, max: number) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback
+  return Math.min(Math.floor(parsed), max)
+}
+
+function facetKey(value: unknown) {
+  return String(value ?? '').trim()
+}
+
+function buildEventFacets(events: Array<Record<string, unknown>>, locale: Locale) {
+  const cityMap = new Map<string, string>()
+  const timeSet = new Set<string>()
+
+  for (const event of events) {
+    const cityValue = facetKey(event.city)
+    const cityLabel = facetKey(locale === 'en' ? event.cityEn ?? event.cityUk : event.cityUk ?? event.cityEn)
+    if (cityValue && cityLabel && !cityMap.has(cityValue)) cityMap.set(cityValue, cityLabel)
+
+    const time = facetKey(event.time)
+    if (time) timeSet.add(time)
+  }
+
+  return {
+    cities: [...cityMap.entries()]
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    times: [...timeSet]
+      .sort()
+      .map((time) => ({ value: time, label: time })),
+  }
+}
+
 function attachLectures(
   events: Array<Record<string, unknown>>,
   lectures: Array<Record<string, unknown>>,
@@ -89,21 +123,67 @@ function attachLectures(
 export async function GET(req: NextRequest) {
   try {
     const locale = resolveLocale(req)
-    const scope = req.nextUrl.searchParams.get('scope')
+    const searchParams = req.nextUrl.searchParams
+    const scope = searchParams.get('scope')
+    const wantsPagination = searchParams.has('limit') || searchParams.has('offset')
+    const limit = parsePositiveInt(searchParams.get('limit'), 10, 50)
+    const offset = parsePositiveInt(searchParams.get('offset'), 0, 100000)
+    const city = searchParams.get('city')?.trim()
+    const time = searchParams.get('time')?.trim()
+    const sort = searchParams.get('sort')
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    let query = supabase.from('Event').select('*').order('createdAt', { ascending: false })
+    if (scope === 'mine' && !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userId = user?.id
+
+    let query = wantsPagination
+      ? supabase.from('Event').select('*', { count: 'exact' })
+      : supabase.from('Event').select('*')
+
     if (scope === 'mine') {
-      if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      query = query.eq('userId', user.id)
+      query = query.eq('userId', userId)
     } else {
       query = query.eq('isPublic', true)
     }
 
-    const { data: events, error } = await query
+    let facetsQuery = supabase.from('Event').select('city, cityUk, cityEn, time')
+    if (scope === 'mine') {
+      facetsQuery = facetsQuery.eq('userId', userId)
+    } else {
+      facetsQuery = facetsQuery.eq('isPublic', true)
+    }
+
+    const { data: facetRows, error: facetsError } = wantsPagination
+      ? await facetsQuery
+      : { data: [] as Array<Record<string, unknown>>, error: null }
+
+    if (facetsError) {
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    if (city) {
+      query = query.eq('city', city)
+    }
+    if (time) {
+      query = query.eq('time', time)
+    }
+
+    if (sort === 'dateAsc') {
+      query = query.order('date', { ascending: true }).order('time', { ascending: true })
+    } else if (sort === 'dateDesc') {
+      query = query.order('date', { ascending: false }).order('time', { ascending: false })
+    } else {
+      query = query.order('createdAt', { ascending: false })
+    }
+
+    if (wantsPagination) {
+      query = query.range(offset, offset + limit - 1)
+    }
+
+    const { data: events, error, count } = await query
     if (error || !events) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
@@ -130,9 +210,21 @@ export async function GET(req: NextRequest) {
       userId: event.userId === user?.id ? event.userId : undefined,
     }))
 
-    return NextResponse.json(
-      attachLectures(sanitizedEvents, (lectures ?? []) as Array<Record<string, unknown>>, locale),
-    )
+    const items = attachLectures(sanitizedEvents, (lectures ?? []) as Array<Record<string, unknown>>, locale)
+
+    if (wantsPagination) {
+      const total = count ?? items.length
+      return NextResponse.json({
+        items,
+        total,
+        limit,
+        offset,
+        hasMore: offset + items.length < total,
+        ...buildEventFacets((facetRows ?? []) as Array<Record<string, unknown>>, locale),
+      })
+    }
+
+    return NextResponse.json(items)
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -44,7 +44,9 @@
     "allCities": "усі міста",
     "dateAsc": "спочатку старіші",
     "dateDesc": "спочатку новіші",
-    "noResults": "Подій не знайдено"
+    "noResults": "Подій не знайдено",
+    "loadMore": "завантажити ще",
+    "loadingMore": "завантажуємо..."
   },
   "lectures": {
     "pageTitle": "ЛЕКЦІЇ",

@@ -138,18 +138,6 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
     ...(isHoverFilled ? { backgroundColor: color, color: 'var(--color-white)' } : {}),
   } as CSSProperties
 
-  if (variant === 'swatch') {
-    return (
-      <Link
-        href={`/lectures/${lecture.id}`}
-        className={joinClassNames('group block min-w-0 no-underline text-inherit', className)}
-        style={{ '--lecture-card-color': color } as CSSProperties}
-      >
-        <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="swatch" active={false} />
-      </Link>
-    )
-  }
-
   if (variant === 'popular') {
     return (
       <Link
@@ -218,8 +206,8 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
 
   const textBlock = (
     <div className={joinClassNames(
-      'flex min-w-0 flex-1 flex-col overflow-hidden px-[clamp(16px,2vw,28px)] py-6 transition-colors duration-200',
-      isCompact ? 'h-[clamp(136px,10vw,152px)] justify-center gap-4 max-[767px]:h-auto max-[767px]:min-h-[136px] max-[767px]:py-5' : 'h-[321px] gap-6 max-[767px]:h-auto max-[767px]:py-5',
+      'flex min-w-0 flex-1 flex-col px-[clamp(16px,2vw,28px)] py-6 transition-colors duration-200',
+      isCompact ? 'h-[clamp(136px,10vw,152px)] justify-center gap-4 overflow-hidden max-[767px]:h-auto max-[767px]:min-h-[136px] max-[767px]:py-5' : 'gap-6 max-[767px]:py-5',
     )}>
       <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
       <p className="text-clamp-1 min-h-[1.3em] text-[clamp(14px,1.3vw,20px)] font-normal leading-[1.3]">{lecture.author}</p>
@@ -239,7 +227,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseLeave={() => setHovered(false)}
       >
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="detail" active={hovered} />
-        <div className="flex h-[clamp(160px,20vw,260px)] min-w-0 flex-col gap-5 overflow-hidden px-[clamp(16px,2vw,28px)] py-3 transition-colors duration-200 group-hover:bg-[var(--lecture-card-color)] max-[900px]:h-auto">
+        <div className="flex min-w-0 flex-col gap-5 px-[clamp(16px,2vw,28px)] py-3 transition-colors duration-200 group-hover:bg-[var(--lecture-card-color)]">
           <div className="flex flex-col gap-2">
             <p className="text-clamp-2 text-[clamp(18px,1.6vw,24px)] font-normal uppercase leading-[1.15] tracking-[-0.04em]">{lecture.title}</p>
             <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>

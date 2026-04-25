@@ -39,12 +39,12 @@ export function normalizeTimeInput(value?: string | null) {
   return `${pad2(hours)}:${pad2(minutes)}`
 }
 
-export function formatEventDate(value?: string | null) {
+export function formatEventDate(value?: string | null, includeYear = false) {
   const normalized = normalizeDateInput(value)
   if (!isoDatePattern.test(normalized)) return value ?? ''
 
-  const [, month, day] = normalized.split('-')
-  return `${day}/${month}`
+  const [year, month, day] = normalized.split('-')
+  return includeYear ? `${day}/${month}/${year}` : `${day}/${month}`
 }
 
 export function formatEventTime(value?: string | null) {
@@ -60,4 +60,13 @@ export function compareEventDates(a?: string | null, b?: string | null) {
   }
 
   return formatEventDate(dateA).localeCompare(formatEventDate(dateB))
+}
+
+export function isEventPast(date?: string | null, time?: string | null, now = Date.now()) {
+  const normalizedDate = normalizeDateInput(date)
+  if (!isoDatePattern.test(normalizedDate)) return false
+
+  const normalizedTime = normalizeTimeInput(time) || '23:59'
+  const timestamp = new Date(`${normalizedDate}T${normalizedTime}`).getTime()
+  return Number.isFinite(timestamp) && timestamp < now
 }

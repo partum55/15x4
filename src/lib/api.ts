@@ -53,6 +53,7 @@ export type Event = {
   title: string
   titleUk: string
   titleEn: string
+  cityId?: string
   city: string
   cityUk: string
   cityEn: string
@@ -80,6 +81,16 @@ export type PaginatedResponse<T> = {
   hasMore: boolean
 }
 
+export type EventFacet = {
+  value: string
+  label: string
+}
+
+export type EventsPageResponse = PaginatedResponse<Event> & {
+  cities: EventFacet[]
+  times: EventFacet[]
+}
+
 export type LectureListParams = {
   limit?: number
   offset?: number
@@ -91,6 +102,11 @@ export type LectureListParams = {
 
 export type EventListParams = {
   scope?: string
+  limit?: number
+  offset?: number
+  city?: string
+  time?: string
+  sort?: string
 }
 
 const json = (res: Response) => res.json()
@@ -131,6 +147,8 @@ export const api = {
   deleteLecture: (id: string) => del(`/api/lectures/${id}`),
 
   getEvents: (params?: EventListParams) => fetch(withQuery('/api/events', params)).then(json).then((data) => asArray<Event>(data)),
+  getEventsPage: (params?: EventListParams) =>
+    fetch(withQuery('/api/events', params)).then(json).then((data) => data as EventsPageResponse),
   getMyEvents: () => fetch(withQuery('/api/events', { scope: 'mine' })).then(json).then((data) => asArray<Event>(data)),
   getEvent: (id: string) => fetch(withQuery(`/api/events/${id}`)).then(json),
   createEvent: (body: object) => post('/api/events', body),
