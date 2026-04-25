@@ -101,6 +101,16 @@ export default function AccountSettingsPage() {
     }
   }
 
+  function updateName(value: string) {
+    setName(value)
+    if (error) setError('')
+  }
+
+  function updateCity(value: string) {
+    setCity(value)
+    if (error) setError('')
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar variant="light" />
@@ -113,12 +123,13 @@ export default function AccountSettingsPage() {
           )}
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-            <FormField label={t('account.settings.nameLabel')}>
+            <FormField label={t('account.settings.nameLabel')} required>
               <input
                 type="text"
                 value={name || user?.name || ''}
-                onChange={e => setName(e.target.value)}
+                onChange={e => updateName(e.target.value)}
                 autoComplete="name"
+                required
               />
             </FormField>
 
@@ -126,11 +137,12 @@ export default function AccountSettingsPage() {
               <input type="email" value={user?.email ?? ''} readOnly className="opacity-50 cursor-not-allowed" />
             </FormField>
 
-            <FormField label={t('account.settings.cityLabel')}>
+            <FormField label={t('account.settings.cityLabel')} required>
               <select
                 value={city || findCityOption(user?.city)?.id || ''}
-                onChange={e => setCity(e.target.value)}
+                onChange={e => updateCity(e.target.value)}
                 autoComplete="address-level2"
+                required
               >
                 <option value="">{t('account.settings.cityPlaceholder')}</option>
                 {CITY_OPTIONS.map((option) => (

@@ -73,6 +73,13 @@ export default function RegisterPage() {
     setSubmitted(true)
   }
 
+  function setField<K extends keyof typeof errors>(field: K, value: string, setter: (next: string) => void) {
+    setter(value)
+    if (errors[field]) {
+      setErrors((current) => ({ ...current, [field]: undefined }))
+    }
+  }
+
   async function handleGoogleRegistration() {
     if (googleLoading || submitting) return
     setGoogleLoading(true)
@@ -148,29 +155,32 @@ export default function RegisterPage() {
           </div>
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
-            <FormField label={t('auth.register.nameLabel')} error={errors.name}>
+            <FormField label={t('auth.register.nameLabel')} error={errors.name} required>
               <input
                 type="text"
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => setField('name', e.target.value, setName)}
                 autoComplete="name"
+                required
               />
             </FormField>
 
-            <FormField label={t('auth.register.emailLabel')} error={errors.email}>
+            <FormField label={t('auth.register.emailLabel')} error={errors.email} required>
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => setField('email', e.target.value, setEmail)}
                 autoComplete="email"
+                required
               />
             </FormField>
 
-            <FormField label={t('auth.register.cityLabel')} error={errors.city}>
+            <FormField label={t('auth.register.cityLabel')} error={errors.city} required>
               <select
                 value={city}
-                onChange={e => setCity(e.target.value)}
+                onChange={e => setField('city', e.target.value, setCity)}
                 autoComplete="address-level2"
+                required
               >
                 <option value="">{t('auth.register.cityPlaceholder')}</option>
                 {CITY_OPTIONS.map((option) => (
@@ -181,11 +191,11 @@ export default function RegisterPage() {
               </select>
             </FormField>
 
-            <FormField label={t('auth.register.passwordLabel')} error={errors.password}>
+            <FormField label={t('auth.register.passwordLabel')} error={errors.password} required>
               <div className="flex flex-col gap-2">
                 <PasswordInput
                   value={password}
-                  onChange={setPassword}
+                  onChange={(value) => setField('password', value, setPassword)}
                   autoComplete="new-password"
                 />
                 {password && (
@@ -207,11 +217,11 @@ export default function RegisterPage() {
               </div>
             </FormField>
 
-            <FormField label={t('auth.register.passwordConfirmLabel')} error={errors.passwordConfirm}>
+            <FormField label={t('auth.register.passwordConfirmLabel')} error={errors.passwordConfirm} required>
               <div className="flex flex-col gap-2">
                 <PasswordInput
                   value={passwordConfirm}
-                  onChange={setPasswordConfirm}
+                  onChange={(value) => setField('passwordConfirm', value, setPasswordConfirm)}
                   autoComplete="new-password"
                 />
                 {passwordConfirm && (

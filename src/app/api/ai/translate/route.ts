@@ -57,7 +57,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Translation provider request failed' }, { status: 502 })
+      const providerError = await response.json().catch(() => null)
+      const providerCode = String(providerError?.error?.code ?? '')
+      const error = response.status === 401 || providerCode === 'invalid_api_key'
+        ? 'Translation provider authentication failed'
+        : 'Translation provider request failed'
+
+      return NextResponse.json({ error }, { status: 502 })
     }
 
     const data = await response.json()

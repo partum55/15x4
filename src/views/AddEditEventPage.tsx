@@ -46,6 +46,7 @@ type EventLectureFormState = {
 }
 
 type FormErrors = Partial<Record<keyof EventFormState, string>>
+type EventLectureErrors = Partial<Record<keyof EventLectureFormState, string>>
 
 const EMPTY_EVENT: EventFormState = {
   titleUk: '',
@@ -88,6 +89,7 @@ export default function AddEditEventPage() {
   const [form, setForm] = useState<EventFormState>(EMPTY_EVENT)
   const [lectures, setLectures] = useState<EventLectureFormState[]>([])
   const [errors, setErrors] = useState<FormErrors>({})
+  const [lectureErrors, setLectureErrors] = useState<Record<string, EventLectureErrors>>({})
   const [formError, setFormError] = useState('')
   const [translating, setTranslating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -133,6 +135,9 @@ export default function AddEditEventPage() {
 
   function setField(field: keyof EventFormState, value: string) {
     setForm(f => ({ ...f, [field]: value }))
+    if (errors[field]) {
+      setErrors((current) => ({ ...current, [field]: undefined }))
+    }
   }
 
   function setCity(value: string) {
@@ -142,10 +147,20 @@ export default function AddEditEventPage() {
       cityUk: city?.uk ?? '',
       cityEn: city?.en ?? '',
     }))
+    if (errors.cityUk) {
+      setErrors((current) => ({ ...current, cityUk: undefined }))
+    }
   }
 
   function setLectureField(index: number, field: keyof EventLectureFormState, value: string) {
     setLectures((prev) => prev.map((lecture, i) => (i === index ? { ...lecture, [field]: value } : lecture)))
+    const tempId = lectures[index]?.tempId
+    if (tempId && lectureErrors[tempId]?.[field]) {
+      setLectureErrors((current) => ({
+        ...current,
+        [tempId]: { ...current[tempId], [field]: undefined },
+      }))
+    }
   }
 
   function addLecture() {
@@ -171,7 +186,26 @@ export default function AddEditEventPage() {
     if (!form.date.trim()) e.date = t('auth.login.errorRequired')
     if (!form.locationUk.trim()) e.locationUk = t('auth.login.errorRequired')
     if (!form.time.trim()) e.time = t('auth.login.errorRequired')
+    if (!form.image.trim()) e.image = t('auth.login.errorRequired')
     return e
+  }
+
+  function validateLectures() {
+    const next: Record<string, EventLectureErrors> = {}
+
+    for (const lecture of lectures) {
+      const errorsForLecture: EventLectureErrors = {}
+      if (!lecture.titleUk.trim()) errorsForLecture.titleUk = t('auth.login.errorRequired')
+      if (!lecture.authorUk.trim()) errorsForLecture.authorUk = t('auth.login.errorRequired')
+      if (!lecture.category.trim()) errorsForLecture.category = t('auth.login.errorRequired')
+      if (!lecture.summaryUk.trim()) errorsForLecture.summaryUk = t('auth.login.errorRequired')
+      if (!lecture.image.trim()) errorsForLecture.image = t('auth.login.errorRequired')
+      if (Object.keys(errorsForLecture).length > 0) {
+        next[lecture.tempId] = errorsForLecture
+      }
+    }
+
+    return next
   }
 
   async function translatePair(
@@ -183,6 +217,7 @@ export default function AddEditEventPage() {
     if (existingTarget.trim()) return existingTarget
     if (!sourceValue.trim()) return ''
     const result = await api.translateText({ text: sourceValue.trim(), sourceLanguage, targetLanguage })
+    if (result?.error) throw new Error(String(result.error))
     return result?.translatedText ? String(result.translatedText) : ''
   }
 
@@ -258,6 +293,8 @@ export default function AddEditEventPage() {
         )
         setLectures(translatedLectures)
       }
+    } catch {
+      setFormError(t('common.translationError'))
     } finally {
       setTranslating(false)
     }
@@ -268,7 +305,10 @@ export default function AddEditEventPage() {
     if (saving || translating) return
     setFormError('')
     const e = validate()
-    if (Object.keys(e).length) { setErrors(e); return }
+    const nextLectureErrors = validateLectures()
+    setErrors(e)
+    setLectureErrors(nextLectureErrors)
+    if (Object.keys(e).length || Object.keys(nextLectureErrors).length) return
 
     const body = {
       titleUk: form.titleUk.trim(),
@@ -311,6 +351,7 @@ export default function AddEditEventPage() {
       !lecture.categoryColor,
     )
     if (invalidLecture) {
+      setLectureErrors(validateLectures())
       setFormError(t('addEvent.errorInvalidCategory'))
       return
     }
@@ -369,19 +410,20 @@ export default function AddEditEventPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
-              <FormField label={t('addEvent.titleUkLabel')} error={errors.titleUk}>
-                <input type="text" value={form.titleUk} onChange={e => setField('titleUk', e.target.value)} />
+              <FormField label={t('addEvent.titleUkLabel')} error={errors.titleUk} required>
+                <input type="text" value={form.titleUk} onChange={e => setField('titleUk', e.target.value)} required />
               </FormField>
               <FormField label={t('addEvent.titleEnLabel')}>
                 <input type="text" value={form.titleEn} onChange={e => setField('titleEn', e.target.value)} />
               </FormField>
             </div>
 
-            <FormField label={t('addEvent.cityLabel')} error={errors.cityUk}>
+            <FormField label={t('addEvent.cityLabel')} error={errors.cityUk} required>
               <select
                 value={findCityOption(form.cityUk)?.id ?? ''}
                 onChange={(e) => setCity(e.target.value)}
                 autoComplete="address-level2"
+                required
               >
                 <option value="">{t('addEvent.cityPlaceholder')}</option>
                 {CITY_OPTIONS.map((option) => (
@@ -393,8 +435,8 @@ export default function AddEditEventPage() {
             </FormField>
 
             <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
-              <FormField label={t('addEvent.locationUkLabel')} error={errors.locationUk}>
-                <input type="text" value={form.locationUk} onChange={e => setField('locationUk', e.target.value)} />
+              <FormField label={t('addEvent.locationUkLabel')} error={errors.locationUk} required>
+                <input type="text" value={form.locationUk} onChange={e => setField('locationUk', e.target.value)} required />
               </FormField>
               <FormField label={t('addEvent.locationEnLabel')}>
                 <input type="text" value={form.locationEn} onChange={e => setField('locationEn', e.target.value)} />
@@ -410,16 +452,16 @@ export default function AddEditEventPage() {
               </FormField>
             </div>
 
-            <FormField label={t('addEvent.dateLabel')} error={errors.date}>
-              <input type="date" value={form.date} onChange={e => setField('date', e.target.value)} />
+            <FormField label={t('addEvent.dateLabel')} error={errors.date} required>
+              <input type="date" value={form.date} onChange={e => setField('date', e.target.value)} required />
             </FormField>
 
             <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
-              <FormField label={t('addEvent.timeLabel')} error={errors.time}>
-                <input type="time" value={form.time} onChange={e => setField('time', e.target.value)} />
+              <FormField label={t('addEvent.timeLabel')} error={errors.time} required>
+                <input type="time" value={form.time} onChange={e => setField('time', e.target.value)} required />
               </FormField>
-              <FormField label={t('addEvent.imageLabel')}>
-                <input type="text" value={form.image} onChange={e => setField('image', e.target.value)} placeholder="https://" />
+              <FormField label={t('addEvent.imageLabel')} error={errors.image} required>
+                <input type="url" value={form.image} onChange={e => setField('image', e.target.value)} placeholder="https://" required />
               </FormField>
             </div>
 
@@ -455,8 +497,8 @@ export default function AddEditEventPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
-                    <FormField label={t('addEvent.lectureTitleUkLabel')}>
-                      <input type="text" value={lecture.titleUk} onChange={(e) => setLectureField(index, 'titleUk', e.target.value)} />
+                    <FormField label={t('addEvent.lectureTitleUkLabel')} error={lectureErrors[lecture.tempId]?.titleUk} required>
+                      <input type="text" value={lecture.titleUk} onChange={(e) => setLectureField(index, 'titleUk', e.target.value)} required />
                     </FormField>
                     <FormField label={t('addEvent.lectureTitleEnLabel')}>
                       <input type="text" value={lecture.titleEn} onChange={(e) => setLectureField(index, 'titleEn', e.target.value)} />
@@ -464,16 +506,16 @@ export default function AddEditEventPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
-                    <FormField label={t('addEvent.lectureAuthorUkLabel')}>
-                      <input type="text" value={lecture.authorUk} onChange={(e) => setLectureField(index, 'authorUk', e.target.value)} />
+                    <FormField label={t('addEvent.lectureAuthorUkLabel')} error={lectureErrors[lecture.tempId]?.authorUk} required>
+                      <input type="text" value={lecture.authorUk} onChange={(e) => setLectureField(index, 'authorUk', e.target.value)} required />
                     </FormField>
                     <FormField label={t('addEvent.lectureAuthorEnLabel')}>
                       <input type="text" value={lecture.authorEn} onChange={(e) => setLectureField(index, 'authorEn', e.target.value)} />
                     </FormField>
                   </div>
 
-                  <FormField label={t('addEvent.lectureCategoryLabel')}>
-                    <select value={lecture.category} onChange={(e) => setLectureField(index, 'category', e.target.value)}>
+                  <FormField label={t('addEvent.lectureCategoryLabel')} error={lectureErrors[lecture.tempId]?.category} required>
+                    <select value={lecture.category} onChange={(e) => setLectureField(index, 'category', e.target.value)} required>
                       <option value="">{t('addEvent.lectureCategoryPlaceholder')}</option>
                       {LECTURE_CATEGORIES.map((category) => (
                         <option key={category} value={category}>
@@ -484,16 +526,16 @@ export default function AddEditEventPage() {
                   </FormField>
 
                   <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
-                    <FormField label={t('addEvent.lectureSummaryUkLabel')}>
-                      <textarea rows={3} value={lecture.summaryUk} onChange={(e) => setLectureField(index, 'summaryUk', e.target.value)} />
+                    <FormField label={t('addEvent.lectureSummaryUkLabel')} error={lectureErrors[lecture.tempId]?.summaryUk} required>
+                      <textarea rows={3} value={lecture.summaryUk} onChange={(e) => setLectureField(index, 'summaryUk', e.target.value)} required />
                     </FormField>
                     <FormField label={t('addEvent.lectureSummaryEnLabel')}>
                       <textarea rows={3} value={lecture.summaryEn} onChange={(e) => setLectureField(index, 'summaryEn', e.target.value)} />
                     </FormField>
                   </div>
 
-                  <FormField label={t('addEvent.lectureImageLabel')}>
-                    <input type="text" value={lecture.image} onChange={(e) => setLectureField(index, 'image', e.target.value)} placeholder="https://" />
+                  <FormField label={t('addEvent.lectureImageLabel')} error={lectureErrors[lecture.tempId]?.image} required>
+                    <input type="url" value={lecture.image} onChange={(e) => setLectureField(index, 'image', e.target.value)} placeholder="https://" required />
                   </FormField>
                 </div>
               ))}
