@@ -257,7 +257,7 @@ export default function AddEditLecturePage() {
                 disabled={translating || saving}
                 aria-busy={translating}
               >
-                {translating ? '...' : 'Translate'}
+                {translating ? '...' : t('common.translate')}
               </button>
             </div>
 

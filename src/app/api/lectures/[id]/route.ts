@@ -12,6 +12,18 @@ function resolveLocale(req: NextRequest): Locale {
   return cookie === 'en' ? 'en' : 'uk'
 }
 
+function safeParse(value: unknown) {
+  if (!value) return null
+  try { return JSON.parse(String(value)) } catch { return null }
+}
+
+function isValidHttpUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch { return false }
+}
+
 function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
   return {
     ...row,
@@ -19,8 +31,8 @@ function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
     author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
     summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
     authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
-    sources: row.sources ? JSON.parse(String(row.sources)) : null,
-    socialLinks: row.socialLinks ? JSON.parse(String(row.socialLinks)) : null,
+    sources: safeParse(row.sources),
+    socialLinks: safeParse(row.socialLinks),
   }
 }
 
@@ -133,6 +145,22 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       eventCity: eventCity !== undefined ? (eventCity ? String(eventCity).trim() : null) : lecture.eventCity,
       eventDate: eventDate !== undefined ? (eventDate ? String(eventDate).trim() : null) : lecture.eventDate,
       eventPhotosUrl: eventPhotosUrl !== undefined ? (eventPhotosUrl ? String(eventPhotosUrl).trim() : null) : lecture.eventPhotosUrl,
+    }
+
+    if (titleUk !== undefined && !data.titleUk) {
+      return NextResponse.json({ error: 'titleUk cannot be empty' }, { status: 400 })
+    }
+    if (authorUk !== undefined && !data.authorUk) {
+      return NextResponse.json({ error: 'authorUk cannot be empty' }, { status: 400 })
+    }
+    if (summaryUk !== undefined && !data.summaryUk) {
+      return NextResponse.json({ error: 'summaryUk cannot be empty' }, { status: 400 })
+    }
+    if (image !== undefined && !data.image) {
+      return NextResponse.json({ error: 'image cannot be empty' }, { status: 400 })
+    }
+    if (image !== undefined && data.image && !isValidHttpUrl(data.image)) {
+      return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
     }
 
     const { data: updated, error } = await queryClient

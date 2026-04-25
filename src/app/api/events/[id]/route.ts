@@ -22,6 +22,18 @@ function mapEventRow(row: Record<string, unknown>, locale: Locale) {
   }
 }
 
+function safeParse(value: unknown) {
+  if (!value) return null
+  try { return JSON.parse(String(value)) } catch { return null }
+}
+
+function isValidHttpUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch { return false }
+}
+
 function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
   return {
     ...row,
@@ -29,8 +41,8 @@ function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
     author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
     summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
     authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
-    sources: row.sources ? JSON.parse(String(row.sources)) : null,
-    socialLinks: row.socialLinks ? JSON.parse(String(row.socialLinks)) : null,
+    sources: safeParse(row.sources),
+    socialLinks: safeParse(row.socialLinks),
   }
 }
 
@@ -135,6 +147,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (!isValidDate(normalizedDate) || !isValidTime(normalizedTime)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (!isValidHttpUrl(String(image))) {
+      return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
+    }
+
+    if (registrationUrl && !isValidHttpUrl(String(registrationUrl))) {
+      return NextResponse.json({ error: 'registrationUrl must be a valid http/https URL' }, { status: 400 })
     }
 
     const { data: updated, error: updateError } = await queryClient

@@ -38,13 +38,14 @@ export default function AdminUsersPage() {
   }, [user, loading, router])
 
   useEffect(() => {
+    if (loading || !user || user?.profile?.role !== 'admin') return
     fetch('/api/admin/users')
       .then(res => res.json())
       .then(data => {
         if (!data.error) setUsers(data)
         setLoadingUsers(false)
       })
-  }, [])
+  }, [loading, user])
 
   useEffect(() => {
     setPage(1)
@@ -178,7 +179,7 @@ export default function AdminUsersPage() {
         )}
 
         {loadingUsers ? (
-          <p className="text-[clamp(14px,1.3vw,20px)]">Loading...</p>
+          <p className="text-[clamp(14px,1.3vw,20px)]">{t('common.loading')}</p>
         ) : filteredUsers.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.users.empty')}</p>
         ) : (

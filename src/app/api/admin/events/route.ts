@@ -31,7 +31,7 @@ export async function GET() {
     ])
 
     // Get emails from auth
-    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers()
+    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
     const emailMap = new Map(authUsers.map(u => [u.id, u.email]))
 
     const profilesById = new Map((profiles ?? []).map((p) => [p.id, { ...p, email: emailMap.get(p.id) ?? '' }]))

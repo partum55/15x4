@@ -70,7 +70,7 @@ export default function MyEventsPage() {
                     {formatEventDate(event.date)} · {formatEventTime(event.time)} · {event.location}
                   </p>
                   <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
-                    {event.lectures?.length ?? 0} {(event.lectures?.length ?? 0) === 1 ? 'lecture' : 'lectures'}
+                    {t('myEvents.lectureCount', { count: event.lectures?.length ?? 0 })}
                   </p>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">

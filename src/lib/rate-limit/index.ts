@@ -1,73 +1,49 @@
-type RateLimitEntry = {
-  count: number
-  resetAt: number
-}
-
-const store = new Map<string, RateLimitEntry>()
-const CLEANUP_INTERVAL_MS = 60_000
-let lastCleanupAt = 0
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export type RateLimitConfig = {
-  limit: number      // max requests
-  window: number     // time window in seconds
+  limit: number
+  window: number  // seconds
 }
 
 export type RateLimitResult = {
   success: boolean
   limit: number
   remaining: number
-  reset: number      // timestamp when limit resets
+  reset: number  // unix ms timestamp
 }
 
-export function rateLimit(
+export async function rateLimit(
   key: string,
-  config: RateLimitConfig
-): RateLimitResult {
-  const now = Date.now()
-  if (now - lastCleanupAt >= CLEANUP_INTERVAL_MS) {
-    for (const [storedKey, entry] of store.entries()) {
-      if (entry.resetAt < now) {
-        store.delete(storedKey)
-      }
-    }
-    lastCleanupAt = now
-  }
+  config: RateLimitConfig,
+): Promise<RateLimitResult> {
+  try {
+    const { data, error } = await supabaseAdmin.rpc('increment_rate_limit', {
+      p_key: key,
+      p_window_seconds: config.window,
+      p_limit: config.limit,
+    })
 
-  const windowMs = config.window * 1000
-  
-  let entry = store.get(key)
-  
-  // Reset if window expired
-  if (!entry || entry.resetAt < now) {
-    entry = {
-      count: 0,
-      resetAt: now + windowMs,
+    if (error || !data || (data as unknown[]).length === 0) {
+      return { success: true, limit: config.limit, remaining: config.limit, reset: Date.now() + config.window * 1000 }
     }
-  }
-  
-  entry.count++
-  store.set(key, entry)
-  
-  const remaining = Math.max(0, config.limit - entry.count)
-  const success = entry.count <= config.limit
-  
-  return {
-    success,
-    limit: config.limit,
-    remaining,
-    reset: entry.resetAt,
+
+    const row = (data as Array<{ success: boolean; current_count: number; reset_at: string }>)[0]
+    const resetMs = new Date(row.reset_at).getTime()
+    return {
+      success: row.success,
+      limit: config.limit,
+      remaining: Math.max(0, config.limit - row.current_count),
+      reset: resetMs,
+    }
+  } catch {
+    // Fail open: allow requests when the rate-limit store is unavailable
+    return { success: true, limit: config.limit, remaining: config.limit, reset: Date.now() + config.window * 1000 }
   }
 }
 
-// Preset configs
 export const RATE_LIMITS = {
-  // Auth endpoints - stricter
-  auth: { limit: 10, window: 60 },           // 10 per minute
-  
-  // API endpoints - more relaxed
-  api: { limit: 100, window: 60 },           // 100 per minute
-  apiWrite: { limit: 30, window: 60 },       // 30 writes per minute
-  
-  // Admin - moderate
-  admin: { limit: 60, window: 60 },          // 60 per minute
+  auth:     { limit: 10,  window: 60 },
+  api:      { limit: 100, window: 60 },
+  apiWrite: { limit: 30,  window: 60 },
+  admin:    { limit: 60,  window: 60 },
 } as const

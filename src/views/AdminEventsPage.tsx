@@ -212,7 +212,7 @@ export default function AdminEventsPage() {
         )}
 
         {loadingEvents ? (
-          <p className="text-[clamp(14px,1.3vw,20px)]">Loading...</p>
+          <p className="text-[clamp(14px,1.3vw,20px)]">{t('common.loading')}</p>
         ) : filteredEvents.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.events.empty')}</p>
         ) : (
@@ -222,8 +222,8 @@ export default function AdminEventsPage() {
                 <tr className="border-b-2 border-black">
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.events.city')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.events.date')}</th>
-                  <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">Location</th>
-                  <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">Lectures</th>
+                  <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.events.location')}</th>
+                  <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.events.lectures')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.events.public')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.events.owner')}</th>
                   <th className="text-right p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.users.actions')}</th>
@@ -252,7 +252,7 @@ export default function AdminEventsPage() {
                           href={`/account/events/${e.id}/edit`}
                           className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:opacity-70"
                         >
-                          {t('admin.events.edit', { defaultValue: 'edit' })}
+                          {t('admin.events.edit')}
                         </Link>
                         {!e.isPublic && (
                           <button

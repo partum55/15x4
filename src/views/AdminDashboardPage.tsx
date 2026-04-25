@@ -27,12 +27,13 @@ export default function AdminDashboard() {
   }, [user, loading, router])
 
   useEffect(() => {
+    if (loading || !user || user?.profile?.role !== 'admin') return
     fetch('/api/admin/stats')
       .then(res => res.json())
       .then(data => {
         if (!data.error) setStats(data)
       })
-  }, [])
+  }, [loading, user])
 
   if (loading || !user || user?.profile?.role !== 'admin') {
     return null

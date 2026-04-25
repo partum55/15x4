@@ -177,7 +177,7 @@ export default function UpcomingEvents() {
                     >
                       <Image
                         src={event.image}
-                        alt={`Подія 15x4 у ${event.city}`}
+                        alt={t('upcomingEvents.imageAlt', { city: event.city })}
                         width={327}
                         height={290}
                         unoptimized
