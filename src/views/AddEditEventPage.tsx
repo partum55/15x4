@@ -15,6 +15,7 @@ import {
   getLectureCategoryColor,
   normalizeLectureCategory,
 } from '../constants/lectureCategories'
+import { CITY_OPTIONS, findCityOption, getCityLabel } from '../constants/cities'
 
 type EventFormState = {
   titleUk: string
@@ -78,7 +79,7 @@ function emptyLecture(slot: number): EventLectureFormState {
 }
 
 export default function AddEditEventPage() {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const id = params?.id
@@ -95,13 +96,14 @@ export default function AddEditEventPage() {
     if (!id) return
     api.getEvent(id).then((data: EventFormState & { error?: string }) => {
       if (!data.error) {
+        const cityOption = findCityOption(data.cityUk) ?? findCityOption(data.cityEn)
         setForm({
           titleUk: data.titleUk ?? '',
           titleEn: data.titleEn ?? '',
           descriptionUk: data.descriptionUk ?? '',
           descriptionEn: data.descriptionEn ?? '',
-          cityUk: data.cityUk ?? '',
-          cityEn: data.cityEn ?? '',
+          cityUk: cityOption?.uk ?? data.cityUk ?? '',
+          cityEn: cityOption?.en ?? data.cityEn ?? '',
           date: normalizeDateInput(data.date),
           locationUk: data.locationUk ?? '',
           locationEn: data.locationEn ?? '',
@@ -131,6 +133,15 @@ export default function AddEditEventPage() {
 
   function setField(field: keyof EventFormState, value: string) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  function setCity(value: string) {
+    const city = findCityOption(value)
+    setForm((current) => ({
+      ...current,
+      cityUk: city?.uk ?? '',
+      cityEn: city?.en ?? '',
+    }))
   }
 
   function setLectureField(index: number, field: keyof EventLectureFormState, value: string) {
@@ -187,9 +198,8 @@ export default function AddEditEventPage() {
         !form.titleEn.trim()
 
       if (useUkAsSource) {
-        const [titleEn, cityEn, locationEn, descriptionEn] = await Promise.all([
+        const [titleEn, locationEn, descriptionEn] = await Promise.all([
           translatePair(form.titleUk, 'uk', 'en', form.titleEn),
-          translatePair(form.cityUk, 'uk', 'en', form.cityEn),
           translatePair(form.locationUk, 'uk', 'en', form.locationEn),
           translatePair(form.descriptionUk, 'uk', 'en', form.descriptionEn),
         ])
@@ -197,7 +207,6 @@ export default function AddEditEventPage() {
         setForm((prev) => ({
           ...prev,
           titleEn: titleEn || prev.titleEn,
-          cityEn: cityEn || prev.cityEn,
           locationEn: locationEn || prev.locationEn,
           descriptionEn: descriptionEn || prev.descriptionEn,
         }))
@@ -219,9 +228,8 @@ export default function AddEditEventPage() {
         )
         setLectures(translatedLectures)
       } else {
-        const [titleUk, cityUk, locationUk, descriptionUk] = await Promise.all([
+        const [titleUk, locationUk, descriptionUk] = await Promise.all([
           translatePair(form.titleEn, 'en', 'uk', form.titleUk),
-          translatePair(form.cityEn, 'en', 'uk', form.cityUk),
           translatePair(form.locationEn, 'en', 'uk', form.locationUk),
           translatePair(form.descriptionEn, 'en', 'uk', form.descriptionUk),
         ])
@@ -229,7 +237,6 @@ export default function AddEditEventPage() {
         setForm((prev) => ({
           ...prev,
           titleUk: titleUk || prev.titleUk,
-          cityUk: cityUk || prev.cityUk,
           locationUk: locationUk || prev.locationUk,
           descriptionUk: descriptionUk || prev.descriptionUk,
         }))
@@ -370,14 +377,20 @@ export default function AddEditEventPage() {
               </FormField>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
-              <FormField label={t('addEvent.cityUkLabel')} error={errors.cityUk}>
-                <input type="text" value={form.cityUk} onChange={e => setField('cityUk', e.target.value)} />
-              </FormField>
-              <FormField label={t('addEvent.cityEnLabel')}>
-                <input type="text" value={form.cityEn} onChange={e => setField('cityEn', e.target.value)} />
-              </FormField>
-            </div>
+            <FormField label={t('addEvent.cityLabel')} error={errors.cityUk}>
+              <select
+                value={findCityOption(form.cityUk)?.id ?? ''}
+                onChange={(e) => setCity(e.target.value)}
+                autoComplete="address-level2"
+              >
+                <option value="">{t('addEvent.cityPlaceholder')}</option>
+                {CITY_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {getCityLabel(option, i18n.language)}
+                  </option>
+                ))}
+              </select>
+            </FormField>
 
             <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
               <FormField label={t('addEvent.locationUkLabel')} error={errors.locationUk}>

@@ -11,9 +11,11 @@ import { api } from '../lib/api'
 import { formatEventDate, formatEventTime } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 import { useAuth } from '../context/AuthContext'
+import { findCityOption } from '../constants/cities'
 
 function normalizeCity(value?: string | null) {
-  return value?.trim().toLocaleLowerCase('uk') ?? ''
+  const city = findCityOption(value)
+  return city?.id ?? value?.trim().toLocaleLowerCase('uk') ?? ''
 }
 
 function eventTimestamp(event: Event) {

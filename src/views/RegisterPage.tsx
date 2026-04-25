@@ -10,9 +10,10 @@ import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
 import { evaluatePasswordStrength } from '../lib/password-strength'
 import { buildLoginHref, normalizeRedirectTarget } from '@/lib/auth'
+import { CITY_OPTIONS, getCityLabel } from '../constants/cities'
 
 export default function RegisterPage() {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const searchParams = useSearchParams()
   const { signUp, signInWithGoogle } = useAuth()
 
@@ -63,7 +64,7 @@ export default function RegisterPage() {
     if (Object.keys(e).length) { setErrors(e); return }
 
     setSubmitting(true)
-    const result = await signUp(email.trim(), password, name.trim(), city.trim())
+    const result = await signUp(email.trim(), password, name.trim(), city)
     setSubmitting(false)
     if (result.error) {
       setErrors({ form: t('auth.register.errorGeneric') })
@@ -166,12 +167,18 @@ export default function RegisterPage() {
             </FormField>
 
             <FormField label={t('auth.register.cityLabel')} error={errors.city}>
-              <input
-                type="text"
+              <select
                 value={city}
                 onChange={e => setCity(e.target.value)}
                 autoComplete="address-level2"
-              />
+              >
+                <option value="">{t('auth.register.cityPlaceholder')}</option>
+                {CITY_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {getCityLabel(option, i18n.language)}
+                  </option>
+                ))}
+              </select>
             </FormField>
 
             <FormField label={t('auth.register.passwordLabel')} error={errors.password}>

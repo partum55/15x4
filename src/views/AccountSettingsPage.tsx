@@ -10,9 +10,10 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { createClient } from '../lib/supabase/client'
 import { evaluatePasswordStrength } from '../lib/password-strength'
+import { CITY_OPTIONS, findCityOption, getCityLabel } from '../constants/cities'
 
 export default function AccountSettingsPage() {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const { user } = useCurrentUser()
   const { refresh } = useAuth()
   const supabase = createClient()
@@ -70,7 +71,7 @@ export default function AccountSettingsPage() {
 
       // Update name in profiles
       const newName = name.trim() || user?.name
-      const newCity = city.trim() || user?.city || ''
+      const newCity = city.trim() || findCityOption(user?.city)?.id || ''
       const profileUpdates: { name?: string; city?: string } = {}
       if (newName && newName !== user?.name) profileUpdates.name = newName
       if (newCity !== (user?.city ?? '')) profileUpdates.city = newCity
@@ -126,12 +127,18 @@ export default function AccountSettingsPage() {
             </FormField>
 
             <FormField label={t('account.settings.cityLabel')}>
-              <input
-                type="text"
-                value={city || user?.city || ''}
+              <select
+                value={city || findCityOption(user?.city)?.id || ''}
                 onChange={e => setCity(e.target.value)}
                 autoComplete="address-level2"
-              />
+              >
+                <option value="">{t('account.settings.cityPlaceholder')}</option>
+                {CITY_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {getCityLabel(option, i18n.language)}
+                  </option>
+                ))}
+              </select>
             </FormField>
 
             <FormField label={t('account.settings.passwordLabel')}>
