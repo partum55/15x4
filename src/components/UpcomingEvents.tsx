@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
@@ -37,7 +37,7 @@ export default function UpcomingEvents() {
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(0)
   const [selectedCity, setSelectedCity] = useState('')
-  const cityInitialized = useRef(false)
+  const [citySelectionTouched, setCitySelectionTouched] = useState(false)
   const skeletonLoading = useMinimumSkeleton(loading)
 
   useEffect(() => {
@@ -61,13 +61,6 @@ export default function UpcomingEvents() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!cityInitialized.current && user?.profile?.city) {
-      setSelectedCity(normalizeCity(user.profile.city))
-      cityInitialized.current = true
-    }
-  }, [user?.profile?.city])
-
   const upcomingEvents = useMemo(() => {
     if (!now) return []
     return events
@@ -89,18 +82,20 @@ export default function UpcomingEvents() {
     return [...seen.entries()].map(([value, label]) => ({ value, label }))
   }, [upcomingEvents])
 
-  const dropdownValue = availableCities.some((c) => c.value === selectedCity)
-    ? selectedCity
+  const defaultCity = user?.profile?.city ? normalizeCity(user.profile.city) : ''
+  const activeCity = citySelectionTouched ? selectedCity : defaultCity
+  const dropdownValue = availableCities.some((c) => c.value === activeCity)
+    ? activeCity
     : ''
 
   const visibleEvents = useMemo(() => {
     if (upcomingEvents.length === 0) return []
 
-    if (!selectedCity) return upcomingEvents.slice(0, 1)
+    if (!activeCity) return upcomingEvents.slice(0, 1)
 
-    const cityFiltered = upcomingEvents.filter((event) => matchesCity(event, selectedCity))
+    const cityFiltered = upcomingEvents.filter((event) => matchesCity(event, activeCity))
     return cityFiltered.length > 0 ? cityFiltered.slice(0, 1) : upcomingEvents.slice(0, 1)
-  }, [upcomingEvents, selectedCity])
+  }, [upcomingEvents, activeCity])
 
   return (
     <Skeleton name="home-upcoming-events" loading={skeletonLoading} className="min-h-[420px]">
@@ -116,7 +111,10 @@ export default function UpcomingEvents() {
                 <span className="text-red">[</span>
                 <select
                   value={dropdownValue}
-                  onChange={(e) => setSelectedCity(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCity(e.target.value)
+                    setCitySelectionTouched(true)
+                  }}
                   className="bg-transparent border-none outline-none text-[clamp(13px,1.3vw,20px)] font-normal text-black cursor-pointer uppercase tracking-[-0.02em] appearance-none pr-1"
                 >
                   <option value="">{t('upcomingEvents.allCities')}</option>
@@ -147,7 +145,7 @@ export default function UpcomingEvents() {
                     {/* Col 1: info */}
                     <div className="flex w-[clamp(220px,23.1%,327px)] flex-shrink-0 flex-col justify-between py-6 max-[900px]:w-full max-[767px]:pb-4">
                       <div className="flex flex-col gap-6">
-                        <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.city} [{formatEventDate(event.date)}]</p>
+                        <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.city} [{formatEventDate(event.date, true)}]</p>
                         <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
                         <p className="text-[clamp(13px,1.3vw,20px)] font-normal">{formatEventTime(event.time)}</p>
                       </div>
@@ -195,8 +193,12 @@ export default function UpcomingEvents() {
                           href={`/lectures/${lecture.id}`}
                           className="group flex items-baseline justify-between gap-4 text-black no-underline transition-colors duration-200 hover:text-red"
                         >
-                          <span className="text-clamp-1 min-w-0 flex-1 text-[clamp(14px,1.6vw,24px)] font-normal">{lecture.title}</span>
-                          <span className="text-clamp-1 max-w-[40%] flex-shrink-0 text-right text-[clamp(12px,1.3vw,20px)] font-normal">{lecture.author}</span>
+                          <span className="min-w-0 flex-1 overflow-hidden">
+                            <span className="text-clamp-1 text-[clamp(14px,1.6vw,24px)] font-normal">{lecture.title}</span>
+                          </span>
+                          <span className="max-w-[40%] flex-shrink-0 overflow-hidden text-right">
+                            <span className="text-clamp-1 text-[clamp(12px,1.3vw,20px)] font-normal">{lecture.author}</span>
+                          </span>
                         </Link>
                       ))}
                     </div>

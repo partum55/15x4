@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -12,19 +12,15 @@ export default function ProfileCompletionBanner() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const pathname = usePathname()
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (!user) { setVisible(false); return }
-    if (user.profile?.city) { setVisible(false); return }
-    if (pathname.startsWith('/account')) { setVisible(false); return }
-    if (sessionStorage.getItem(DISMISS_KEY)) { setVisible(false); return }
-    setVisible(true)
-  }, [user, pathname])
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.sessionStorage.getItem(DISMISS_KEY) === '1'
+  })
+  const visible = Boolean(user && !user.profile?.city && !pathname.startsWith('/account') && !dismissed)
 
   function handleDismiss() {
     sessionStorage.setItem(DISMISS_KEY, '1')
-    setVisible(false)
+    setDismissed(true)
   }
 
   if (!visible) return null
@@ -36,7 +32,7 @@ export default function ProfileCompletionBanner() {
         <Link
           href="/account/settings"
           className="underline underline-offset-2 text-white hover:text-white/75 transition-colors"
-          onClick={() => setVisible(false)}
+          onClick={handleDismiss}
         >
           {t('profile.completionLink')}
         </Link>

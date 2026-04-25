@@ -191,19 +191,13 @@ export default function LecturesPage() {
       )
       idx += 3
 
-      if (idx + 4 > lectures.length) break
+      if (idx + 1 > lectures.length) break
       rows.push(
-        <div key={`row-compact-quad-${idx}`} className="flex border-b border-black max-[767px]:flex-col">
-          <LectureCard lecture={lectures[idx]} variant="compact" />
-          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 1]} variant="compact" />
-          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 2]} variant="compact" />
-          <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 3]} variant="compact" />
+        <div key={`row-wide-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
+          <LectureCard lecture={lectures[idx]} variant="horizontal" />
         </div>,
       )
-      idx += 4
+      idx += 1
     }
 
     if (idx < lectures.length) {
