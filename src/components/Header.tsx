@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <header
       id="home-hero"
-      className="relative w-full h-[clamp(480px,65vw,982px)] bg-cover bg-center bg-no-repeat text-white max-[767px]:h-[clamp(360px,80vw,520px)]"
+      className="relative h-screen min-h-[100svh] w-full bg-cover bg-center bg-no-repeat text-white"
       style={{ backgroundImage: `url(/images/header-image.png)` }}
     >
       <div className="absolute inset-0 bg-black/35" />
