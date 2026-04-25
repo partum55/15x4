@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -45,6 +45,8 @@ const EMPTY: FormState = {
   authorBioEn: '',
   videoUrl: '',
 }
+
+const LECTURE_SLOTS = ['1', '2', '3', '4']
 
 export default function AddEditLecturePage() {
   const { t } = useTranslation()
@@ -109,6 +111,24 @@ export default function AddEditLecturePage() {
       setErrors((current) => ({ ...current, [field]: undefined }))
     }
   }
+
+  const selectedEvent = events.find((event) => event.id === form.eventId)
+  const occupiedSlots = useMemo(
+    () => new Set(
+      (selectedEvent?.lectures ?? [])
+        .filter((lecture) => !isEdit || lecture.id !== id)
+        .map((lecture) => String(lecture.slot)),
+    ),
+    [id, isEdit, selectedEvent],
+  )
+
+  useEffect(() => {
+    if (!form.eventId || !selectedEvent) return
+    if (form.slot && !occupiedSlots.has(form.slot)) return
+
+    const nextSlot = LECTURE_SLOTS.find((slot) => !occupiedSlots.has(slot)) ?? ''
+    setForm((current) => current.slot === nextSlot ? current : { ...current, slot: nextSlot })
+  }, [form.eventId, form.slot, selectedEvent, occupiedSlots])
 
   function validate(): FormErrors {
     const e: FormErrors = {}
@@ -233,7 +253,6 @@ export default function AddEditLecturePage() {
     }
   }
 
-  const selectedEvent = events.find((event) => event.id === form.eventId)
   const previewTitle = form.titleUk.trim() || form.titleEn.trim() || t('addLecture.titleLabel')
   const previewAuthor = form.authorUk.trim() || form.authorEn.trim() || t('addLecture.authorLabel')
   const previewSummary = form.summaryUk.trim() || form.summaryEn.trim() || t('addLecture.summaryLabel')
@@ -280,12 +299,32 @@ export default function AddEditLecturePage() {
               </FormField>
 
               <FormField label={t('addLecture.slotLabel')} error={errors.slot} required>
-                <select value={form.slot} onChange={(e) => set('slot', e.target.value)} required>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                </select>
+                <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label={t('addLecture.slotLabel')}>
+                  {LECTURE_SLOTS.map((slot) => {
+                    const occupied = occupiedSlots.has(slot)
+                    const selected = form.slot === slot
+
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        aria-disabled={occupied}
+                        disabled={occupied || saving || translating}
+                        onClick={() => set('slot', slot)}
+                        className={[
+                          'h-12 border text-[clamp(14px,1.2vw,18px)] font-normal uppercase transition-colors duration-150',
+                          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
+                          selected ? 'border-black bg-black text-white' : 'border-black bg-white text-black hover:bg-black hover:text-white',
+                          occupied ? 'cursor-not-allowed border-black/25 bg-black/5 text-black/30 hover:bg-black/5 hover:text-black/30' : 'cursor-pointer',
+                        ].join(' ')}
+                      >
+                        {slot}
+                      </button>
+                    )
+                  })}
+                </div>
               </FormField>
             </div>
 
