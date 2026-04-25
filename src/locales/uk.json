@@ -15,7 +15,8 @@
     "title": "МАЙБУТНІ ПОДІЇ",
     "register": "реєстрація",
     "allCities": "усі міста",
-    "noEvents": "Немає майбутніх подій"
+    "noEvents": "Немає майбутніх подій",
+    "imageAlt": "Подія 15x4 у {{city}}"
   },
   "popularLectures": {
     "title": "ПОПУЛЯРНІ ЛЕКЦІЇ",
@@ -224,7 +225,15 @@
     "addBtn": "додати подію",
     "editBtn": "редагувати",
     "deleteBtn": "видалити",
-    "deleteConfirm": "видалити цю подію?"
+    "deleteConfirm": "видалити цю подію?",
+    "lectureCount_one": "{{count}} лекція",
+    "lectureCount_few": "{{count}} лекції",
+    "lectureCount_many": "{{count}} лекцій",
+    "lectureCount_other": "{{count}} лекцій"
+  },
+  "common": {
+    "loading": "завантажуємо...",
+    "translate": "перекласти"
   },
   "addLecture": {
     "titleNew": "// ДОДАТИ ЛЕКЦІЮ",
@@ -328,10 +337,14 @@
     },
     "lectures": {
       "title": "// ВСІ ЛЕКЦІЇ",
+      "titleHeader": "назва",
       "author": "автор",
       "category": "категорія",
       "public": "публічна",
       "owner": "власник",
+      "edit": "редагувати",
+      "approve": "схвалити",
+      "unpublish": "приховати",
       "delete": "видалити",
       "confirmDelete": "видалити цю лекцію?",
       "empty": "лекцій не знайдено",
@@ -350,8 +363,11 @@
       "title": "// ВСІ ПОДІЇ",
       "city": "місто",
       "date": "дата",
+      "location": "місце проведення",
+      "lectures": "лекції",
       "public": "публічна",
       "owner": "власник",
+      "edit": "редагувати",
       "approve": "схвалити",
       "delete": "видалити",
       "confirmDelete": "видалити цю подію?",

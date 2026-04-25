@@ -42,6 +42,7 @@ export default function AdminLecturesPage() {
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
   const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
+  const [approvingLectureIds, setApprovingLectureIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -113,6 +114,30 @@ export default function AdminLecturesPage() {
       }
     } finally {
       setLoadingMore(false)
+    }
+  }
+
+  async function handleApprove(lectureId: string, isPublic: boolean) {
+    if (approvingLectureIds.has(lectureId)) return
+    setApprovingLectureIds(prev => {
+      const next = new Set(prev)
+      next.add(lectureId)
+      return next
+    })
+    try {
+      const res = await fetch(`/api/admin/lectures/${lectureId}/approval`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublic }),
+      })
+      if (!res.ok) return
+      setLectures(prev => prev.map(l => l.id === lectureId ? { ...l, isPublic } : l))
+    } finally {
+      setApprovingLectureIds(prev => {
+        const next = new Set(prev)
+        next.delete(lectureId)
+        return next
+      })
     }
   }
 
@@ -212,7 +237,7 @@ export default function AdminLecturesPage() {
         )}
 
         {loadingLectures ? (
-          <p className="text-[clamp(14px,1.3vw,20px)]">Loading...</p>
+          <p className="text-[clamp(14px,1.3vw,20px)]">{t('common.loading')}</p>
         ) : lectures.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.lectures.empty')}</p>
         ) : (
@@ -220,7 +245,7 @@ export default function AdminLecturesPage() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b-2 border-black">
-                  <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">Title</th>
+                  <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.lectures.titleHeader')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.lectures.author')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.lectures.category')}</th>
                   <th className="text-left p-3 text-[clamp(12px,1.1vw,16px)] uppercase">{t('admin.lectures.public')}</th>
@@ -257,8 +282,30 @@ export default function AdminLecturesPage() {
                           href={`/account/lectures/${l.id}/edit`}
                           className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:opacity-70"
                         >
-                          {t('admin.lectures.edit', { defaultValue: 'edit' })}
+                          {t('admin.lectures.edit')}
                         </Link>
+                        {!l.isPublic && (
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(l.id, true)}
+                            disabled={approvingLectureIds.has(l.id)}
+                            aria-busy={approvingLectureIds.has(l.id)}
+                            className="px-3 py-1 bg-black text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
+                          >
+                            {approvingLectureIds.has(l.id) ? `${t('admin.lectures.approve')}...` : t('admin.lectures.approve')}
+                          </button>
+                        )}
+                        {l.isPublic && (
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(l.id, false)}
+                            disabled={approvingLectureIds.has(l.id)}
+                            aria-busy={approvingLectureIds.has(l.id)}
+                            className="px-3 py-1 border border-black bg-white text-black border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
+                          >
+                            {approvingLectureIds.has(l.id) ? `${t('admin.lectures.unpublish')}...` : t('admin.lectures.unpublish')}
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleDelete(l.id)}

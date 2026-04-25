@@ -54,6 +54,13 @@ function isValidTime(value: string) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
+function isValidHttpUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch { return false }
+}
+
 function attachLectures(
   events: Array<Record<string, unknown>>,
   lectures: Array<Record<string, unknown>>,
@@ -170,6 +177,14 @@ export async function POST(req: NextRequest) {
 
     if (!isValidDate(normalizedDate) || !isValidTime(normalizedTime)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (!isValidHttpUrl(String(image))) {
+      return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
+    }
+
+    if (registrationUrl && !isValidHttpUrl(String(registrationUrl))) {
+      return NextResponse.json({ error: 'registrationUrl must be a valid http/https URL' }, { status: 400 })
     }
 
     const { data: event, error: eventError } = await supabase

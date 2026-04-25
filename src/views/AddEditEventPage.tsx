@@ -357,7 +357,7 @@ export default function AddEditEventPage() {
                 disabled={translating || saving}
                 aria-busy={translating}
               >
-                {translating ? '...' : 'Translate'}
+                {translating ? '...' : t('common.translate')}
               </button>
             </div>
 

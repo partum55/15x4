@@ -80,7 +80,7 @@ export async function middleware(request: NextRequest) {
   const limitConfig = resolveRateLimitConfig(pathname, request.method.toUpperCase())
   if (limitConfig) {
     const identity = user?.id ?? getClientIp(request)
-    const result = rateLimit(`${limitConfig.bucket}:${identity}`, limitConfig.config)
+    const result = await rateLimit(`${limitConfig.bucket}:${identity}`, limitConfig.config)
 
     if (!result.success) {
       const retryAfter = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))

@@ -11,6 +11,18 @@ function resolveLocale(req: NextRequest): Locale {
   return cookie === 'en' ? 'en' : 'uk'
 }
 
+function safeParse(value: unknown) {
+  if (!value) return null
+  try { return JSON.parse(String(value)) } catch { return null }
+}
+
+function isValidHttpUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch { return false }
+}
+
 function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
   return {
     ...row,
@@ -18,8 +30,8 @@ function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
     author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
     summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
     authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
-    sources: row.sources ? JSON.parse(String(row.sources)) : null,
-    socialLinks: row.socialLinks ? JSON.parse(String(row.socialLinks)) : null,
+    sources: safeParse(row.sources),
+    socialLinks: safeParse(row.socialLinks),
   }
 }
 
@@ -163,8 +175,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    if (!isValidHttpUrl(String(image))) {
+      return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
+    }
+
     if (!validCategoryPair(String(category), String(categoryColor))) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
+    }
+
+    if (access.role !== 'admin') {
+      const { data: targetEvent } = await supabase
+        .from('Event')
+        .select('userId')
+        .eq('id', String(eventId))
+        .maybeSingle()
+      if (!targetEvent) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      }
+      if (targetEvent.userId !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const { data: lecture, error } = await supabase

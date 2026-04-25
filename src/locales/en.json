@@ -15,7 +15,8 @@
     "title": "UPCOMING EVENTS",
     "register": "register",
     "allCities": "all cities",
-    "noEvents": "No upcoming events"
+    "noEvents": "No upcoming events",
+    "imageAlt": "15x4 event in {{city}}"
   },
   "popularLectures": {
     "title": "POPULAR LECTURES",
@@ -224,7 +225,13 @@
     "addBtn": "add event",
     "editBtn": "edit",
     "deleteBtn": "delete",
-    "deleteConfirm": "delete this event?"
+    "deleteConfirm": "delete this event?",
+    "lectureCount_one": "{{count}} lecture",
+    "lectureCount_other": "{{count}} lectures"
+  },
+  "common": {
+    "loading": "loading...",
+    "translate": "translate"
   },
   "addLecture": {
     "titleNew": "// ADD LECTURE",
@@ -328,10 +335,14 @@
     },
     "lectures": {
       "title": "// ALL LECTURES",
+      "titleHeader": "title",
       "author": "author",
       "category": "category",
       "public": "public",
       "owner": "owner",
+      "edit": "edit",
+      "approve": "approve",
+      "unpublish": "unpublish",
       "delete": "delete",
       "confirmDelete": "delete this lecture?",
       "empty": "no lectures found",
@@ -350,8 +361,11 @@
       "title": "// ALL EVENTS",
       "city": "city",
       "date": "date",
+      "location": "location",
+      "lectures": "lectures",
       "public": "public",
       "owner": "owner",
+      "edit": "edit",
       "approve": "approve",
       "delete": "delete",
       "confirmDelete": "delete this event?",

@@ -20,7 +20,7 @@ export async function GET() {
     }
 
     // Fetch emails from auth.users for each profile
-    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers()
+    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
     
     const emailMap = new Map(authUsers.map(u => [u.id, u.email]))
     
