@@ -191,14 +191,17 @@ export default function EventsPage() {
       <Navbar />
 
       <Skeleton name="page-events" loading={skeletonLoading} className="min-h-[620px]">
-        <div className="content-shell grid grid-cols-2 items-end gap-9 py-6 max-[900px]:grid-cols-1 max-[900px]:gap-4">
-          <h1 className="ml-[calc(50%-327px)] text-[clamp(28px,3.2vw,48px)] font-normal leading-none text-black max-[1199px]:ml-0">
-            <span className="text-red">{'//'}</span> {t('events.pageTitle')}
-          </h1>
-          <div className="flex items-center justify-between gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
+        <div className="content-shell grid grid-cols-[clamp(220px,22.7vw,327px)_minmax(0,1fr)] gap-9 py-6 max-[1199px]:gap-6 max-[900px]:grid-cols-1 max-[900px]:gap-4">
+          <div className="max-[900px]:hidden" />
+          <div className="flex min-w-0 flex-col gap-6 px-[clamp(16px,2vw,28px)] max-[900px]:px-0 max-[900px]:gap-4">
+            <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal leading-none text-black">
+              <span className="text-red">{'//'}</span> {t('events.pageTitle')}
+            </h1>
+            <div className="flex items-center justify-between gap-6 max-[1199px]:gap-4 max-[767px]:w-full max-[767px]:flex-wrap max-[767px]:gap-3">
             <FilterDropdown label={t('events.sortBy')} options={sortOptions} value={sortOrder} onChange={setSortOrder} />
             <FilterDropdown label={t('events.city')} options={cityOptions} value={cityFilter} onChange={setCityFilter} />
             <FilterDropdown label={t('events.time')} options={timeOptions} value={timeFilter} onChange={setTimeFilter} />
+            </div>
           </div>
         </div>
 
