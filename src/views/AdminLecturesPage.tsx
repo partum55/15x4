@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
+import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORY_COLOR_VAR } from '@/constants/colors'
 import { LECTURE_CATEGORIES } from '@/constants/lectureCategories'
@@ -237,7 +238,7 @@ export default function AdminLecturesPage() {
         )}
 
         {loadingLectures ? (
-          <p className="text-[clamp(14px,1.3vw,20px)]">{t('common.loading')}</p>
+          <Loader className="flex items-center justify-center py-12" />
         ) : lectures.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.lectures.empty')}</p>
         ) : (
@@ -329,7 +330,7 @@ export default function AdminLecturesPage() {
                   disabled={loadingMore}
                   className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:animate-pulse disabled:hover:bg-transparent disabled:hover:text-black"
                 >
-                  {loadingMore ? t('admin.lectures.loadingMore') : t('admin.lectures.loadMore')}
+                  {loadingMore ? <span className="loader" /> : t('admin.lectures.loadMore')}
                 </button>
               </div>
             )}

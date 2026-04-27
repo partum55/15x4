@@ -220,7 +220,7 @@ export default function EventsPage() {
               disabled={loadingMore}
               className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-black"
             >
-              {loadingMore ? t('events.loadingMore') : t('events.loadMore')}
+              {loadingMore ? <span className="loader" /> : t('events.loadMore')}
             </button>
           </div>
         )}

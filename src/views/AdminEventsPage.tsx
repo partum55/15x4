@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
+import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
 import { formatEventDate, formatEventTime } from '@/lib/date-time'
 
@@ -212,7 +213,7 @@ export default function AdminEventsPage() {
         )}
 
         {loadingEvents ? (
-          <p className="text-[clamp(14px,1.3vw,20px)]">{t('common.loading')}</p>
+          <Loader className="flex items-center justify-center py-12" />
         ) : filteredEvents.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.events.empty')}</p>
         ) : (
