@@ -159,45 +159,29 @@ export default function AddEditLecturePage() {
     if (translating || saving) return
     setTranslating(true)
     try {
-      const useUkAsSource =
-        form.titleUk.trim() ||
-        form.authorUk.trim() ||
-        form.summaryUk.trim() ||
-        form.authorBioUk.trim() ||
-        !form.titleEn.trim()
+      const tasks: Array<Promise<[keyof FormState, string]>> = []
 
-      if (useUkAsSource) {
-        const [titleEn, authorEn, summaryEn, authorBioEn] = await Promise.all([
-          translatePair(form.titleUk, 'uk', 'en', form.titleEn),
-          translatePair(form.authorUk, 'uk', 'en', form.authorEn),
-          translatePair(form.summaryUk, 'uk', 'en', form.summaryEn),
-          translatePair(form.authorBioUk, 'uk', 'en', form.authorBioEn),
-        ])
+      if (!form.titleUk.trim() && form.titleEn.trim()) tasks.push(translatePair(form.titleEn, 'en', 'uk').then(v => ['titleUk', v] as [keyof FormState, string]))
+      if (!form.titleEn.trim() && form.titleUk.trim()) tasks.push(translatePair(form.titleUk, 'uk', 'en').then(v => ['titleEn', v] as [keyof FormState, string]))
 
-        setForm((prev) => ({
-          ...prev,
-          titleEn: titleEn || prev.titleEn,
-          authorEn: authorEn || prev.authorEn,
-          summaryEn: summaryEn || prev.summaryEn,
-          authorBioEn: authorBioEn || prev.authorBioEn,
-        }))
-      } else {
-        const [titleUk, authorUk, summaryUk, authorBioUk] = await Promise.all([
-          translatePair(form.titleEn, 'en', 'uk', form.titleUk),
-          translatePair(form.authorEn, 'en', 'uk', form.authorUk),
-          translatePair(form.summaryEn, 'en', 'uk', form.summaryUk),
-          translatePair(form.authorBioEn, 'en', 'uk', form.authorBioUk),
-        ])
+      if (!form.authorUk.trim() && form.authorEn.trim()) tasks.push(translatePair(form.authorEn, 'en', 'uk').then(v => ['authorUk', v] as [keyof FormState, string]))
+      if (!form.authorEn.trim() && form.authorUk.trim()) tasks.push(translatePair(form.authorUk, 'uk', 'en').then(v => ['authorEn', v] as [keyof FormState, string]))
 
-        setForm((prev) => ({
-          ...prev,
-          titleUk: titleUk || prev.titleUk,
-          authorUk: authorUk || prev.authorUk,
-          summaryUk: summaryUk || prev.summaryUk,
-          authorBioUk: authorBioUk || prev.authorBioUk,
-        }))
+      if (!form.summaryUk.trim() && form.summaryEn.trim()) tasks.push(translatePair(form.summaryEn, 'en', 'uk').then(v => ['summaryUk', v] as [keyof FormState, string]))
+      if (!form.summaryEn.trim() && form.summaryUk.trim()) tasks.push(translatePair(form.summaryUk, 'uk', 'en').then(v => ['summaryEn', v] as [keyof FormState, string]))
+
+      if (!form.authorBioUk.trim() && form.authorBioEn.trim()) tasks.push(translatePair(form.authorBioEn, 'en', 'uk').then(v => ['authorBioUk', v] as [keyof FormState, string]))
+      if (!form.authorBioEn.trim() && form.authorBioUk.trim()) tasks.push(translatePair(form.authorBioUk, 'uk', 'en').then(v => ['authorBioEn', v] as [keyof FormState, string]))
+
+      const results = await Promise.all(tasks)
+      if (results.length) {
+        const next = { ...form }
+        for (const [key, value] of results) {
+          if (value && value.trim()) next[key] = value
+        }
+        setForm(next)
       }
-    } catch {
+    } catch (err) {
       setFormError(t('common.translationError'))
     } finally {
       setTranslating(false)

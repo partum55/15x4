@@ -225,113 +225,72 @@ export default function AddEditEventPage() {
   ) {
     const src = String(sourceValue ?? '').trim()
     const tgt = String(existingTarget ?? '').trim()
-    console.debug('translatePair:', { srcSnippet: src.slice(0, 120), sourceLanguage, targetLanguage, hasExistingTarget: Boolean(tgt) })
     if (tgt) {
-      console.debug('translatePair: skipping because existing target non-empty', { existingTarget: tgt.slice(0, 120) })
       return existingTarget
     }
     if (!src) {
-      console.debug('translatePair: skipping because source is empty')
       return ''
     }
-    console.debug('translatePair: calling API', { sourceSample: src.slice(0, 120) })
     const result = await api.translateText({ text: src, sourceLanguage, targetLanguage })
     if (result?.error) {
-      console.debug('translatePair: api returned error', result.error)
       throw new Error(String(result.error))
     }
     const translated = result?.translatedText ? String(result.translatedText) : ''
-    console.debug('translatePair: got translated text', { translatedSample: translated.slice(0, 120) })
     return translated
   }
 
   async function handleTranslateAll() {
     if (translating || saving) return
-    console.debug('handleTranslateAll: clicked')
     setTranslating(true)
     try {
-      const useUkAsSource =
-        form.titleUk.trim() ||
-        form.cityUk.trim() ||
-        form.locationUk.trim() ||
-        form.descriptionUk.trim() ||
-        !form.titleEn.trim()
+      // Event-level translations (only fill missing counterparts)
+      const tasks: Array<Promise<[keyof EventFormState, string]>> = []
 
-      console.debug('handleTranslateAll: useUkAsSource', useUkAsSource, {
-        titleUk: form.titleUk.slice(0, 80),
-        titleEn: form.titleEn.slice(0, 80),
-        locationUk: form.locationUk.slice(0, 80),
-        locationEn: form.locationEn.slice(0, 80),
-        descriptionUk: form.descriptionUk.slice(0, 80),
-        descriptionEn: form.descriptionEn.slice(0, 80),
+      if (!form.titleUk.trim() && form.titleEn.trim()) tasks.push(translatePair(form.titleEn, 'en', 'uk').then(v => ['titleUk', v] as [keyof EventFormState, string]))
+      if (!form.titleEn.trim() && form.titleUk.trim()) tasks.push(translatePair(form.titleUk, 'uk', 'en').then(v => ['titleEn', v] as [keyof EventFormState, string]))
+
+      if (!form.locationUk.trim() && form.locationEn.trim()) tasks.push(translatePair(form.locationEn, 'en', 'uk').then(v => ['locationUk', v] as [keyof EventFormState, string]))
+      if (!form.locationEn.trim() && form.locationUk.trim()) tasks.push(translatePair(form.locationUk, 'uk', 'en').then(v => ['locationEn', v] as [keyof EventFormState, string]))
+
+      if (!form.descriptionUk.trim() && form.descriptionEn.trim()) tasks.push(translatePair(form.descriptionEn, 'en', 'uk').then(v => ['descriptionUk', v] as [keyof EventFormState, string]))
+      if (!form.descriptionEn.trim() && form.descriptionUk.trim()) tasks.push(translatePair(form.descriptionUk, 'uk', 'en').then(v => ['descriptionEn', v] as [keyof EventFormState, string]))
+
+      const results = await Promise.all(tasks)
+      if (results.length) {
+        const nextForm = { ...form }
+        for (const [key, value] of results) {
+          if (value && value.trim()) nextForm[key] = value
+        }
+        setForm(nextForm)
+      }
+
+      // Lectures: translate each missing counterpart per lecture
+      const lectureTasks: Array<Promise<{ index: number; key: keyof EventLectureFormState; value: string }>> = []
+      lectures.forEach((lecture, i) => {
+        if (!lecture.titleUk.trim() && lecture.titleEn.trim()) lectureTasks.push(translatePair(lecture.titleEn, 'en', 'uk').then(v => ({ index: i, key: 'titleUk' as const, value: v })))
+        if (!lecture.titleEn.trim() && lecture.titleUk.trim()) lectureTasks.push(translatePair(lecture.titleUk, 'uk', 'en').then(v => ({ index: i, key: 'titleEn' as const, value: v })))
+
+        if (!lecture.authorUk.trim() && lecture.authorEn.trim()) lectureTasks.push(translatePair(lecture.authorEn, 'en', 'uk').then(v => ({ index: i, key: 'authorUk' as const, value: v })))
+        if (!lecture.authorEn.trim() && lecture.authorUk.trim()) lectureTasks.push(translatePair(lecture.authorUk, 'uk', 'en').then(v => ({ index: i, key: 'authorEn' as const, value: v })))
+
+        if (!lecture.summaryUk.trim() && lecture.summaryEn.trim()) lectureTasks.push(translatePair(lecture.summaryEn, 'en', 'uk').then(v => ({ index: i, key: 'summaryUk' as const, value: v })))
+        if (!lecture.summaryEn.trim() && lecture.summaryUk.trim()) lectureTasks.push(translatePair(lecture.summaryUk, 'uk', 'en').then(v => ({ index: i, key: 'summaryEn' as const, value: v })))
+
+        if (!lecture.authorBioUk.trim() && lecture.authorBioEn.trim()) lectureTasks.push(translatePair(lecture.authorBioEn, 'en', 'uk').then(v => ({ index: i, key: 'authorBioUk' as const, value: v })))
+        if (!lecture.authorBioEn.trim() && lecture.authorBioUk.trim()) lectureTasks.push(translatePair(lecture.authorBioUk, 'uk', 'en').then(v => ({ index: i, key: 'authorBioEn' as const, value: v })))
       })
 
-      if (useUkAsSource) {
-        const [titleEn, locationEn, descriptionEn] = await Promise.all([
-          translatePair(form.titleUk, 'uk', 'en', form.titleEn),
-          translatePair(form.locationUk, 'uk', 'en', form.locationEn),
-          translatePair(form.descriptionUk, 'uk', 'en', form.descriptionEn),
-        ])
-
-        setForm((prev) => ({
-          ...prev,
-          titleEn: titleEn || prev.titleEn,
-          locationEn: locationEn || prev.locationEn,
-          descriptionEn: descriptionEn || prev.descriptionEn,
-        }))
-
-        const translatedLectures = await Promise.all(
-          lectures.map(async (lecture) => {
-            const [lTitleEn, lAuthorEn, lSummaryEn, lAuthorBioEn] = await Promise.all([
-              translatePair(lecture.titleUk, 'uk', 'en', lecture.titleEn),
-              translatePair(lecture.authorUk, 'uk', 'en', lecture.authorEn),
-              translatePair(lecture.summaryUk, 'uk', 'en', lecture.summaryEn),
-              translatePair(lecture.authorBioUk, 'uk', 'en', lecture.authorBioEn),
-            ])
-            return {
-              ...lecture,
-              titleEn: lTitleEn || lecture.titleEn,
-              authorEn: lAuthorEn || lecture.authorEn,
-              summaryEn: lSummaryEn || lecture.summaryEn,
-              authorBioEn: lAuthorBioEn || lecture.authorBioEn,
-            }
-          }),
-        )
-        setLectures(translatedLectures)
-      } else {
-        const [titleUk, locationUk, descriptionUk] = await Promise.all([
-          translatePair(form.titleEn, 'en', 'uk', form.titleUk),
-          translatePair(form.locationEn, 'en', 'uk', form.locationUk),
-          translatePair(form.descriptionEn, 'en', 'uk', form.descriptionUk),
-        ])
-
-        setForm((prev) => ({
-          ...prev,
-          titleUk: titleUk || prev.titleUk,
-          locationUk: locationUk || prev.locationUk,
-          descriptionUk: descriptionUk || prev.descriptionUk,
-        }))
-
-        const translatedLectures = await Promise.all(
-          lectures.map(async (lecture) => {
-            const [lTitleUk, lAuthorUk, lSummaryUk, lAuthorBioUk] = await Promise.all([
-              translatePair(lecture.titleEn, 'en', 'uk', lecture.titleUk),
-              translatePair(lecture.authorEn, 'en', 'uk', lecture.authorUk),
-              translatePair(lecture.summaryEn, 'en', 'uk', lecture.summaryUk),
-              translatePair(lecture.authorBioEn, 'en', 'uk', lecture.authorBioUk),
-            ])
-            return {
-              ...lecture,
-              titleUk: lTitleUk || lecture.titleUk,
-              authorUk: lAuthorUk || lecture.authorUk,
-              summaryUk: lSummaryUk || lecture.summaryUk,
-              authorBioUk: lAuthorBioUk || lecture.authorBioUk,
-            }
-          }),
-        )
-        setLectures(translatedLectures)
+      const lresults = await Promise.all(lectureTasks)
+      if (lresults.length) {
+        const nextLectures = lectures.map((l) => ({ ...l }))
+        for (const r of lresults) {
+          if (r.value && r.value.trim()) {
+            nextLectures[r.index] = { ...nextLectures[r.index], [r.key]: r.value }
+          }
+        }
+        setLectures(nextLectures)
       }
-    } catch {
+    } catch (err) {
       setFormError(t('common.translationError'))
     } finally {
       setTranslating(false)
