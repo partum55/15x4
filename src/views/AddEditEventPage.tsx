@@ -223,15 +223,31 @@ export default function AddEditEventPage() {
     targetLanguage: 'uk' | 'en',
     existingTarget = '',
   ) {
-    if (existingTarget.trim()) return existingTarget
-    if (!sourceValue.trim()) return ''
-    const result = await api.translateText({ text: sourceValue.trim(), sourceLanguage, targetLanguage })
-    if (result?.error) throw new Error(String(result.error))
-    return result?.translatedText ? String(result.translatedText) : ''
+    const src = String(sourceValue ?? '').trim()
+    const tgt = String(existingTarget ?? '').trim()
+    console.debug('translatePair:', { srcSnippet: src.slice(0, 120), sourceLanguage, targetLanguage, hasExistingTarget: Boolean(tgt) })
+    if (tgt) {
+      console.debug('translatePair: skipping because existing target non-empty', { existingTarget: tgt.slice(0, 120) })
+      return existingTarget
+    }
+    if (!src) {
+      console.debug('translatePair: skipping because source is empty')
+      return ''
+    }
+    console.debug('translatePair: calling API', { sourceSample: src.slice(0, 120) })
+    const result = await api.translateText({ text: src, sourceLanguage, targetLanguage })
+    if (result?.error) {
+      console.debug('translatePair: api returned error', result.error)
+      throw new Error(String(result.error))
+    }
+    const translated = result?.translatedText ? String(result.translatedText) : ''
+    console.debug('translatePair: got translated text', { translatedSample: translated.slice(0, 120) })
+    return translated
   }
 
   async function handleTranslateAll() {
     if (translating || saving) return
+    console.debug('handleTranslateAll: clicked')
     setTranslating(true)
     try {
       const useUkAsSource =
@@ -240,6 +256,15 @@ export default function AddEditEventPage() {
         form.locationUk.trim() ||
         form.descriptionUk.trim() ||
         !form.titleEn.trim()
+
+      console.debug('handleTranslateAll: useUkAsSource', useUkAsSource, {
+        titleUk: form.titleUk.slice(0, 80),
+        titleEn: form.titleEn.slice(0, 80),
+        locationUk: form.locationUk.slice(0, 80),
+        locationEn: form.locationEn.slice(0, 80),
+        descriptionUk: form.descriptionUk.slice(0, 80),
+        descriptionEn: form.descriptionEn.slice(0, 80),
+      })
 
       if (useUkAsSource) {
         const [titleEn, locationEn, descriptionEn] = await Promise.all([
