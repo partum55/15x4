@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
@@ -33,6 +34,7 @@ function matchesCity(event: Event, city: string) {
 export default function UpcomingEvents() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const router = useRouter()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(0)
@@ -139,9 +141,25 @@ export default function UpcomingEvents() {
               </>
             ) : (
               visibleEvents.map((event) => (
-                <div key={event.id}>
-                  <div className="w-full h-px bg-black" />
-                  <div className="flex min-h-[290px] items-stretch gap-9 max-[1199px]:gap-6 max-[900px]:grid max-[900px]:grid-cols-[minmax(220px,327px)_1fr] max-[767px]:flex max-[767px]:flex-col max-[767px]:min-h-0">
+                    <div key={event.id}>
+                      <div className="w-full h-px bg-black" />
+                      <div
+                        role="link"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            const el = e.target as HTMLElement
+                            if (el.closest('a')) return
+                            router.push(`/events/${event.id}`)
+                          }
+                        }}
+                        onClick={(e) => {
+                          const el = e.target as HTMLElement
+                          if (el.closest('a')) return
+                          router.push(`/events/${event.id}`)
+                        }}
+                        className="flex min-h-[290px] items-stretch gap-9 max-[1199px]:gap-6 max-[900px]:grid max-[900px]:grid-cols-[minmax(220px,327px)_1fr] max-[767px]:flex max-[767px]:flex-col max-[767px]:min-h-0 cursor-pointer"
+                      >
                     {/* Col 1: info */}
                     <div className="flex w-[clamp(220px,23.1%,327px)] flex-shrink-0 flex-col justify-between py-6 max-[900px]:w-full max-[767px]:pb-4">
                       <div className="flex flex-col gap-6">
