@@ -43,6 +43,9 @@ type EventLectureFormState = {
   summaryUk: string
   summaryEn: string
   image: string
+  authorBioUk: string,
+  authorBioEn: string,
+  videoUrl: string,
 }
 
 type FormErrors = Partial<Record<keyof EventFormState, string>>
@@ -76,6 +79,9 @@ function emptyLecture(slot: number): EventLectureFormState {
     summaryUk: '',
     summaryEn: '',
     image: '',
+    authorBioUk: '',
+    authorBioEn: '',
+    videoUrl: '',
   }
 }
 
@@ -126,6 +132,9 @@ export default function AddEditEventPage() {
                 summaryUk: String(lecture.summaryUk ?? ''),
                 summaryEn: String(lecture.summaryEn ?? ''),
                 image: String(lecture.image ?? ''),
+                authorBioUk: String(lecture.authorBioUk ?? ''),
+                authorBioEn: String(lecture.authorBioEn ?? ''),
+                videoUrl: String(lecture.videoUrl ?? ''),
               }))
             : [],
         )
@@ -248,16 +257,18 @@ export default function AddEditEventPage() {
 
         const translatedLectures = await Promise.all(
           lectures.map(async (lecture) => {
-            const [lTitleEn, lAuthorEn, lSummaryEn] = await Promise.all([
+            const [lTitleEn, lAuthorEn, lSummaryEn, lAuthorBioEn] = await Promise.all([
               translatePair(lecture.titleUk, 'uk', 'en', lecture.titleEn),
               translatePair(lecture.authorUk, 'uk', 'en', lecture.authorEn),
               translatePair(lecture.summaryUk, 'uk', 'en', lecture.summaryEn),
+              translatePair(lecture.authorBioUk, 'uk', 'en', lecture.authorBioEn),
             ])
             return {
               ...lecture,
               titleEn: lTitleEn || lecture.titleEn,
               authorEn: lAuthorEn || lecture.authorEn,
               summaryEn: lSummaryEn || lecture.summaryEn,
+              authorBioEn: lAuthorBioEn || lecture.authorBioEn,
             }
           }),
         )
@@ -278,16 +289,18 @@ export default function AddEditEventPage() {
 
         const translatedLectures = await Promise.all(
           lectures.map(async (lecture) => {
-            const [lTitleUk, lAuthorUk, lSummaryUk] = await Promise.all([
+            const [lTitleUk, lAuthorUk, lSummaryUk, lAuthorBioUk] = await Promise.all([
               translatePair(lecture.titleEn, 'en', 'uk', lecture.titleUk),
               translatePair(lecture.authorEn, 'en', 'uk', lecture.authorUk),
               translatePair(lecture.summaryEn, 'en', 'uk', lecture.summaryUk),
+              translatePair(lecture.authorBioEn, 'en', 'uk', lecture.authorBioUk),
             ])
             return {
               ...lecture,
               titleUk: lTitleUk || lecture.titleUk,
               authorUk: lAuthorUk || lecture.authorUk,
               summaryUk: lSummaryUk || lecture.summaryUk,
+              authorBioUk: lAuthorBioUk || lecture.authorBioUk,
             }
           }),
         )
@@ -334,6 +347,9 @@ export default function AddEditEventPage() {
         summaryUk: lecture.summaryUk.trim(),
         summaryEn: lecture.summaryEn.trim(),
         image: lecture.image.trim(),
+        authorBioUk: lecture.authorBioUk.trim(),
+        authorBioEn: lecture.authorBioEn.trim(),
+        videoUrl: lecture.videoUrl.trim() || '',
       })),
     }
 
@@ -537,6 +553,18 @@ export default function AddEditEventPage() {
                   <FormField label={t('addEvent.lectureImageLabel')} error={lectureErrors[lecture.tempId]?.image} required>
                     <input type="url" value={lecture.image} onChange={(e) => setLectureField(index, 'image', e.target.value)} placeholder="https://" required />
                   </FormField>
+                  <FormField label={t('addLecture.videoUrlLabel')}>
+                    <input type="text" value={lecture.videoUrl} onChange={(e) => setLectureField(index, 'videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
+                  </FormField>
+
+                  <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+                    <FormField label={t('addLecture.authorBioUkLabel')}>
+                      <textarea rows={3} value={lecture.authorBioUk} onChange={(e) => setLectureField(index, 'authorBioUk', e.target.value)} />
+                    </FormField>
+                    <FormField label={t('addLecture.authorBioEnLabel')}>
+                      <textarea rows={3} value={lecture.authorBioEn} onChange={(e) => setLectureField(index, 'authorBioEn', e.target.value)} />
+                    </FormField>
+                  </div>
                 </div>
               ))}
             </div>
