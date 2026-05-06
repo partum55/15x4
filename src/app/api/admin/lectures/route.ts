@@ -12,6 +12,12 @@ function sanitizeSearch(value: string | null) {
   return value?.replace(/[%,()]/g, ' ').trim() ?? ''
 }
 
+function resolveLocale(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const queryLocale = searchParams.get('locale')
+  return queryLocale?.startsWith('en') ? 'en' : 'uk'
+}
+
 export async function GET(req: Request) {
   try {
     const session = await requireAdminSession()
@@ -26,6 +32,7 @@ export async function GET(req: Request) {
     const category = searchParams.get('category')?.trim()
     const status = searchParams.get('status')
     const sort = searchParams.get('sort')
+    const locale = resolveLocale(req)
 
     let query = supabaseAdmin
       .from('Lecture')
@@ -49,7 +56,7 @@ export async function GET(req: Request) {
     }
 
     if (sort === 'titleAZ' || sort === 'titleZA') {
-      query = query.order('titleUk', { ascending: sort === 'titleAZ' })
+      query = query.order(locale === 'en' ? 'titleEn' : 'titleUk', { ascending: sort === 'titleAZ' })
     } else if (sort === 'oldest') {
       query = query.order('createdAt', { ascending: true })
     } else {
@@ -70,8 +77,8 @@ export async function GET(req: Request) {
     const profilesById = new Map((profiles ?? []).map((p) => [p.id, { ...p, email: '' }]))
     const response = lectures.map((lecture) => ({
       ...lecture,
-      title: lecture.titleUk,
-      author: lecture.authorUk,
+      title: locale === 'en' ? lecture.titleEn ?? lecture.titleUk : lecture.titleUk ?? lecture.titleEn,
+      author: locale === 'en' ? lecture.authorEn ?? lecture.authorUk : lecture.authorUk ?? lecture.authorEn,
       user: lecture.userId ? profilesById.get(lecture.userId) ?? null : null,
     }))
 

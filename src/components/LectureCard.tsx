@@ -12,7 +12,6 @@ export type LectureCardVariant =
   | 'compact'
   | 'vertical'
   | 'featured'
-  | 'popular'
   | 'event'
   | 'swatch'
   | 'detail'
@@ -84,11 +83,10 @@ function MediaBlock({
   active?: boolean
 }) {
   const hasImage = Boolean(lecture.image?.trim())
+  const isHorizontal = variant === 'horizontal'
   const imageHeight = variant === 'featured'
     ? 'h-[clamp(220px,22.5vw,324px)]'
-    : variant === 'popular'
-      ? 'h-[clamp(150px,17.4vw,250px)]'
-      : variant === 'detail'
+    : variant === 'detail'
         ? 'h-[clamp(160px,20vw,260px)]'
         : variant === 'compact' || variant === 'swatch'
           ? 'h-[clamp(136px,10vw,152px)]'
@@ -99,7 +97,8 @@ function MediaBlock({
   return (
     <div className={joinClassNames(
       'relative shrink-0 overflow-hidden bg-[var(--lecture-card-color)]',
-      variant === 'featured' || variant === 'popular' || variant === 'vertical' || variant === 'detail' ? 'w-full' : 'w-[clamp(200px,22vw,327px)] max-[767px]:w-full',
+      isHorizontal ? 'self-stretch' : '',
+      variant === 'featured' || variant === 'vertical' || variant === 'detail' ? 'w-full' : 'w-[clamp(200px,22vw,327px)] max-[767px]:w-full',
     )}>
       {hasImage && variant !== 'compact' && variant !== 'swatch' ? (
         <Image
@@ -110,14 +109,17 @@ function MediaBlock({
           unoptimized
           className={joinClassNames(
             'block w-full object-cover transition-opacity duration-200 max-[767px]:h-[200px]',
-            variant === 'popular' ? 'opacity-100 group-hover:opacity-55' : 'opacity-50 group-hover:opacity-70',
-            imageHeight,
+            isHorizontal ? 'h-full min-h-[clamp(220px,22.3vw,321px)]' : imageHeight,
+            'opacity-50 group-hover:opacity-70',
           )}
         />
       ) : (
-        <div className={joinClassNames('w-full', imageHeight)} />
+        <div className={joinClassNames('w-full', isHorizontal ? 'h-full min-h-[clamp(220px,22.3vw,321px)]' : imageHeight)} />
       )}
-      <span className="absolute left-3 top-3 max-w-[calc(100%-24px)]">
+      <span className={joinClassNames(
+        'absolute max-w-[calc(100%-24px)]',
+        'left-3 top-3',
+      )}>
         <CategoryBadge label={categoryLabel} color={color} active={active} inverse={variant === 'swatch' && active} compact={variant === 'detail' || variant === 'swatch'} />
       </span>
     </div>
@@ -137,33 +139,6 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
     '--lecture-card-color': color,
     ...(isHoverFilled ? { backgroundColor: color, color: 'var(--color-white)' } : {}),
   } as CSSProperties
-
-  if (variant === 'popular') {
-    return (
-      <Link
-        href={`/lectures/${lecture.id}`}
-        className={joinClassNames(
-          'group flex min-w-0 flex-1 cursor-pointer flex-col py-8 text-inherit no-underline transition-colors duration-200 ease-in max-[1199px]:py-6 max-[767px]:border-b max-[767px]:border-black max-[767px]:py-5 last:max-[767px]:border-b-0',
-          className,
-        )}
-        style={style}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        <div className="mb-4 flex h-9 items-center justify-between gap-3 px-[clamp(16px,2vw,28px)]">
-          <CategoryBadge label={categoryLabel} color={color} active={hovered} thin />
-          <span className="text-clamp-1 flex-shrink-0 text-right text-[clamp(13px,1.3vw,20px)] font-normal transition-colors duration-200">{lecture.author}</span>
-        </div>
-        <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="popular" active={hovered} />
-        <div className="mt-5 flex h-[clamp(104px,8.7vw,126px)] flex-col gap-4 overflow-hidden px-[clamp(16px,2vw,28px)]">
-          <p className="text-clamp-2 text-[clamp(15px,1.35vw,21px)] font-normal uppercase leading-[1.15] tracking-[-0.04em]">{lecture.title}</p>
-          {hasSummary && (
-            <p className="text-clamp-3 text-[clamp(13px,1.25vw,19px)] font-normal leading-[1.25]">{lecture.summary}</p>
-          )}
-        </div>
-      </Link>
-    )
-  }
 
   if (variant === 'featured') {
     return (

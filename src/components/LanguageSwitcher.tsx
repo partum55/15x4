@@ -15,7 +15,7 @@ export default function LanguageSwitcher() {
     window.localStorage.setItem('i18nextLng', newLang)
     document.cookie = `i18nextLng=${newLang}; path=/; max-age=31536000; sameSite=lax`
     void i18n.changeLanguage(newLang).finally(() => {
-      window.location.reload()
+      setSwitching(false)
     })
   }
 

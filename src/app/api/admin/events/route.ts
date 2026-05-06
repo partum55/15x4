@@ -2,12 +2,20 @@ import { NextResponse } from 'next/server'
 import { requireAdminSession } from '@/lib/admin'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-export async function GET() {
+function resolveLocale(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const queryLocale = searchParams.get('locale')
+  return queryLocale?.startsWith('en') ? 'en' : 'uk'
+}
+
+export async function GET(req: Request) {
   try {
     const session = await requireAdminSession()
     if (!session) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+
+    const locale = resolveLocale(req)
 
     const { data: events, error } = await supabaseAdmin
       .from('Event')
@@ -42,9 +50,9 @@ export async function GET() {
 
     const response = events.map((event) => ({
       ...event,
-      title: event.titleUk,
-      city: event.cityUk,
-      location: event.locationUk,
+      title: locale === 'en' ? event.titleEn ?? event.titleUk : event.titleUk ?? event.titleEn,
+      city: locale === 'en' ? event.cityEn ?? event.cityUk : event.cityUk ?? event.cityEn,
+      location: locale === 'en' ? event.locationEn ?? event.locationUk : event.locationUk ?? event.locationEn,
       user: event.userId ? profilesById.get(event.userId) ?? null : null,
       _count: { lectures: lecturesCountByEventId.get(event.id) ?? 0 },
     }))

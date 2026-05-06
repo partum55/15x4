@@ -15,20 +15,16 @@ type LectureRowProps = {
 
 function LectureRow({ left, right }: LectureRowProps) {
   return (
-    <div className="flex flex-col">
-      <div className="w-full h-px bg-black" />
-      <div className="flex items-stretch max-[767px]:flex-col">
-        <LectureCard lecture={left} variant="popular" className="pr-[18px] max-[767px]:pr-0" />
-        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-        <LectureCard lecture={right} variant="popular" className="pl-[18px] max-[767px]:pl-0" />
-      </div>
-      <div className="w-full h-px bg-black" />
+    <div className="flex items-stretch border-b border-black max-[767px]:flex-col">
+      <LectureCard lecture={left} variant="horizontal" />
+      <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+      <LectureCard lecture={right} variant="horizontal" />
     </div>
   )
 }
 
 export default function PopularLectures() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loading, setLoading] = useState(true)
   const skeletonLoading = useMinimumSkeleton(loading)
@@ -55,7 +51,7 @@ export default function PopularLectures() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [i18n.language])
 
   const rows: [Lecture, Lecture][] = []
   const visibleLectures = lectures.slice(0, 4)
@@ -74,7 +70,7 @@ export default function PopularLectures() {
             </h2>
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col border-t border-black">
             {rows.map(([left, right]) => (
               <LectureRow key={left.id} left={left} right={right} />
             ))}
