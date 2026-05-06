@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
+import { PAGE_SIZE, getAdminPageItems } from '@/lib/admin-pagination'
 import { PROFILE_ROLES, type ProfileRole } from '@/lib/roles'
 
 type User = {
@@ -17,14 +18,13 @@ type User = {
   createdAt: string
 }
 
-const USERS_PAGE_SIZE = 20
-
 export default function AdminUsersPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
   const { user, loading } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
+  const [usersError, setUsersError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [sortBy, setSortBy] = useState('')
@@ -40,12 +40,32 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (loading || !user || user?.profile?.role !== 'admin') return
+    let isMounted = true
+    setLoadingUsers(true)
+    setUsersError('')
     fetch('/api/admin/users')
       .then(res => res.json())
       .then(data => {
-        if (!data.error) setUsers(data)
-        setLoadingUsers(false)
+        if (!isMounted) return
+        if (!data.error) {
+          setUsers(data)
+        } else {
+          setUsers([])
+          setUsersError(data.error)
+        }
       })
+      .catch(() => {
+        if (!isMounted) return
+        setUsers([])
+        setUsersError('Could not load users.')
+      })
+      .finally(() => {
+        if (isMounted) setLoadingUsers(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [loading, user])
 
   useEffect(() => {
@@ -62,15 +82,18 @@ export default function AdminUsersPage() {
 
     return rows.sort((a, b) => {
       if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      if (sortBy === 'nameAZ') return a.name.localeCompare(b.name, 'uk')
-      if (sortBy === 'nameZA') return b.name.localeCompare(a.name, 'uk')
+      const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
+      if (sortBy === 'nameAZ') return a.name.localeCompare(b.name, locale)
+      if (sortBy === 'nameZA') return b.name.localeCompare(a.name, locale)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
-  }, [users, searchQuery, roleFilter, sortBy])
+  }, [users, searchQuery, roleFilter, sortBy, i18n.language])
 
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const paginatedUsers = filteredUsers.slice((safePage - 1) * USERS_PAGE_SIZE, safePage * USERS_PAGE_SIZE)
+  const { pagination, visibleItems: paginatedUsers } = getAdminPageItems(filteredUsers, page, PAGE_SIZE)
+
+  useEffect(() => {
+    if (page !== pagination.currentPage) setPage(pagination.currentPage)
+  }, [page, pagination.currentPage])
 
   async function handleSetRole(userId: string, role: ProfileRole) {
     if (pendingRoleUserIds.has(userId) || deletingUserIds.has(userId)) return
@@ -181,6 +204,8 @@ export default function AdminUsersPage() {
 
         {loadingUsers ? (
           <Loader className="flex items-center justify-center py-12" />
+        ) : usersError ? (
+          <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{usersError}</p>
         ) : filteredUsers.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.users.empty')}</p>
         ) : (
@@ -210,7 +235,7 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
-                      {new Date(u.createdAt).toLocaleDateString('uk')}
+                      {new Date(u.createdAt).toLocaleDateString(i18n.language.startsWith('en') ? 'en' : 'uk')}
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex gap-2 justify-end flex-wrap">
@@ -245,23 +270,23 @@ export default function AdminUsersPage() {
                 ))}
               </tbody>
             </table>
-            {totalPages > 1 && (
+            {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between gap-4 py-8 max-[640px]:flex-col max-[640px]:items-stretch">
                 <button
                   type="button"
                   onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                  disabled={safePage === 1}
+                  disabled={pagination.currentPage === 1}
                   className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
                 >
                   {t('admin.pagination.prev', { defaultValue: 'назад' })}
                 </button>
                 <span className="text-center text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
-                  {safePage} / {totalPages}
+                  {pagination.currentPage} / {pagination.totalPages}
                 </span>
                 <button
                   type="button"
-                  onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={safePage === totalPages}
+                  onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={pagination.currentPage === pagination.totalPages}
                   className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
                 >
                   {t('admin.pagination.next', { defaultValue: 'далі' })}

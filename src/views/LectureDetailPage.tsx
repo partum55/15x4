@@ -12,106 +12,7 @@ import Footer from '../components/Footer'
 import { api } from '../lib/api'
 import { CATEGORY_BORDER_CLASS as badgeBorderClass } from '../constants/colors'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
-
-type ResolvedLectureVideo = {
-  kind: 'iframe' | 'file'
-  src: string
-}
-
-function toHttpUrl(raw: string): URL | null {
-  try {
-    const parsed = new URL(raw)
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-      return parsed
-    }
-  } catch {
-    return null
-  }
-
-  return null
-}
-
-function getYouTubeId(url: URL): string | null {
-  const host = url.hostname.toLowerCase()
-
-  if (host === 'youtu.be') {
-    return url.pathname.slice(1) || null
-  }
-
-  if (host.endsWith('youtube.com')) {
-    if (url.pathname === '/watch') {
-      return url.searchParams.get('v')
-    }
-
-    if (url.pathname.startsWith('/embed/')) {
-      return url.pathname.split('/')[2] || null
-    }
-
-    if (url.pathname.startsWith('/shorts/')) {
-      return url.pathname.split('/')[2] || null
-    }
-  }
-
-  return null
-}
-
-function getVimeoId(url: URL): string | null {
-  const host = url.hostname.toLowerCase()
-  if (!host.endsWith('vimeo.com')) {
-    return null
-  }
-
-  const parts = url.pathname.split('/').filter(Boolean)
-  if (parts.length === 0) {
-    return null
-  }
-
-  const id = parts[parts.length - 1]
-  return /^\d+$/.test(id) ? id : null
-}
-
-function resolveLectureVideo(videoUrl?: string): ResolvedLectureVideo | null {
-  if (!videoUrl) {
-    return null
-  }
-
-  const url = toHttpUrl(videoUrl.trim())
-  if (!url) {
-    return null
-  }
-
-  const youTubeId = getYouTubeId(url)
-  if (youTubeId) {
-    return {
-      kind: 'iframe',
-      src: `https://www.youtube.com/embed/${youTubeId}?autoplay=1&rel=0`,
-    }
-  }
-
-  const vimeoId = getVimeoId(url)
-  if (vimeoId) {
-    return {
-      kind: 'iframe',
-      src: `https://player.vimeo.com/video/${vimeoId}?autoplay=1`,
-    }
-  }
-
-  if (/\.(mp4|webm|ogg)$/i.test(url.pathname)) {
-    return {
-      kind: 'file',
-      src: url.toString(),
-    }
-  }
-
-  if (url.pathname.startsWith('/embed/')) {
-    return {
-      kind: 'iframe',
-      src: url.toString(),
-    }
-  }
-
-  return null
-}
+import { resolveLectureVideo } from '../lib/lecture-video'
 
 export default function LectureDetailPage() {
   const { t, i18n } = useTranslation()
@@ -123,12 +24,12 @@ export default function LectureDetailPage() {
   const [related, setRelated] = useState<Lecture[]>([])
   const [loading, setLoading] = useState(!bonesMode)
   const skeletonLoading = useMinimumSkeleton(bonesMode || loading)
-  const [openedVideoLectureId, setOpenedVideoLectureId] = useState<string | null>(null)
+  const [videoErrorLectureId, setVideoErrorLectureId] = useState<string | null>(null)
   const lectureCategoryLabel = lecture
     ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
     : ''
   const resolvedVideo = lecture ? resolveLectureVideo(lecture.videoUrl) : null
-  const isVideoOpen = lecture ? openedVideoLectureId === lecture.id : false
+  const hasVideoError = lecture ? videoErrorLectureId === lecture.id : false
 
   useEffect(() => {
     if (!id) return
@@ -188,26 +89,31 @@ export default function LectureDetailPage() {
           {lecture.title.toUpperCase()}
         </h1>
 
-        {/* Hero: image + meta */}
+        {/* Hero: media + meta */}
         <div className="grid grid-cols-[58%_1fr] gap-[clamp(24px,3vw,48px)] mb-[clamp(32px,4vw,64px)] items-start max-[1023px]:grid-cols-1">
-          <div className="relative">
-            {isVideoOpen && resolvedVideo ? (
+          <div>
+            {resolvedVideo && !hasVideoError ? (
               resolvedVideo.kind === 'iframe' ? (
-                <iframe
-                  src={resolvedVideo.src}
-                  title={lecture.title}
-                  className="w-full aspect-[4/3] block border-0 max-[1023px]:aspect-[16/9]"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
+                <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16 / 9' }}>
+                  <iframe
+                    src={resolvedVideo.src}
+                    title={lecture.title}
+                    className="absolute inset-0 block h-full w-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
               ) : (
-                <video
-                  src={resolvedVideo.src}
-                  className="w-full aspect-[4/3] object-cover block max-[1023px]:aspect-[16/9]"
-                  controls
-                  autoPlay
-                  playsInline
-                />
+                <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: '16 / 9' }}>
+                  <video
+                    className="absolute inset-0 block h-full w-full object-cover"
+                    controls
+                    playsInline
+                    onError={() => setVideoErrorLectureId(lecture.id)}
+                  >
+                    <source src={resolvedVideo.src} />
+                  </video>
+                </div>
               )
             ) : (
               <>
@@ -219,22 +125,10 @@ export default function LectureDetailPage() {
                   unoptimized
                   className="w-full aspect-[4/3] object-cover block max-[1023px]:aspect-[16/9]"
                 />
-                {resolvedVideo && (
-                  <button
-                    type="button"
-                    className="absolute inset-0 flex items-center justify-center bg-transparent border-none cursor-pointer transition-opacity duration-200 hover:opacity-80"
-                    aria-label={t('lectureDetail.play')}
-                    onClick={() => setOpenedVideoLectureId(lecture.id)}
-                  >
-                    <svg
-                      viewBox="0 0 48 48"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-[clamp(48px,7vw,96px)] h-[clamp(48px,7vw,96px)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
-                    >
-                      <polygon points="16,10 40,24 16,38" fill="white" />
-                    </svg>
-                  </button>
+                {hasVideoError && (
+                  <p className="mt-4 border border-black/20 px-4 py-3 text-[clamp(12px,1.2vw,17px)] text-black/60">
+                    {t('lectureDetail.videoUnavailable', { defaultValue: 'Video is unavailable.' })}
+                  </p>
                 )}
               </>
             )}

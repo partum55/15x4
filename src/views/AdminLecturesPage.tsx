@@ -9,6 +9,7 @@ import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORY_COLOR_VAR } from '@/constants/colors'
 import { LECTURE_CATEGORIES } from '@/constants/lectureCategories'
+import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { api } from '@/lib/api'
 
 type Lecture = {
@@ -26,22 +27,20 @@ type Lecture = {
   user: { id: string; name: string; email: string } | null
 }
 
-const ADMIN_PAGE_SIZE = 100
-
 export default function AdminLecturesPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
   const { user, loading } = useAuth()
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loadingLectures, setLoadingLectures] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
+  const [lecturesError, setLecturesError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [sortBy, setSortBy] = useState('')
-  const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
   const [approvingLectureIds, setApprovingLectureIds] = useState<Set<string>>(new Set())
 
@@ -53,6 +52,7 @@ export default function AdminLecturesPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      setPage(1)
       setDebouncedSearchQuery(searchQuery.trim())
     }, 300)
 
@@ -64,10 +64,11 @@ export default function AdminLecturesPage() {
 
     let isMounted = true
     setLoadingLectures(true)
+    setLecturesError('')
 
     api.admin.getLectures({
-      limit: ADMIN_PAGE_SIZE,
-      offset: 0,
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
       search: debouncedSearchQuery,
       category: categoryFilter,
       status: statusFilter,
@@ -76,16 +77,25 @@ export default function AdminLecturesPage() {
       .then(data => {
         if (!isMounted) return
         if (!data.error) {
+          const totalItems = Number(data.total ?? 0)
+          const totalPages = Math.ceil(totalItems / PAGE_SIZE)
+          if (page > 1 && page > totalPages) {
+            setPage(1)
+            return
+          }
           setLectures(Array.isArray(data.items) ? data.items : [])
-          setHasMore(Boolean(data.hasMore))
-          setTotal(Number(data.total ?? 0))
+          setTotal(totalItems)
+        } else {
+          setLectures([])
+          setTotal(0)
+          setLecturesError(data.error)
         }
       })
       .catch(() => {
         if (!isMounted) return
         setLectures([])
-        setHasMore(false)
         setTotal(0)
+        setLecturesError('Could not load lectures.')
       })
       .finally(() => {
         if (isMounted) setLoadingLectures(false)
@@ -94,29 +104,9 @@ export default function AdminLecturesPage() {
     return () => {
       isMounted = false
     }
-  }, [loading, user, debouncedSearchQuery, categoryFilter, statusFilter, sortBy])
+  }, [loading, user, debouncedSearchQuery, categoryFilter, statusFilter, sortBy, page, i18n.language])
 
-  async function handleLoadMore() {
-    if (loadingMore) return
-    setLoadingMore(true)
-    try {
-      const data = await api.admin.getLectures({
-        limit: ADMIN_PAGE_SIZE,
-        offset: lectures.length,
-        search: debouncedSearchQuery,
-        category: categoryFilter,
-        status: statusFilter,
-        sort: sortBy,
-      })
-      if (!data.error) {
-        setLectures(prev => [...prev, ...(Array.isArray(data.items) ? data.items : [])])
-        setHasMore(Boolean(data.hasMore))
-        setTotal(Number(data.total ?? 0))
-      }
-    } finally {
-      setLoadingMore(false)
-    }
-  }
+  const pagination = buildPaginationState(total, page, PAGE_SIZE)
 
   async function handleApprove(lectureId: string, isPublic: boolean) {
     if (approvingLectureIds.has(lectureId)) return
@@ -155,6 +145,7 @@ export default function AdminLecturesPage() {
       if (!res.ok) return
       setLectures(prev => prev.filter(l => l.id !== lectureId))
       setTotal(prev => Math.max(0, prev - 1))
+      if (lectures.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
     } finally {
       setDeletingLectureIds(prev => {
         const next = new Set(prev)
@@ -200,7 +191,10 @@ export default function AdminLecturesPage() {
           />
           <select
             value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
+            onChange={(event) => {
+              setPage(1)
+              setCategoryFilter(event.target.value)
+            }}
             className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
           >
             <option value="">{t('admin.lectures.allCategories')}</option>
@@ -212,7 +206,10 @@ export default function AdminLecturesPage() {
           </select>
           <select
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
+            onChange={(event) => {
+              setPage(1)
+              setStatusFilter(event.target.value)
+            }}
             className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
           >
             <option value="">{t('admin.lectures.allStatuses')}</option>
@@ -221,7 +218,10 @@ export default function AdminLecturesPage() {
           </select>
           <select
             value={sortBy}
-            onChange={(event) => setSortBy(event.target.value)}
+            onChange={(event) => {
+              setPage(1)
+              setSortBy(event.target.value)
+            }}
             className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
           >
             <option value="">{t('admin.lectures.newest')}</option>
@@ -239,6 +239,8 @@ export default function AdminLecturesPage() {
 
         {loadingLectures ? (
           <Loader className="flex items-center justify-center py-12" />
+        ) : lecturesError ? (
+          <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{lecturesError}</p>
         ) : lectures.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.lectures.empty')}</p>
         ) : (
@@ -322,15 +324,26 @@ export default function AdminLecturesPage() {
                 ))}
               </tbody>
             </table>
-            {(hasMore || total > lectures.length) && (
-              <div className="flex justify-center py-8">
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between gap-4 py-8 max-[640px]:flex-col max-[640px]:items-stretch">
                 <button
                   type="button"
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:animate-pulse disabled:hover:bg-transparent disabled:hover:text-black"
+                  onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                  disabled={pagination.currentPage === 1 || loadingLectures}
+                  className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
                 >
-                  {loadingMore ? <span className="loader" /> : t('admin.lectures.loadMore')}
+                  {t('admin.pagination.prev', { defaultValue: 'назад' })}
+                </button>
+                <span className="text-center text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
+                  {pagination.currentPage} / {pagination.totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={pagination.currentPage === pagination.totalPages || loadingLectures}
+                  className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
+                >
+                  {t('admin.pagination.next', { defaultValue: 'далі' })}
                 </button>
               </div>
             )}

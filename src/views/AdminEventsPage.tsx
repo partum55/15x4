@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
+import { PAGE_SIZE, getAdminPageItems } from '@/lib/admin-pagination'
+import { api } from '@/lib/api'
 import { formatEventDate, formatEventTime } from '@/lib/date-time'
 
 type Event = {
@@ -29,14 +31,13 @@ type Event = {
   _count: { lectures: number }
 }
 
-const EVENTS_PAGE_SIZE = 20
-
 export default function AdminEventsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const router = useRouter()
   const { user, loading } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
+  const [eventsError, setEventsError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [sortBy, setSortBy] = useState('')
@@ -54,11 +55,21 @@ export default function AdminEventsPage() {
     if (loading || !user || user?.profile?.role !== 'admin') return
     let isMounted = true
     setLoadingEvents(true)
-    fetch('/api/admin/events')
-      .then(res => res.json())
+    setEventsError('')
+    api.admin.getEvents()
       .then(data => {
         if (!isMounted) return
-        if (!data.error) setEvents(data)
+        if (!data.error) {
+          setEvents(data)
+        } else {
+          setEvents([])
+          setEventsError(data.error)
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setEvents([])
+        setEventsError('Could not load events.')
       })
       .finally(() => {
         if (isMounted) setLoadingEvents(false)
@@ -66,7 +77,7 @@ export default function AdminEventsPage() {
     return () => {
       isMounted = false
     }
-  }, [loading, user])
+  }, [loading, user, i18n.language])
 
   useEffect(() => {
     setPage(1)
@@ -74,17 +85,14 @@ export default function AdminEventsPage() {
 
   const filteredEvents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
+    const selectedLanguage = i18n.language.startsWith('en') ? 'en' : 'uk'
+    const eventText = (row: Event, ukKey: 'titleUk' | 'cityUk' | 'locationUk', enKey: 'titleEn' | 'cityEn' | 'locationEn') =>
+      selectedLanguage === 'en' ? row[enKey] || row[ukKey] : row[ukKey] || row[enKey]
     const rows = events.filter((row) => {
       const searchValues = [
-        row.title,
-        row.titleUk,
-        row.titleEn,
-        row.city,
-        row.cityUk,
-        row.cityEn,
-        row.location,
-        row.locationUk,
-        row.locationEn,
+        eventText(row, 'titleUk', 'titleEn'),
+        eventText(row, 'cityUk', 'cityEn'),
+        eventText(row, 'locationUk', 'locationEn'),
         row.user?.name ?? '',
         row.user?.email ?? '',
       ]
@@ -98,16 +106,21 @@ export default function AdminEventsPage() {
 
     return rows.sort((a, b) => {
       if (sortBy === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime()
-      if (sortBy === 'titleAZ') return a.title.localeCompare(b.title, 'uk')
-      if (sortBy === 'titleZA') return b.title.localeCompare(a.title, 'uk')
+      if (sortBy === 'titleAZ') return eventText(a, 'titleUk', 'titleEn').localeCompare(eventText(b, 'titleUk', 'titleEn'), selectedLanguage)
+      if (sortBy === 'titleZA') return eventText(b, 'titleUk', 'titleEn').localeCompare(eventText(a, 'titleUk', 'titleEn'), selectedLanguage)
       if (sortBy === 'created') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       return new Date(b.date).getTime() - new Date(a.date).getTime()
     })
-  }, [events, searchQuery, statusFilter, sortBy])
+  }, [events, searchQuery, statusFilter, sortBy, i18n.language])
 
-  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / EVENTS_PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const paginatedEvents = filteredEvents.slice((safePage - 1) * EVENTS_PAGE_SIZE, safePage * EVENTS_PAGE_SIZE)
+  const { pagination, visibleItems: paginatedEvents } = getAdminPageItems(filteredEvents, page, PAGE_SIZE)
+  const selectedLanguage = i18n.language.startsWith('en') ? 'en' : 'uk'
+  const eventTitle = (row: Event) => selectedLanguage === 'en' ? row.titleEn || row.titleUk : row.titleUk || row.titleEn
+  const eventLocation = (row: Event) => selectedLanguage === 'en' ? row.locationEn || row.locationUk : row.locationUk || row.locationEn
+
+  useEffect(() => {
+    if (page !== pagination.currentPage) setPage(pagination.currentPage)
+  }, [page, pagination.currentPage])
 
   async function handleDelete(eventId: string) {
     if (deletingEventIds.has(eventId)) return
@@ -214,6 +227,8 @@ export default function AdminEventsPage() {
 
         {loadingEvents ? (
           <Loader className="flex items-center justify-center py-12" />
+        ) : eventsError ? (
+          <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{eventsError}</p>
         ) : filteredEvents.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.events.empty')}</p>
         ) : (
@@ -235,11 +250,11 @@ export default function AdminEventsPage() {
                   <tr key={e.id} className="border-b border-black/20 hover:bg-black/5">
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
                       <Link href={`/events/${e.id}`} className="text-black hover:underline">
-                        {e.title}
+                        {eventTitle(e)}
                       </Link>
                     </td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{formatEventDate(e.date, true)} · {formatEventTime(e.time)}</td>
-                    <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e.location}</td>
+                    <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{eventLocation(e)}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e._count.lectures}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
                       {e.isPublic ? '✓' : '—'}
@@ -281,23 +296,23 @@ export default function AdminEventsPage() {
                 ))}
               </tbody>
             </table>
-            {totalPages > 1 && (
+            {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between gap-4 py-8 max-[640px]:flex-col max-[640px]:items-stretch">
                 <button
                   type="button"
                   onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                  disabled={safePage === 1}
+                  disabled={pagination.currentPage === 1}
                   className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
                 >
                   {t('admin.pagination.prev', { defaultValue: 'назад' })}
                 </button>
                 <span className="text-center text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
-                  {safePage} / {totalPages}
+                  {pagination.currentPage} / {pagination.totalPages}
                 </span>
                 <button
                   type="button"
-                  onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={safePage === totalPages}
+                  onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={pagination.currentPage === pagination.totalPages}
                   className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-black"
                 >
                   {t('admin.pagination.next', { defaultValue: 'далі' })}

@@ -30,7 +30,6 @@ function EventSection({ event, detailsLabel, registerLabel }: EventSectionProps)
 
   const actionClassName = "flex h-[69px] w-[clamp(220px,22.7vw,327px)] items-center justify-center gap-[10px] px-6 py-5 font-sans text-[clamp(14px,1.6vw,24px)] no-underline max-[767px]:w-full"
   const registerClassName = `${actionClassName} bg-black text-white transition-opacity duration-200 hover:opacity-85`
-  const disabledRegisterClassName = `${actionClassName} cursor-not-allowed border border-black text-black opacity-40`
   const registerContent = (
     <>
       <span>{registerLabel}</span>
@@ -52,6 +51,11 @@ function EventSection({ event, detailsLabel, registerLabel }: EventSectionProps)
         </div>
 
         <div className="flex items-center gap-9 max-[1199px]:gap-6 max-[767px]:w-full max-[767px]:flex-col max-[767px]:gap-4">
+          {registrationAvailable && registerHref && (
+            <a href={registerHref} target="_blank" rel="noopener noreferrer" className={registerClassName}>
+              {registerContent}
+            </a>
+          )}
           <Link
             href={`/events/${event.id}`}
             className={`${actionClassName} border border-red bg-transparent text-black transition-colors duration-200 hover:bg-red hover:text-white`}
@@ -59,15 +63,6 @@ function EventSection({ event, detailsLabel, registerLabel }: EventSectionProps)
             <span>{detailsLabel}</span>
             <ArrowIcon />
           </Link>
-          {registrationAvailable && registerHref ? (
-            <a href={registerHref} target="_blank" rel="noopener noreferrer" className={registerClassName}>
-              {registerContent}
-            </a>
-          ) : (
-            <span className={disabledRegisterClassName} aria-disabled="true">
-              {registerContent}
-            </span>
-          )}
         </div>
       </div>
 
