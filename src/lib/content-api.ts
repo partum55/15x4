@@ -72,23 +72,31 @@ export function validCategoryPair(category: string, categoryColor: string) {
   )
 }
 
+export function pickLocalized(en: unknown, uk: unknown, locale: Locale) {
+  const primary = locale === 'en' ? en : uk
+  const fallback = locale === 'en' ? uk : en
+  if (typeof primary === 'string' && primary.trim()) return primary
+  if (primary != null && typeof primary !== 'string') return primary
+  return fallback ?? ''
+}
+
 export function mapEventRow(row: ContentRow, locale: Locale) {
   return {
     ...row,
     cityId: row.city,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    city: locale === 'en' ? row.cityEn ?? row.cityUk : row.cityUk ?? row.cityEn,
-    location: locale === 'en' ? row.locationEn ?? row.locationUk : row.locationUk ?? row.locationEn,
+    title: pickLocalized(row.titleEn, row.titleUk, locale),
+    city: pickLocalized(row.cityEn, row.cityUk, locale),
+    location: pickLocalized(row.locationEn, row.locationUk, locale),
   }
 }
 
 export function mapLectureRow(row: ContentRow, locale: Locale) {
   return {
     ...row,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
-    summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
-    authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
+    title: pickLocalized(row.titleEn, row.titleUk, locale),
+    author: pickLocalized(row.authorEn, row.authorUk, locale),
+    summary: pickLocalized(row.summaryEn, row.summaryUk, locale),
+    authorBio: pickLocalized(row.authorBioEn, row.authorBioUk, locale),
     sources: safeParse(row.sources),
     socialLinks: safeParse(row.socialLinks),
   }

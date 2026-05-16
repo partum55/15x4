@@ -70,7 +70,7 @@ function EventSection({ event, detailsLabel, registerLabel }: EventSectionProps)
       {lectures.length > 0 && (
         <div className="grid grid-cols-2 gap-x-9 gap-y-6 pb-9 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
           {lectures.slice(0, 4).map((lecture) => (
-            <LectureCard key={lecture.id} lecture={lecture} variant="compact" />
+            <LectureCard key={lecture.id} lecture={lecture} variant="event" />
           ))}
         </div>
       )}
