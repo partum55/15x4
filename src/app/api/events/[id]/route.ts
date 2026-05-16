@@ -4,72 +4,16 @@ import { getProfileRole, requireContentRole } from '@/lib/authz'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { normalizeDateInput, normalizeTimeInput } from '@/lib/date-time'
 import { findCityOption } from '@/constants/cities'
-
-type Locale = 'uk' | 'en'
-
-function resolveLocale(req: NextRequest): Locale {
-  const queryLocale = req.nextUrl.searchParams.get('locale')
-  if (queryLocale === 'en') return 'en'
-  const cookie = req.cookies.get('i18nextLng')?.value
-  return cookie === 'en' ? 'en' : 'uk'
-}
-
-function mapEventRow(row: Record<string, unknown>, locale: Locale) {
-  return {
-    ...row,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    city: locale === 'en' ? row.cityEn ?? row.cityUk : row.cityUk ?? row.cityEn,
-    location: locale === 'en' ? row.locationEn ?? row.locationUk : row.locationUk ?? row.locationEn,
-  }
-}
-
-function safeParse(value: unknown) {
-  if (!value) return null
-  try { return JSON.parse(String(value)) } catch { return null }
-}
-
-function isValidHttpUrl(value: string) {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch { return false }
-}
-
-function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
-  return {
-    ...row,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
-    summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
-    authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
-    sources: safeParse(row.sources),
-    socialLinks: safeParse(row.socialLinks),
-  }
-}
-
-function validCategoryPair(category: string, categoryColor: string) {
-  return (
-    (category === 'tech' && categoryColor === 'blue') ||
-    (category === 'nature' && categoryColor === 'green') ||
-    (category === 'artes' && categoryColor === 'red') ||
-    (category === 'wild-card' && categoryColor === 'orange')
-  )
-}
-
-function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const [year, month, day] = value.split('-').map(Number)
-  const parsed = new Date(Date.UTC(year, month - 1, day))
-  return (
-    parsed.getUTCFullYear() === year &&
-    parsed.getUTCMonth() === month - 1 &&
-    parsed.getUTCDate() === day
-  )
-}
-
-function isValidTime(value: string) {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
-}
+import {
+  isValidDate,
+  isValidHttpUrl,
+  isValidOptionalHttpUrl,
+  isValidTime,
+  mapEventRow,
+  mapLectureRow,
+  resolveLocale,
+  validCategoryPair,
+} from '@/lib/content-api'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -155,33 +99,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
     }
 
-    if (registrationUrl && !isValidHttpUrl(String(registrationUrl))) {
+    if (!isValidOptionalHttpUrl(registrationUrl)) {
       return NextResponse.json({ error: 'registrationUrl must be a valid http/https URL' }, { status: 400 })
-    }
-
-    const { data: updated, error: updateError } = await queryClient
-      .from('Event')
-      .update({
-        titleUk: String(titleUk).trim(),
-        titleEn: String(titleEn ?? '').trim(),
-        descriptionUk: String(descriptionUk ?? '').trim(),
-        descriptionEn: String(descriptionEn ?? '').trim(),
-        city: cityOption.id,
-        cityUk: cityOption.uk,
-        cityEn: cityOption.en,
-        date: normalizedDate,
-        locationUk: String(locationUk).trim(),
-        locationEn: String(locationEn ?? '').trim(),
-        time: normalizedTime,
-        image: String(image).trim(),
-        registrationUrl: registrationUrl ? String(registrationUrl).trim() : null,
-      })
-      .eq('id', id)
-      .select('*')
-      .single()
-
-    if (updateError || !updated) {
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     const rawLectures = Array.isArray(lectures) ? lectures : []
@@ -192,7 +111,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const preparedLectures = rawLectures.map((item, index) => {
       const lecture = item as Record<string, unknown>
       return {
-        eventId: id,
         userId: ownerId,
         slot: Number(lecture.slot ?? index + 1),
         titleUk: String(lecture.titleUk ?? '').trim(),
@@ -204,7 +122,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         summaryUk: String(lecture.summaryUk ?? '').trim(),
         summaryEn: String(lecture.summaryEn ?? '').trim(),
         image: String(lecture.image ?? '').trim(),
-        isPublic: false,
+        videoUrl: String(lecture.videoUrl ?? '').trim(),
+        authorBioUk: String(lecture.authorBioUk ?? '').trim(),
+        authorBioEn: String(lecture.authorBioEn ?? '').trim(),
       }
     })
 
@@ -216,22 +136,40 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       !lecture.image ||
       lecture.slot < 1 ||
       lecture.slot > 4 ||
+      !isValidHttpUrl(lecture.image) ||
+      !isValidOptionalHttpUrl(lecture.videoUrl) ||
       !validCategoryPair(lecture.category, lecture.categoryColor),
     )
     if (invalidLecture) {
       return NextResponse.json({ error: 'Invalid lecture payload' }, { status: 400 })
     }
 
-    const { error: deleteLecturesError } = await queryClient.from('Lecture').delete().eq('eventId', id)
-    if (deleteLecturesError) {
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const eventPayload = {
+      titleUk: String(titleUk).trim(),
+      titleEn: String(titleEn ?? '').trim(),
+      descriptionUk: String(descriptionUk ?? '').trim(),
+      descriptionEn: String(descriptionEn ?? '').trim(),
+      city: cityOption.id,
+      cityUk: cityOption.uk,
+      cityEn: cityOption.en,
+      date: normalizedDate,
+      locationUk: String(locationUk).trim(),
+      locationEn: String(locationEn ?? '').trim(),
+      time: normalizedTime,
+      image: String(image).trim(),
+      registrationUrl: registrationUrl ? String(registrationUrl).trim() : '',
     }
 
-    if (preparedLectures.length > 0) {
-      const { error: insertLecturesError } = await queryClient.from('Lecture').insert(preparedLectures)
-      if (insertLecturesError) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-      }
+    const { data: updated, error: updateError } = await queryClient
+      .rpc('update_event_with_lectures', {
+        p_event_id: id,
+        p_event: eventPayload,
+        p_lectures: preparedLectures,
+      })
+      .single()
+
+    if (updateError || !updated) {
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     const locale = resolveLocale(req)
@@ -301,6 +239,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (!validCategoryPair(String(category), String(categoryColor))) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
+    }
+
+    if (!isValidHttpUrl(String(image))) {
+      return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
     }
 
     const lecturePayload = {

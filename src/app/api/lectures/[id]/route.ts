@@ -2,48 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getProfileRole, requireContentRole } from '@/lib/authz'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-
-type Locale = 'uk' | 'en'
-
-function resolveLocale(req: NextRequest): Locale {
-  const queryLocale = req.nextUrl.searchParams.get('locale')
-  if (queryLocale === 'en') return 'en'
-  const cookie = req.cookies.get('i18nextLng')?.value
-  return cookie === 'en' ? 'en' : 'uk'
-}
-
-function safeParse(value: unknown) {
-  if (!value) return null
-  try { return JSON.parse(String(value)) } catch { return null }
-}
-
-function isValidHttpUrl(value: string) {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch { return false }
-}
-
-function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
-  return {
-    ...row,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
-    summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
-    authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
-    sources: safeParse(row.sources),
-    socialLinks: safeParse(row.socialLinks),
-  }
-}
-
-function validCategoryPair(category: string, categoryColor: string) {
-  return (
-    (category === 'tech' && categoryColor === 'blue') ||
-    (category === 'nature' && categoryColor === 'green') ||
-    (category === 'artes' && categoryColor === 'red') ||
-    (category === 'wild-card' && categoryColor === 'orange')
-  )
-}
+import {
+  isValidHttpUrl,
+  isValidOptionalHttpUrl,
+  mapLectureRow,
+  resolveLocale,
+  validCategoryPair,
+} from '@/lib/content-api'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -119,13 +84,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const normalizedCategory = String(category ?? lecture.category)
     const normalizedCategoryColor = String(categoryColor ?? lecture.categoryColor)
+    const nextEventId = eventId !== undefined ? String(eventId) : String(lecture.eventId)
 
     if (!validCategoryPair(normalizedCategory, normalizedCategoryColor)) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
     }
 
+    if (nextEventId !== String(lecture.eventId)) {
+      const { data: targetEvent } = await queryClient
+        .from('Event')
+        .select('id, userId')
+        .eq('id', nextEventId)
+        .maybeSingle()
+
+      if (!targetEvent) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      }
+
+      if (access.role !== 'admin' && targetEvent.userId !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
     const data = {
-      eventId: eventId ?? lecture.eventId,
+      eventId: nextEventId,
       slot: slot ? Number(slot) : lecture.slot,
       category: normalizedCategory,
       categoryColor: normalizedCategoryColor,
@@ -161,6 +143,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     if (image !== undefined && data.image && !isValidHttpUrl(data.image)) {
       return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
+    }
+    if (!isValidOptionalHttpUrl(data.videoUrl)) {
+      return NextResponse.json({ error: 'videoUrl must be a valid http/https URL' }, { status: 400 })
+    }
+    if (!isValidOptionalHttpUrl(data.eventPhotosUrl)) {
+      return NextResponse.json({ error: 'eventPhotosUrl must be a valid http/https URL' }, { status: 400 })
     }
 
     const { data: updated, error } = await queryClient

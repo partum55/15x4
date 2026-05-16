@@ -12,6 +12,7 @@ import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { LECTURE_CATEGORIES } from '../constants/lectureCategories'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
+import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 const LECTURES_PAGE_SIZE = 20
 
@@ -222,7 +223,7 @@ export default function LecturesPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-lectures" loading={skeletonLoading} className="min-h-[620px]">
+      <Skeleton name="page-lectures" loading={skeletonLoading} className="min-h-[620px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
         <div className="content-shell flex items-end justify-between py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
           <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
             <span className="text-red">{'//'}</span> {t('lectures.pageTitle')}

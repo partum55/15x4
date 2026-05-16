@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
-import { PAGE_SIZE, getAdminPageItems } from '@/lib/admin-pagination'
+import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { PROFILE_ROLES, type ProfileRole } from '@/lib/roles'
+import { api } from '@/lib/api'
 
 type User = {
   id: string
@@ -26,8 +27,10 @@ export default function AdminUsersPage() {
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [usersError, setUsersError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [sortBy, setSortBy] = useState('')
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pendingRoleUserIds, setPendingRoleUserIds] = useState<Set<string>>(new Set())
   const [deletingUserIds, setDeletingUserIds] = useState<Set<string>>(new Set())
@@ -39,24 +42,51 @@ export default function AdminUsersPage() {
   }, [user, loading, router])
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage(1)
+      setDebouncedSearchQuery(searchQuery.trim())
+    }, 300)
+
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    setPage(1)
+  }, [roleFilter, sortBy])
+
+  useEffect(() => {
     if (loading || !user || user?.profile?.role !== 'admin') return
     let isMounted = true
     setLoadingUsers(true)
     setUsersError('')
-    fetch('/api/admin/users')
-      .then(res => res.json())
+    api.admin.getUsers({
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+      search: debouncedSearchQuery,
+      role: roleFilter,
+      sort: sortBy,
+    })
       .then(data => {
         if (!isMounted) return
         if (!data.error) {
-          setUsers(data)
+          const totalItems = Number(data.total ?? 0)
+          const totalPages = Math.ceil(totalItems / PAGE_SIZE)
+          if (page > 1 && page > totalPages) {
+            setPage(1)
+            return
+          }
+          setUsers(Array.isArray(data.items) ? data.items : [])
+          setTotal(totalItems)
         } else {
           setUsers([])
+          setTotal(0)
           setUsersError(data.error)
         }
       })
       .catch(() => {
         if (!isMounted) return
         setUsers([])
+        setTotal(0)
         setUsersError('Could not load users.')
       })
       .finally(() => {
@@ -66,30 +96,10 @@ export default function AdminUsersPage() {
     return () => {
       isMounted = false
     }
-  }, [loading, user])
+  }, [loading, user, debouncedSearchQuery, roleFilter, sortBy, page])
 
-  useEffect(() => {
-    setPage(1)
-  }, [searchQuery, roleFilter, sortBy])
-
-  const filteredUsers = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    const rows = users.filter((row) => {
-      const matchesSearch = !query || [row.name, row.email, row.role].some((value) => value.toLowerCase().includes(query))
-      const matchesRole = !roleFilter || row.role === roleFilter
-      return matchesSearch && matchesRole
-    })
-
-    return rows.sort((a, b) => {
-      if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
-      if (sortBy === 'nameAZ') return a.name.localeCompare(b.name, locale)
-      if (sortBy === 'nameZA') return b.name.localeCompare(a.name, locale)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
-  }, [users, searchQuery, roleFilter, sortBy, i18n.language])
-
-  const { pagination, visibleItems: paginatedUsers } = getAdminPageItems(filteredUsers, page, PAGE_SIZE)
+  const pagination = buildPaginationState(total, page, PAGE_SIZE)
+  const paginatedUsers = users
 
   useEffect(() => {
     if (page !== pagination.currentPage) setPage(pagination.currentPage)
@@ -131,6 +141,8 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
       if (!res.ok) return
       setUsers(prev => prev.filter(u => u.id !== userId))
+      setTotal(prev => Math.max(0, prev - 1))
+      if (users.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
     } finally {
       setDeletingUserIds(prev => {
         const next = new Set(prev)
@@ -198,7 +210,7 @@ export default function AdminUsersPage() {
 
         {!loadingUsers && (
           <p className="mb-4 text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
-            {t('admin.users.showing', { defaultValue: 'показано {{count}} з {{total}}', count: paginatedUsers.length, total: filteredUsers.length })}
+            {t('admin.users.showing', { defaultValue: 'показано {{count}} з {{total}}', count: paginatedUsers.length, total })}
           </p>
         )}
 
@@ -206,7 +218,7 @@ export default function AdminUsersPage() {
           <Loader className="flex items-center justify-center py-12" />
         ) : usersError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{usersError}</p>
-        ) : filteredUsers.length === 0 ? (
+        ) : paginatedUsers.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.users.empty')}</p>
         ) : (
           <div className="overflow-x-auto">

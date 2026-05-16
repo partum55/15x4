@@ -37,11 +37,9 @@ BEGIN
       'chernivtsi',
       'chisinau',
       'odesa',
-      'samara',
       'khmelnytskyi',
       'dnipro',
       'munich',
-      'tula',
       'sievierodonetsk',
       'tartu',
       'ternopil',
@@ -189,8 +187,8 @@ BEGIN
     NULLIF(TRIM(COALESCE(NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1), 'User')), ''),
     CASE
       WHEN NEW.raw_user_meta_data->>'city' IN (
-        'kharkiv', 'kyiv', 'lviv', 'chernivtsi', 'chisinau', 'odesa', 'samara',
-        'khmelnytskyi', 'dnipro', 'munich', 'tula', 'sievierodonetsk', 'tartu',
+        'kharkiv', 'kyiv', 'lviv', 'chernivtsi', 'chisinau', 'odesa',
+        'khmelnytskyi', 'dnipro', 'munich', 'sievierodonetsk', 'tartu',
         'ternopil', 'ivano-frankivsk', 'kolomyia'
       )
       THEN (NEW.raw_user_meta_data->>'city')::public.city_id
@@ -221,8 +219,8 @@ SELECT
   NULLIF(TRIM(COALESCE(users.raw_user_meta_data->>'name', users.raw_user_meta_data->>'full_name', split_part(users.email, '@', 1), 'User')), ''),
   CASE
     WHEN users.raw_user_meta_data->>'city' IN (
-      'kharkiv', 'kyiv', 'lviv', 'chernivtsi', 'chisinau', 'odesa', 'samara',
-      'khmelnytskyi', 'dnipro', 'munich', 'tula', 'sievierodonetsk', 'tartu',
+      'kharkiv', 'kyiv', 'lviv', 'chernivtsi', 'chisinau', 'odesa',
+      'khmelnytskyi', 'dnipro', 'munich', 'sievierodonetsk', 'tartu',
       'ternopil', 'ivano-frankivsk', 'kolomyia'
     )
     THEN (users.raw_user_meta_data->>'city')::public.city_id

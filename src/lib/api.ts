@@ -104,13 +104,44 @@ export type EventListParams = {
   scope?: string
   limit?: number
   offset?: number
+  search?: string
   city?: string
   time?: string
+  status?: string
   sort?: string
 }
 
-const json = (res: Response) => res.json()
+export type UserListParams = {
+  limit?: number
+  offset?: number
+  search?: string
+  role?: string
+  sort?: string
+}
+
 const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+const parseJson = async (res: Response) => {
+  const text = await res.text()
+  if (!text) return null
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    if (!res.ok) return { error: `Request failed (${res.status})`, status: res.status }
+    throw new Error('Invalid JSON response')
+  }
+}
+const requestJson = async (url: string, init?: RequestInit) => {
+  const res = await fetch(url, init)
+  const data = await parseJson(res)
+
+  if (!res.ok) {
+    if (data && typeof data === 'object' && 'error' in data) return data
+    return { error: `Request failed (${res.status})`, status: res.status }
+  }
+
+  return data
+}
 const currentLocale = () => {
   if (typeof window === 'undefined') return null
   const stored = window.localStorage.getItem('i18nextLng')
@@ -127,47 +158,47 @@ const withQuery = (url: string, params?: Record<string, string | number | undefi
   return query ? `${url}?${query}` : url
 }
 const post = (url: string, body?: object) =>
-  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then(json)
+  requestJson(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
 const put = (url: string, body: object) =>
-  fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(json)
+  requestJson(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 const patch = (url: string, body: object) =>
-  fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(json)
+  requestJson(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 const del = (url: string) =>
-  fetch(url, { method: 'DELETE' }).then(json)
+  requestJson(url, { method: 'DELETE' })
 
 export const api = {
   updateProfile: (body: { name?: string; city?: string }) => patch('/api/profile', body),
 
-  getLectures: (params?: LectureListParams) => fetch(withQuery('/api/lectures', params)).then(json).then((data) => asArray<Lecture>(data)),
+  getLectures: (params?: LectureListParams) => requestJson(withQuery('/api/lectures', params)).then((data) => asArray<Lecture>(data)),
   getLecturesPage: (params?: LectureListParams) =>
-    fetch(withQuery('/api/lectures', params)).then(json).then((data) => data as PaginatedResponse<Lecture>),
-  getLecture: (id: string) => fetch(withQuery(`/api/lectures/${id}`)).then(json),
+    requestJson(withQuery('/api/lectures', params)).then((data) => data as PaginatedResponse<Lecture>),
+  getLecture: (id: string) => requestJson(withQuery(`/api/lectures/${id}`)),
   createLecture: (body: object) => post('/api/lectures', body),
   updateLecture: (id: string, body: object) => put(`/api/lectures/${id}`, body),
   deleteLecture: (id: string) => del(`/api/lectures/${id}`),
 
-  getEvents: (params?: EventListParams) => fetch(withQuery('/api/events', params)).then(json).then((data) => asArray<Event>(data)),
+  getEvents: (params?: EventListParams) => requestJson(withQuery('/api/events', params)).then((data) => asArray<Event>(data)),
   getEventsPage: (params?: EventListParams) =>
-    fetch(withQuery('/api/events', params)).then(json).then((data) => data as EventsPageResponse),
-  getMyEvents: () => fetch(withQuery('/api/events', { scope: 'mine' })).then(json).then((data) => asArray<Event>(data)),
-  getEvent: (id: string) => fetch(withQuery(`/api/events/${id}`)).then(json),
+    requestJson(withQuery('/api/events', params)).then((data) => data as EventsPageResponse),
+  getMyEvents: () => requestJson(withQuery('/api/events', { scope: 'mine' })).then((data) => asArray<Event>(data)),
+  getEvent: (id: string) => requestJson(withQuery(`/api/events/${id}`)),
   createEvent: (body: object) => post('/api/events', body),
   updateEvent: (id: string, body: object) => put(`/api/events/${id}`, body),
   deleteEvent: (id: string) => del(`/api/events/${id}`),
-  getMyLectures: () => fetch(withQuery('/api/lectures', { scope: 'mine' })).then(json).then((data) => asArray<Lecture>(data)),
+  getMyLectures: () => requestJson(withQuery('/api/lectures', { scope: 'mine' })).then((data) => asArray<Lecture>(data)),
 
   translateText: (body: { text: string; sourceLanguage: 'uk' | 'en'; targetLanguage: 'uk' | 'en' }) =>
     post('/api/ai/translate', body),
 
   admin: {
-    getUsers: () => fetch('/api/admin/users').then(json),
+    getUsers: (params?: UserListParams) => requestJson(withQuery('/api/admin/users', params)),
     updateUser: (id: string, body: { role?: string }) => patch(`/api/admin/users/${id}`, body),
     deleteUser: (id: string) => del(`/api/admin/users/${id}`),
-    getLectures: (params?: LectureListParams & { status?: string }) => fetch(withQuery('/api/admin/lectures', params)).then(json),
+    getLectures: (params?: LectureListParams & { status?: string }) => requestJson(withQuery('/api/admin/lectures', params)),
     deleteLecture: (id: string) => del(`/api/admin/lectures/${id}`),
-    getEvents: (params?: EventListParams) => fetch(withQuery('/api/admin/events', params)).then(json),
+    getEvents: (params?: EventListParams) => requestJson(withQuery('/api/admin/events', params)),
     approveEvent: (id: string) => patch(`/api/admin/events/${id}`, {}),
     deleteEvent: (id: string) => del(`/api/admin/events/${id}`),
-    getStats: () => fetch('/api/admin/stats').then(json),
+    getStats: () => requestJson('/api/admin/stats'),
   },
 }

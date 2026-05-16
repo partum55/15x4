@@ -14,6 +14,7 @@ import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime, isEventPast } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
+import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 const EVENTS_PAGE_SIZE = 10
 
@@ -175,7 +176,7 @@ export default function EventsPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-events" loading={skeletonLoading} className="min-h-[620px]">
+      <Skeleton name="page-events" loading={skeletonLoading} className="min-h-[620px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
         <div className="content-shell grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-6 py-6 max-[1199px]:gap-4 max-[900px]:grid-cols-1 max-[900px]:gap-4">
           <div className="grid grid-cols-[clamp(220px,22.7vw,327px)_minmax(0,1fr)] items-end gap-6 max-[1199px]:gap-4 max-[900px]:grid-cols-1">
             <h1 className="col-start-2 px-[clamp(16px,2vw,28px)] text-[clamp(28px,3.2vw,48px)] font-normal leading-none text-black max-[900px]:col-start-auto max-[900px]:px-0">

@@ -13,6 +13,7 @@ import { formatEventDate, formatEventTime } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 import { useAuth } from '../context/AuthContext'
 import { findCityOption } from '../constants/cities'
+import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 function normalizeCity(value?: string | null) {
   const city = findCityOption(value)
@@ -100,7 +101,7 @@ export default function UpcomingEvents() {
   }, [upcomingEvents, activeCity])
 
   return (
-    <Skeleton name="home-upcoming-events" loading={skeletonLoading} className="min-h-[420px]">
+    <Skeleton name="home-upcoming-events" loading={skeletonLoading} className="min-h-[420px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
       <section className="pt-[clamp(32px,4.2vw,64px)]" id="events">
         <div className="content-shell">
           <div className="ml-[clamp(0px,25.6%,363px)] mb-6 max-[1199px]:ml-0 flex flex-wrap items-baseline gap-x-6 gap-y-2">

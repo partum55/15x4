@@ -181,7 +181,7 @@ export default function AddEditLecturePage() {
         }
         setForm(next)
       }
-    } catch (err) {
+    } catch {
       setFormError(t('common.translationError'))
     } finally {
       setTranslating(false)

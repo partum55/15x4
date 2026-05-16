@@ -1,22 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdminSession } from '@/lib/admin'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-
-function parsePositiveInt(value: string | null, fallback: number, max: number) {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed) || parsed < 0) return fallback
-  return Math.min(Math.floor(parsed), max)
-}
-
-function sanitizeSearch(value: string | null) {
-  return value?.replace(/[%,()]/g, ' ').trim() ?? ''
-}
-
-function resolveLocale(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const queryLocale = searchParams.get('locale')
-  return queryLocale?.startsWith('en') ? 'en' : 'uk'
-}
+import { parsePositiveInt, resolveLocaleFromUrl, sanitizeSearch } from '@/lib/content-api'
 
 export async function GET(req: Request) {
   try {
@@ -32,7 +17,7 @@ export async function GET(req: Request) {
     const category = searchParams.get('category')?.trim()
     const status = searchParams.get('status')
     const sort = searchParams.get('sort')
-    const locale = resolveLocale(req)
+    const locale = resolveLocaleFromUrl(req)
 
     let query = supabaseAdmin
       .from('Lecture')

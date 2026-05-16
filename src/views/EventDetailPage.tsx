@@ -14,6 +14,7 @@ import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime, isEventPast } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
+import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 function eventDescription(event: Event, language: string) {
   if (language.startsWith('en')) {
@@ -91,7 +92,7 @@ export default function EventDetailPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-event-detail" loading={skeletonLoading} className="min-h-[720px]">
+      <Skeleton name="page-event-detail" loading={skeletonLoading} className="min-h-[720px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
         {event && (
           <main>
             <section className="content-shell grid grid-cols-[1fr_minmax(320px,49%)] gap-9 border-b border-black py-[clamp(28px,4.2vw,64px)] max-[900px]:grid-cols-1">

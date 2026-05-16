@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const MAX_TRANSLATION_CHARS = 5000
+
+function isSupportedLanguage(value: unknown): value is 'uk' | 'en' {
+  return value === 'uk' || value === 'en'
+}
 
 function languageLabel(language: 'uk' | 'en') {
   return language === 'uk' ? 'Ukrainian' : 'English'
@@ -17,11 +22,15 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const text = String(body?.text ?? '').trim()
-    const sourceLanguage = body?.sourceLanguage as 'uk' | 'en'
-    const targetLanguage = body?.targetLanguage as 'uk' | 'en'
+    const sourceLanguage = body?.sourceLanguage
+    const targetLanguage = body?.targetLanguage
 
-    if (!text || !sourceLanguage || !targetLanguage || sourceLanguage === targetLanguage) {
+    if (!text || !isSupportedLanguage(sourceLanguage) || !isSupportedLanguage(targetLanguage) || sourceLanguage === targetLanguage) {
       return NextResponse.json({ error: 'Invalid translation payload' }, { status: 400 })
+    }
+
+    if (text.length > MAX_TRANSLATION_CHARS) {
+      return NextResponse.json({ error: 'Text is too long to translate' }, { status: 413 })
     }
 
     const apiKey = process.env.GROQ_API_KEY

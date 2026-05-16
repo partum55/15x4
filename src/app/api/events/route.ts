@@ -3,71 +3,18 @@ import { createClient } from '@/lib/supabase/server'
 import { requireContentRole } from '@/lib/authz'
 import { normalizeDateInput, normalizeTimeInput } from '@/lib/date-time'
 import { findCityOption } from '@/constants/cities'
-
-type Locale = 'uk' | 'en'
-
-function resolveLocale(req: NextRequest): Locale {
-  const queryLocale = req.nextUrl.searchParams.get('locale')
-  if (queryLocale === 'en') return 'en'
-  const cookie = req.cookies.get('i18nextLng')?.value
-  return cookie === 'en' ? 'en' : 'uk'
-}
-
-function mapEventRow(row: Record<string, unknown>, locale: Locale) {
-  return {
-    ...row,
-    cityId: row.city,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    city: locale === 'en' ? row.cityEn ?? row.cityUk : row.cityUk ?? row.cityEn,
-    location: locale === 'en' ? row.locationEn ?? row.locationUk : row.locationUk ?? row.locationEn,
-  }
-}
-
-function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
-  return {
-    ...row,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
-    summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
-  }
-}
-
-function validCategoryPair(category: string, categoryColor: string) {
-  return (
-    (category === 'tech' && categoryColor === 'blue') ||
-    (category === 'nature' && categoryColor === 'green') ||
-    (category === 'artes' && categoryColor === 'red') ||
-    (category === 'wild-card' && categoryColor === 'orange')
-  )
-}
-
-function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const [year, month, day] = value.split('-').map(Number)
-  const parsed = new Date(Date.UTC(year, month - 1, day))
-  return (
-    parsed.getUTCFullYear() === year &&
-    parsed.getUTCMonth() === month - 1 &&
-    parsed.getUTCDate() === day
-  )
-}
-
-function isValidTime(value: string) {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
-}
-
-function isValidHttpUrl(value: string) {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch { return false }
-}
-
-function parsePositiveInt(value: string | null, fallback: number, max: number) {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed) || parsed < 0) return fallback
-  return Math.min(Math.floor(parsed), max)
-}
+import {
+  type Locale,
+  isValidDate,
+  isValidHttpUrl,
+  isValidOptionalHttpUrl,
+  isValidTime,
+  mapEventRow,
+  mapLectureRow,
+  parsePositiveInt,
+  resolveLocale,
+  validCategoryPair,
+} from '@/lib/content-api'
 
 function facetKey(value: unknown) {
   return String(value ?? '').trim()
@@ -277,34 +224,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
     }
 
-    if (registrationUrl && !isValidHttpUrl(String(registrationUrl))) {
+    if (!isValidOptionalHttpUrl(registrationUrl)) {
       return NextResponse.json({ error: 'registrationUrl must be a valid http/https URL' }, { status: 400 })
-    }
-
-    const { data: event, error: eventError } = await supabase
-      .from('Event')
-      .insert({
-        titleUk: String(titleUk).trim(),
-        titleEn: String(titleEn ?? '').trim(),
-        descriptionUk: String(descriptionUk ?? '').trim(),
-        descriptionEn: String(descriptionEn ?? '').trim(),
-        city: cityOption.id,
-        cityUk: cityOption.uk,
-        cityEn: cityOption.en,
-        date: normalizedDate,
-        locationUk: String(locationUk).trim(),
-        locationEn: String(locationEn ?? '').trim(),
-        time: normalizedTime,
-        image: String(image).trim(),
-        registrationUrl: registrationUrl ? String(registrationUrl).trim() : null,
-        isPublic: false,
-        userId: user.id,
-      })
-      .select('*')
-      .single()
-
-    if (eventError || !event) {
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     const rawLectures = Array.isArray(lectures) ? lectures : []
@@ -315,7 +236,6 @@ export async function POST(req: NextRequest) {
     const preparedLectures = rawLectures.map((item, index) => {
       const lecture = item as Record<string, unknown>
       return {
-        eventId: event.id,
         userId: user.id,
         slot: Number(lecture.slot ?? index + 1),
         titleUk: String(lecture.titleUk ?? '').trim(),
@@ -327,7 +247,9 @@ export async function POST(req: NextRequest) {
         summaryUk: String(lecture.summaryUk ?? '').trim(),
         summaryEn: String(lecture.summaryEn ?? '').trim(),
         image: String(lecture.image ?? '').trim(),
-        isPublic: false,
+        videoUrl: String(lecture.videoUrl ?? '').trim(),
+        authorBioUk: String(lecture.authorBioUk ?? '').trim(),
+        authorBioEn: String(lecture.authorBioEn ?? '').trim(),
       }
     })
 
@@ -339,6 +261,8 @@ export async function POST(req: NextRequest) {
       !lecture.image ||
       lecture.slot < 1 ||
       lecture.slot > 4 ||
+      !isValidHttpUrl(lecture.image) ||
+      !isValidOptionalHttpUrl(lecture.videoUrl) ||
       !validCategoryPair(lecture.category, lecture.categoryColor),
     )
 
@@ -346,11 +270,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid lecture payload' }, { status: 400 })
     }
 
-    if (preparedLectures.length > 0) {
-      const { error: lecturesError } = await supabase.from('Lecture').insert(preparedLectures)
-      if (lecturesError) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-      }
+    const eventPayload = {
+      titleUk: String(titleUk).trim(),
+      titleEn: String(titleEn ?? '').trim(),
+      descriptionUk: String(descriptionUk ?? '').trim(),
+      descriptionEn: String(descriptionEn ?? '').trim(),
+      city: cityOption.id,
+      cityUk: cityOption.uk,
+      cityEn: cityOption.en,
+      date: normalizedDate,
+      locationUk: String(locationUk).trim(),
+      locationEn: String(locationEn ?? '').trim(),
+      time: normalizedTime,
+      image: String(image).trim(),
+      registrationUrl: registrationUrl ? String(registrationUrl).trim() : '',
+      userId: user.id,
+    }
+
+    const { data: event, error: eventError } = await supabase
+      .rpc('create_event_with_lectures', {
+        p_event: eventPayload,
+        p_lectures: preparedLectures,
+      })
+      .single()
+
+    if (eventError || !event) {
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     const locale = resolveLocale(req)

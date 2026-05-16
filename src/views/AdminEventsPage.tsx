@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
-import { PAGE_SIZE, getAdminPageItems } from '@/lib/admin-pagination'
+import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { api } from '@/lib/api'
 import { formatEventDate, formatEventTime } from '@/lib/date-time'
 
@@ -39,8 +39,10 @@ export default function AdminEventsPage() {
   const [loadingEvents, setLoadingEvents] = useState(true)
   const [eventsError, setEventsError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [sortBy, setSortBy] = useState('')
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [approvingEventIds, setApprovingEventIds] = useState<Set<string>>(new Set())
   const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
@@ -52,23 +54,51 @@ export default function AdminEventsPage() {
   }, [user, loading, router])
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage(1)
+      setDebouncedSearchQuery(searchQuery.trim())
+    }, 300)
+
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    setPage(1)
+  }, [statusFilter, sortBy])
+
+  useEffect(() => {
     if (loading || !user || user?.profile?.role !== 'admin') return
     let isMounted = true
     setLoadingEvents(true)
     setEventsError('')
-    api.admin.getEvents()
+    api.admin.getEvents({
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+      search: debouncedSearchQuery,
+      status: statusFilter,
+      sort: sortBy,
+    })
       .then(data => {
         if (!isMounted) return
         if (!data.error) {
-          setEvents(data)
+          const totalItems = Number(data.total ?? 0)
+          const totalPages = Math.ceil(totalItems / PAGE_SIZE)
+          if (page > 1 && page > totalPages) {
+            setPage(1)
+            return
+          }
+          setEvents(Array.isArray(data.items) ? data.items : [])
+          setTotal(totalItems)
         } else {
           setEvents([])
+          setTotal(0)
           setEventsError(data.error)
         }
       })
       .catch(() => {
         if (!isMounted) return
         setEvents([])
+        setTotal(0)
         setEventsError('Could not load events.')
       })
       .finally(() => {
@@ -77,43 +107,10 @@ export default function AdminEventsPage() {
     return () => {
       isMounted = false
     }
-  }, [loading, user, i18n.language])
+  }, [loading, user, debouncedSearchQuery, statusFilter, sortBy, page, i18n.language])
 
-  useEffect(() => {
-    setPage(1)
-  }, [searchQuery, statusFilter, sortBy])
-
-  const filteredEvents = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    const selectedLanguage = i18n.language.startsWith('en') ? 'en' : 'uk'
-    const eventText = (row: Event, ukKey: 'titleUk' | 'cityUk' | 'locationUk', enKey: 'titleEn' | 'cityEn' | 'locationEn') =>
-      selectedLanguage === 'en' ? row[enKey] || row[ukKey] : row[ukKey] || row[enKey]
-    const rows = events.filter((row) => {
-      const searchValues = [
-        eventText(row, 'titleUk', 'titleEn'),
-        eventText(row, 'cityUk', 'cityEn'),
-        eventText(row, 'locationUk', 'locationEn'),
-        row.user?.name ?? '',
-        row.user?.email ?? '',
-      ]
-      const matchesSearch = !query || searchValues.some((value) => value.toLowerCase().includes(query))
-      const matchesStatus =
-        !statusFilter ||
-        (statusFilter === 'public' && row.isPublic) ||
-        (statusFilter === 'draft' && !row.isPublic)
-      return matchesSearch && matchesStatus
-    })
-
-    return rows.sort((a, b) => {
-      if (sortBy === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime()
-      if (sortBy === 'titleAZ') return eventText(a, 'titleUk', 'titleEn').localeCompare(eventText(b, 'titleUk', 'titleEn'), selectedLanguage)
-      if (sortBy === 'titleZA') return eventText(b, 'titleUk', 'titleEn').localeCompare(eventText(a, 'titleUk', 'titleEn'), selectedLanguage)
-      if (sortBy === 'created') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
-    })
-  }, [events, searchQuery, statusFilter, sortBy, i18n.language])
-
-  const { pagination, visibleItems: paginatedEvents } = getAdminPageItems(filteredEvents, page, PAGE_SIZE)
+  const pagination = buildPaginationState(total, page, PAGE_SIZE)
+  const paginatedEvents = events
   const selectedLanguage = i18n.language.startsWith('en') ? 'en' : 'uk'
   const eventTitle = (row: Event) => selectedLanguage === 'en' ? row.titleEn || row.titleUk : row.titleUk || row.titleEn
   const eventLocation = (row: Event) => selectedLanguage === 'en' ? row.locationEn || row.locationUk : row.locationUk || row.locationEn
@@ -134,6 +131,8 @@ export default function AdminEventsPage() {
       const res = await fetch(`/api/admin/events/${eventId}`, { method: 'DELETE' })
       if (!res.ok) return
       setEvents(prev => prev.filter(e => e.id !== eventId))
+      setTotal(prev => Math.max(0, prev - 1))
+      if (events.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
     } finally {
       setDeletingEventIds(prev => {
         const next = new Set(prev)
@@ -221,7 +220,7 @@ export default function AdminEventsPage() {
 
         {!loadingEvents && (
           <p className="mb-4 text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
-            {t('admin.events.showing', { defaultValue: 'показано {{count}} з {{total}}', count: paginatedEvents.length, total: filteredEvents.length })}
+            {t('admin.events.showing', { defaultValue: 'показано {{count}} з {{total}}', count: paginatedEvents.length, total })}
           </p>
         )}
 
@@ -229,7 +228,7 @@ export default function AdminEventsPage() {
           <Loader className="flex items-center justify-center py-12" />
         ) : eventsError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{eventsError}</p>
-        ) : filteredEvents.length === 0 ? (
+        ) : paginatedEvents.length === 0 ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{t('admin.events.empty')}</p>
         ) : (
           <div className="overflow-x-auto">

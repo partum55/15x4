@@ -1,58 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireContentRole } from '@/lib/authz'
-
-type Locale = 'uk' | 'en'
-
-function resolveLocale(req: NextRequest): Locale {
-  const queryLocale = req.nextUrl.searchParams.get('locale')
-  if (queryLocale === 'en') return 'en'
-  const cookie = req.cookies.get('i18nextLng')?.value
-  return cookie === 'en' ? 'en' : 'uk'
-}
-
-function safeParse(value: unknown) {
-  if (!value) return null
-  try { return JSON.parse(String(value)) } catch { return null }
-}
-
-function isValidHttpUrl(value: string) {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch { return false }
-}
-
-function mapLectureRow(row: Record<string, unknown>, locale: Locale) {
-  return {
-    ...row,
-    title: locale === 'en' ? row.titleEn ?? row.titleUk : row.titleUk ?? row.titleEn,
-    author: locale === 'en' ? row.authorEn ?? row.authorUk : row.authorUk ?? row.authorEn,
-    summary: locale === 'en' ? row.summaryEn ?? row.summaryUk : row.summaryUk ?? row.summaryEn,
-    authorBio: locale === 'en' ? row.authorBioEn ?? row.authorBioUk : row.authorBioUk ?? row.authorBioEn,
-    sources: safeParse(row.sources),
-    socialLinks: safeParse(row.socialLinks),
-  }
-}
-
-function parsePositiveInt(value: string | null, fallback: number, max: number) {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed) || parsed < 0) return fallback
-  return Math.min(Math.floor(parsed), max)
-}
-
-function sanitizeSearch(value: string | null) {
-  return value?.replace(/[%,()]/g, ' ').trim() ?? ''
-}
-
-function validCategoryPair(category: string, categoryColor: string) {
-  return (
-    (category === 'tech' && categoryColor === 'blue') ||
-    (category === 'nature' && categoryColor === 'green') ||
-    (category === 'artes' && categoryColor === 'red') ||
-    (category === 'wild-card' && categoryColor === 'orange')
-  )
-}
+import {
+  isValidHttpUrl,
+  isValidOptionalHttpUrl,
+  mapLectureRow,
+  parsePositiveInt,
+  resolveLocale,
+  sanitizeSearch,
+  validCategoryPair,
+} from '@/lib/content-api'
 
 export async function GET(req: NextRequest) {
   try {
@@ -181,6 +138,14 @@ export async function POST(req: NextRequest) {
 
     if (!validCategoryPair(String(category), String(categoryColor))) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
+    }
+
+    if (!isValidOptionalHttpUrl(videoUrl)) {
+      return NextResponse.json({ error: 'videoUrl must be a valid http/https URL' }, { status: 400 })
+    }
+
+    if (!isValidOptionalHttpUrl(eventPhotosUrl)) {
+      return NextResponse.json({ error: 'eventPhotosUrl must be a valid http/https URL' }, { status: 400 })
     }
 
     if (access.role !== 'admin') {

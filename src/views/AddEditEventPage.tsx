@@ -290,7 +290,7 @@ export default function AddEditEventPage() {
         }
         setLectures(nextLectures)
       }
-    } catch (err) {
+    } catch {
       setFormError(t('common.translationError'))
     } finally {
       setTranslating(false)

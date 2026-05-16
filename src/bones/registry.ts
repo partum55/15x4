@@ -4,8 +4,8 @@ import { registerBones } from 'boneyard-js'
 
 import _home_upcoming_events from './home-upcoming-events.bones.json'
 import _home_popular_lectures from './home-popular-lectures.bones.json'
-import _page_events from './page-events.bones.json'
 import _page_lectures from './page-lectures.bones.json'
+import _page_events from './page-events.bones.json'
 import _page_about_us from './page-about-us.bones.json'
 import _page_event_detail from './page-event-detail.bones.json'
 import _page_lecture_detail from './page-lecture-detail.bones.json'
@@ -13,8 +13,8 @@ import _page_lecture_detail from './page-lecture-detail.bones.json'
 registerBones({
   "home-upcoming-events": _home_upcoming_events,
   "home-popular-lectures": _home_popular_lectures,
-  "page-events": _page_events,
   "page-lectures": _page_lectures,
+  "page-events": _page_events,
   "page-about-us": _page_about_us,
   "page-event-detail": _page_event_detail,
   "page-lecture-detail": _page_lecture_detail,

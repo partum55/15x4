@@ -13,6 +13,7 @@ import { api } from '../lib/api'
 import { CATEGORY_BORDER_CLASS as badgeBorderClass } from '../constants/colors'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 import { resolveLectureVideo } from '../lib/lecture-video'
+import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 export default function LectureDetailPage() {
   const { t, i18n } = useTranslation()
@@ -81,7 +82,7 @@ export default function LectureDetailPage() {
     <div className="page min-h-screen">
       <Navbar />
 
-      <Skeleton name="page-lecture-detail" loading={skeletonLoading} className="min-h-[720px]">
+      <Skeleton name="page-lecture-detail" loading={skeletonLoading} className="min-h-[720px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
         {lecture && (
           <main className="content-shell border-t border-black pt-[clamp(28px,4.2vw,64px)] pb-[clamp(48px,6vw,96px)]">
         {/* Title */}

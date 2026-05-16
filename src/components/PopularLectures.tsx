@@ -7,6 +7,7 @@ import type { Lecture } from '@/lib/api'
 import LectureCard from './LectureCard'
 import { api } from '../lib/api'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
+import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 type LectureRowProps = {
   left: Lecture
@@ -60,7 +61,7 @@ export default function PopularLectures() {
   }
 
   return (
-    <Skeleton name="home-popular-lectures" loading={skeletonLoading} className="min-h-[420px]">
+    <Skeleton name="home-popular-lectures" loading={skeletonLoading} className="min-h-[420px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
       <section className="pt-[clamp(32px,4.2vw,64px)]" id="lectures">
         <div className="content-shell">
           <div className="flex items-end gap-9 ml-[clamp(0px,13%,184px)] mb-[34px] max-[767px]:ml-0 max-[767px]:flex-wrap max-[767px]:gap-2">
