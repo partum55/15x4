@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { useTranslation, Trans } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { Skeleton } from 'boneyard-js/react'
 import Navbar from '../components/Navbar'
 import JoinSection from '../components/JoinSection'
@@ -11,6 +11,22 @@ import { CATEGORY_BG_CLASS as categoryBgClass, CATEGORY_BORDER_CLASS as category
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 const introImage = '/images/about-intro.jpg'
+
+function RichText({ text }: { text: string }) {
+  const parts: React.ReactNode[] = []
+  const regex = /<(bold|italic)>([\s\S]+?)<\/\1>/g
+  let lastIdx = 0
+  let key = 0
+  let m: RegExpExecArray | null
+  while ((m = regex.exec(text)) !== null) {
+    if (m.index > lastIdx) parts.push(text.slice(lastIdx, m.index))
+    const className = m[1] === 'bold' ? 'font-bold italic' : 'italic'
+    parts.push(<span key={key++} className={className}>{m[2]}</span>)
+    lastIdx = m.index + m[0].length
+  }
+  if (lastIdx < text.length) parts.push(text.slice(lastIdx))
+  return <>{parts}</>
+}
 
 type CategoryProps = {
   title: string
@@ -80,10 +96,7 @@ export default function AboutPage() {
           <div className="flex items-start justify-between gap-9 max-[1199px]:flex-col">
             <div className="flex flex-col gap-3 max-w-[690px] flex-1">
               <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black leading-[1.4]">
-                <Trans
-                  i18nKey="about.whoWeAre.description"
-                  components={{ bold: <span className="font-bold italic" /> }}
-                />
+                <RichText text={t('about.whoWeAre.description')} />
               </p>
               <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black uppercase tracking-[-0.04em]">{t('about.whoWeAre.missionLabel')}</p>
               <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black leading-[1.4]">{t('about.whoWeAre.mission')}</p>
@@ -108,16 +121,10 @@ export default function AboutPage() {
           </div>
 
           <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black leading-[1.4] max-w-[690px] mb-3">
-            <Trans
-              i18nKey="about.format.description1"
-              components={{ italic: <span className="italic" /> }}
-            />
+            <RichText text={t('about.format.description1')} />
           </p>
           <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black leading-[1.4] max-w-[690px] mb-3">
-            <Trans
-              i18nKey="about.format.description2"
-              components={{ italic: <span className="italic" /> }}
-            />
+            <RichText text={t('about.format.description2')} />
           </p>
 
           <div className="grid grid-cols-4 gap-9 mt-9 max-[1199px]:grid-cols-2 max-[1199px]:gap-6 max-[767px]:grid-cols-1">
