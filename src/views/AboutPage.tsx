@@ -96,7 +96,6 @@ export default function AboutPage() {
               alt="15x4"
               width={690}
               height={387}
-              unoptimized
               className="w-full max-w-[690px] h-auto object-cover flex-shrink-0 max-[1199px]:max-w-full"
               style={{ aspectRatio: '690/387' }}
             />

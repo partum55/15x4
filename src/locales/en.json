@@ -80,7 +80,15 @@
     "aboutEvent": "ABOUT EVENT",
     "eventPhotos": "Event photos [Google Drive]",
     "notFound": "Lecture not found",
-    "play": "Play lecture"
+    "play": "Play lecture",
+    "back": "lectures",
+    "toEvent": "to event"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "somethingWrong": "Something went wrong",
+    "tryAgain": "Try again",
+    "goHome": "Go home"
   },
   "eventDetail": {
     "back": "events",

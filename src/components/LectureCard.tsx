@@ -145,8 +145,8 @@ function MediaBlock({
         <Image
           src={lecture.image ?? ''}
           alt={lecture.title}
-          width={variant === 'featured' ? 1200 : 900}
-          height={variant === 'featured' ? 800 : 900}
+          width={variant === 'featured' ? 1200 : 600}
+          height={variant === 'featured' ? 800 : 600}
           sizes={getLectureCardSizes(variant)}
           className={joinClassNames(
             'block w-full object-cover transition-opacity duration-200 max-[767px]:h-[200px]',

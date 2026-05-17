@@ -80,7 +80,15 @@
     "aboutEvent": "ПРО ПОДІЮ",
     "eventPhotos": "Фото з події [Google Drive]",
     "notFound": "Лекцію не знайдено",
-    "play": "Відтворити лекцію"
+    "play": "Відтворити лекцію",
+    "back": "лекції",
+    "toEvent": "до події"
+  },
+  "errors": {
+    "notFound": "Сторінку не знайдено",
+    "somethingWrong": "Щось пішло не так",
+    "tryAgain": "Спробувати знову",
+    "goHome": "На головну"
   },
   "eventDetail": {
     "back": "події",

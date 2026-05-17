@@ -209,7 +209,8 @@ export default function EventDetailPage() {
                     alt={`${event.city} ${formatEventDate(event.date, true)}`}
                     width={1200}
                     height={900}
-                    unoptimized
+                    priority
+                    sizes="(max-width: 900px) 100vw, 50vw"
                     className="block aspect-[1.12/1] w-full object-cover"
                   />
                 ) : (

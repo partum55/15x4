@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslation } from 'react-i18next'
+import Image from 'next/image'
 import Navbar from './Navbar'
 
 export default function Header() {
@@ -9,9 +10,16 @@ export default function Header() {
   return (
     <header
       id="home-hero"
-      className="relative h-screen min-h-[100svh] w-full bg-cover bg-center bg-no-repeat text-white"
-      style={{ backgroundImage: `url(/images/header-image.png)` }}
+      className="relative h-screen min-h-[100svh] w-full text-white"
     >
+      <Image
+        src="/images/header-image.png"
+        alt=""
+        fill
+        priority
+        className="object-cover"
+        sizes="100vw"
+      />
       <div className="absolute inset-0 bg-black/35" />
       <div className="absolute top-0 left-0 right-0 z-50">
         <Navbar variant="dark" />

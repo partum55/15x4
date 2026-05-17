@@ -246,7 +246,8 @@ export default function UpcomingEvents() {
                         alt={t('upcomingEvents.imageAlt', { city: event.city })}
                         width={327}
                         height={290}
-                        unoptimized
+                        priority
+                        sizes="(max-width: 767px) 100vw, 327px"
                         className="block h-full min-h-[290px] w-full object-cover max-[900px]:h-[220px] max-[900px]:min-h-0"
                       />
                     </Link>
