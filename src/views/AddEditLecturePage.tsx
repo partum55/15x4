@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
-import { api } from '../lib/api'
+import { api, type Lecture } from '../lib/api'
 import { CATEGORY_COLOR_VAR } from '../constants/colors'
 import { LECTURE_CATEGORIES, getLectureCategoryColor, normalizeLectureCategory } from '../constants/lectureCategories'
 import type { Event } from '@/lib/api'
@@ -80,7 +80,7 @@ export default function AddEditLecturePage() {
 
   useEffect(() => {
     if (!id) return
-    api.getLecture(id).then((data: FormState & { error?: string }) => {
+    api.getLecture(id).then((data: Lecture & { error?: string }) => {
       if (!data.error) {
         const normalizedCategory = normalizeLectureCategory(data.category ?? '')?.category ?? ''
         setForm({
