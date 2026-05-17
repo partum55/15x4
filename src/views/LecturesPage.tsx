@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Lecture } from '@/lib/api'
 import Navbar from '../components/Navbar'
@@ -13,6 +13,13 @@ import { LECTURE_CATEGORIES } from '../constants/lectureCategories'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 const LECTURES_PAGE_SIZE = 20
+const LECTURES_FILTER_STORAGE_KEY = '15x4:lectures:filters'
+
+type StoredLectureFilters = {
+  searchQuery?: string
+  sortBy?: string
+  themeFilter?: string
+}
 
 function SearchIcon() {
   return (
@@ -25,16 +32,45 @@ function SearchIcon() {
 
 export default function LecturesPage() {
   const { t, i18n } = useTranslation()
+  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
+  const previousLocaleRef = useRef(locale)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('')
   const [themeFilter, setThemeFilter] = useState('')
+  const [filtersReady, setFiltersReady] = useState(false)
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loading, setLoading] = useState(true)
   const [hasLoaded, setHasLoaded] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [textRefreshing, setTextRefreshing] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(LECTURES_FILTER_STORAGE_KEY)
+      const stored = raw ? (JSON.parse(raw) as StoredLectureFilters) : null
+      if (stored?.searchQuery) {
+        setSearchQuery(stored.searchQuery)
+        setDebouncedSearchQuery(stored.searchQuery.trim())
+      }
+      if (stored?.sortBy) setSortBy(stored.sortBy)
+      if (stored?.themeFilter) setThemeFilter(stored.themeFilter)
+    } catch {
+      // Ignore invalid persisted filters.
+    } finally {
+      setFiltersReady(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!filtersReady) return
+    window.localStorage.setItem(
+      LECTURES_FILTER_STORAGE_KEY,
+      JSON.stringify({ searchQuery, sortBy, themeFilter }),
+    )
+  }, [filtersReady, searchQuery, sortBy, themeFilter])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -45,6 +81,7 @@ export default function LecturesPage() {
   }, [searchQuery])
 
   useEffect(() => {
+    if (!filtersReady) return
     let isMounted = true
     setLoading(true)
 
@@ -78,7 +115,43 @@ export default function LecturesPage() {
     return () => {
       isMounted = false
     }
-  }, [debouncedSearchQuery, sortBy, themeFilter, i18n.language])
+  }, [filtersReady, debouncedSearchQuery, sortBy, themeFilter])
+
+  useEffect(() => {
+    const previousLocale = previousLocaleRef.current
+    if (previousLocale === locale) return
+    previousLocaleRef.current = locale
+    if (!filtersReady || !hasLoaded) return
+
+    let isMounted = true
+    setTextRefreshing(true)
+
+    api
+      .getLecturesPage({
+        limit: Math.max(lectures.length, LECTURES_PAGE_SIZE),
+        offset: 0,
+        search: debouncedSearchQuery,
+        category: themeFilter,
+        sort: sortBy,
+      })
+      .then((data) => {
+        if (!isMounted) return
+        setLectures(Array.isArray(data.items) ? data.items : [])
+        setHasMore(Boolean(data.hasMore))
+        setTotal(Number(data.total ?? 0))
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setHasMore(total > lectures.length)
+      })
+      .finally(() => {
+        if (isMounted) setTextRefreshing(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [locale, filtersReady, hasLoaded, lectures.length, debouncedSearchQuery, sortBy, themeFilter, total])
 
   async function handleLoadMore() {
     setLoadingMore(true)
@@ -103,6 +176,7 @@ export default function LecturesPage() {
   const hasActiveFilters = !!(debouncedSearchQuery || sortBy || themeFilter)
   const showInitialSkeleton = loading && !hasLoaded
   const skeletonLoading = useMinimumSkeleton(showInitialSkeleton)
+  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
 
   const sortOptions = [
     { value: '', label: t('lectures.sortBy') },
@@ -127,11 +201,11 @@ export default function LecturesPage() {
 
       rows.push(
         <div key={`${keyPrefix}-${i}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <LectureCard lecture={left} variant="horizontal" />
+          <LectureCard lecture={left} variant="horizontal" textLoading={textSkeletonLoading} />
           {right && (
             <>
               <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-              <LectureCard lecture={right} variant="horizontal" />
+              <LectureCard lecture={right} variant="horizontal" textLoading={textSkeletonLoading} />
             </>
           )}
         </div>,
@@ -151,9 +225,9 @@ export default function LecturesPage() {
       if (idx + 2 > lectures.length) break
       rows.push(
         <div key={`row-horizontal-a-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <LectureCard lecture={lectures[idx]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx]} variant="horizontal" textLoading={textSkeletonLoading} />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 1]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx + 1]} variant="horizontal" textLoading={textSkeletonLoading} />
         </div>,
       )
       idx += 2
@@ -161,9 +235,9 @@ export default function LecturesPage() {
       if (idx + 2 > lectures.length) break
       rows.push(
         <div key={`row-compact-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <LectureCard lecture={lectures[idx]} variant="compact" />
+          <LectureCard lecture={lectures[idx]} variant="compact" textLoading={textSkeletonLoading} />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 1]} variant="compact" />
+          <LectureCard lecture={lectures[idx + 1]} variant="compact" textLoading={textSkeletonLoading} />
         </div>,
       )
       idx += 2
@@ -171,9 +245,9 @@ export default function LecturesPage() {
       if (idx + 2 > lectures.length) break
       rows.push(
         <div key={`row-horizontal-b-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <LectureCard lecture={lectures[idx]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx]} variant="horizontal" textLoading={textSkeletonLoading} />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 1]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx + 1]} variant="horizontal" textLoading={textSkeletonLoading} />
         </div>,
       )
       idx += 2
@@ -181,11 +255,11 @@ export default function LecturesPage() {
       if (idx + 3 > lectures.length) break
       rows.push(
         <div key={`row-featured-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <LectureCard lecture={lectures[idx]} variant="vertical" />
+          <LectureCard lecture={lectures[idx]} variant="vertical" textLoading={textSkeletonLoading} />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 1]} variant="featured" />
+          <LectureCard lecture={lectures[idx + 1]} variant="featured" textLoading={textSkeletonLoading} />
           <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
-          <LectureCard lecture={lectures[idx + 2]} variant="vertical" />
+          <LectureCard lecture={lectures[idx + 2]} variant="vertical" textLoading={textSkeletonLoading} />
         </div>,
       )
       idx += 3
@@ -193,7 +267,7 @@ export default function LecturesPage() {
       if (idx + 1 > lectures.length) break
       rows.push(
         <div key={`row-wide-${idx}`} className="flex items-stretch border-b border-black max-[767px]:flex-col">
-          <LectureCard lecture={lectures[idx]} variant="horizontal" />
+          <LectureCard lecture={lectures[idx]} variant="horizontal" textLoading={textSkeletonLoading} />
         </div>,
       )
       idx += 1
@@ -277,15 +351,18 @@ export default function LecturesPage() {
           <div className="content-shell py-10 flex justify-center">
             <div className="h-[48px] w-36 animate-pulse border border-black bg-black/10" />
           </div>
+        ) : loadingMore ? (
+          <div className="content-shell py-10 flex justify-center" aria-live="polite" aria-busy="true">
+            <span className="loader" />
+          </div>
         ) : (hasMore || total > lectures.length) && (
           <div className="content-shell py-10 flex justify-center">
             <button
               type="button"
               onClick={handleLoadMore}
-              disabled={loadingMore}
               className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-black"
             >
-              {loadingMore ? <span className="loader" /> : t('lectures.loadMore')}
+              {t('lectures.loadMore')}
             </button>
           </div>
         )}

@@ -2,14 +2,16 @@
 .form-field-control select,
 .form-field-control textarea {
   width: 100%;
+  min-height: 50px;
   padding: 12px 16px;
   border: 1px solid var(--color-black);
-  background: none;
+  background-color: var(--color-white);
   font-family: inherit;
   font-size: clamp(14px, 1.3vw, 20px);
   font-weight: 400;
   color: var(--color-black);
   color-scheme: light;
+  border-radius: 0;
   outline: none;
   transition: border-color 0.15s;
 }
@@ -17,6 +19,10 @@
 .form-field-control input:focus,
 .form-field-control select:focus,
 .form-field-control textarea:focus {
+  border-color: var(--color-red);
+}
+
+.form-field-control select:hover {
   border-color: var(--color-red);
 }
 

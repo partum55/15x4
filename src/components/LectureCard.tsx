@@ -31,6 +31,7 @@ type LectureCardProps = {
   variant?: LectureCardVariant
   className?: string
   loading?: boolean
+  textLoading?: boolean
 }
 
 function joinClassNames(...classes: Array<string | false | undefined>) {
@@ -51,6 +52,28 @@ function getLectureCardSizes(variant: LectureCardVariant) {
   }
 
   return '(max-width: 767px) 100vw, 50vw'
+}
+
+function TextLoadingOverlay({ compact, summary }: { compact?: boolean; summary?: boolean }) {
+  return (
+    <div
+      className={joinClassNames(
+        'pointer-events-none absolute inset-0 z-10 flex flex-col bg-white px-[clamp(16px,2vw,28px)] py-6',
+        compact ? 'justify-center gap-4 max-[767px]:py-5' : 'gap-6 max-[767px]:py-5',
+      )}
+      aria-hidden="true"
+    >
+      <span className="h-7 w-4/5 animate-pulse bg-black/10" />
+      <span className="h-5 w-3/5 animate-pulse bg-black/10" />
+      {!compact && summary && (
+        <span className="flex flex-col gap-3">
+          <span className="h-5 w-full animate-pulse bg-black/10" />
+          <span className="h-5 w-11/12 animate-pulse bg-black/10" />
+          <span className="h-5 w-2/3 animate-pulse bg-black/10" />
+        </span>
+      )}
+    </div>
+  )
 }
 
 function CategoryBadge({
@@ -148,7 +171,7 @@ function MediaBlock({
   )
 }
 
-export default function LectureCard({ lecture, variant = 'horizontal', className }: LectureCardProps) {
+export default function LectureCard({ lecture, variant = 'horizontal', className, textLoading = false }: LectureCardProps) {
   const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
   const isCompact = variant === 'compact' || variant === 'swatch'
@@ -252,9 +275,10 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div className="flex h-[86px] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
+        <div className="relative flex h-[86px] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
           <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
           <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>
+          {textLoading && <TextLoadingOverlay compact />}
         </div>
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="featured" active={hovered} />
       </Link>
@@ -271,12 +295,22 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseLeave={() => setHovered(false)}
       >
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="vertical" active={hovered} />
-        <div className="flex h-[86px] flex-col gap-2 overflow-hidden px-[clamp(16px,2vw,28px)]">
+        <div className="relative flex h-[86px] flex-col gap-2 overflow-hidden px-[clamp(16px,2vw,28px)]">
           <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
           <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>
+          {textLoading && <TextLoadingOverlay compact />}
         </div>
         {hasSummary && (
-          <p className="text-clamp-3 px-[clamp(16px,2vw,28px)] text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{lecture.summary}</p>
+          <div className="relative px-[clamp(16px,2vw,28px)]">
+            <p className="text-clamp-3 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{lecture.summary}</p>
+            {textLoading && (
+              <div className="pointer-events-none absolute inset-0 z-10 flex flex-col gap-3 bg-white px-[clamp(16px,2vw,28px)]" aria-hidden="true">
+                <span className="h-5 w-full animate-pulse bg-black/10" />
+                <span className="h-5 w-4/5 animate-pulse bg-black/10" />
+                <span className="h-5 w-2/3 animate-pulse bg-black/10" />
+              </div>
+            )}
+          </div>
         )}
       </Link>
     )
@@ -284,7 +318,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
 
   const textBlock = (
     <div className={joinClassNames(
-      'flex min-w-0 flex-1 flex-col px-[clamp(16px,2vw,28px)] py-6 transition-colors duration-200',
+      'relative flex min-w-0 flex-1 flex-col px-[clamp(16px,2vw,28px)] py-6 transition-colors duration-200',
       isCompact ? 'h-[clamp(136px,10vw,152px)] justify-center gap-4 overflow-hidden max-[767px]:h-auto max-[767px]:min-h-[136px] max-[767px]:py-5' : 'gap-6 max-[767px]:py-5',
     )}>
       <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
@@ -292,6 +326,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
       {!isCompact && hasSummary && (
         <p className="text-clamp-5 text-[clamp(14px,1.6vw,24px)] font-normal leading-[1.3]">{lecture.summary}</p>
       )}
+      {textLoading && <TextLoadingOverlay compact={isCompact} summary={hasSummary} />}
     </div>
   )
 
@@ -305,7 +340,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseLeave={() => setHovered(false)}
       >
         <MediaBlock lecture={lecture} color={color} categoryLabel={categoryLabel} variant="detail" active={hovered} />
-        <div className="flex min-w-0 flex-col gap-5 px-[clamp(16px,2vw,28px)] py-3 transition-colors duration-200 group-hover:bg-[var(--lecture-card-color)]">
+        <div className="relative flex min-w-0 flex-col gap-5 px-[clamp(16px,2vw,28px)] py-3 transition-colors duration-200 group-hover:bg-[var(--lecture-card-color)]">
           <div className="flex flex-col gap-2">
             <p className="text-clamp-2 text-[clamp(18px,1.6vw,24px)] font-normal uppercase leading-[1.15] tracking-[-0.04em]">{lecture.title}</p>
             <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>
@@ -313,6 +348,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
           {hasSummary && (
             <p className="text-clamp-4 text-[clamp(14px,1.3vw,20px)] font-normal leading-[1.35]">{lecture.summary}</p>
           )}
+          {textLoading && <TextLoadingOverlay summary={hasSummary} />}
         </div>
       </Link>
     )

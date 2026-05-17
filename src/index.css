@@ -178,6 +178,7 @@ body {
   font-size: clamp(13px, 1.2vw, 18px);
   font-weight: 400;
   color: var(--color-black);
+  border-radius: 0;
   outline: none;
   cursor: pointer;
   appearance: none;
@@ -187,6 +188,10 @@ body {
 }
 
 .ui-select:focus {
+  border-color: var(--color-red);
+}
+
+.ui-select:hover {
   border-color: var(--color-red);
 }
 
@@ -209,6 +214,10 @@ body {
   font-size: clamp(13px, 1.3vw, 20px);
   text-transform: uppercase;
   letter-spacing: -0.02em;
+}
+
+.ui-select--filter {
+  min-width: 180px;
 }
 
 .ui-dropdown {

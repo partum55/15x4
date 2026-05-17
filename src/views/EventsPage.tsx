@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Event } from '@/lib/api'
 import Navbar from '../components/Navbar'
@@ -13,6 +13,13 @@ import { formatEventTime } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 const EVENTS_PAGE_SIZE = 10
+const EVENTS_FILTER_STORAGE_KEY = '15x4:events:filters'
+
+type StoredEventFilters = {
+  sortOrder?: string
+  cityFilter?: string
+  timeFilter?: string
+}
 
 function LoadingBlock({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse bg-black/10 ${className}`} />
@@ -20,19 +27,46 @@ function LoadingBlock({ className = "" }: { className?: string }) {
 
 export default function EventsPage() {
   const { t, i18n } = useTranslation()
+  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
+  const previousLocaleRef = useRef(locale)
   const [sortOrder, setSortOrder] = useState('')
   const [cityFilter, setCityFilter] = useState('')
   const [timeFilter, setTimeFilter] = useState('')
+  const [filtersReady, setFiltersReady] = useState(false)
   const [events, setEvents] = useState<Event[]>([])
   const [cityOptionsData, setCityOptionsData] = useState<Array<{ value: string; label: string }>>([])
   const [timeOptionsData, setTimeOptionsData] = useState<Array<{ value: string; label: string }>>([])
   const [loading, setLoading] = useState(true)
   const [hasLoaded, setHasLoaded] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [textRefreshing, setTextRefreshing] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
 
   useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(EVENTS_FILTER_STORAGE_KEY)
+      const stored = raw ? (JSON.parse(raw) as StoredEventFilters) : null
+      if (stored?.sortOrder) setSortOrder(stored.sortOrder)
+      if (stored?.cityFilter) setCityFilter(stored.cityFilter)
+      if (stored?.timeFilter) setTimeFilter(stored.timeFilter)
+    } catch {
+      // Ignore invalid persisted filters.
+    } finally {
+      setFiltersReady(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!filtersReady) return
+    window.localStorage.setItem(
+      EVENTS_FILTER_STORAGE_KEY,
+      JSON.stringify({ sortOrder, cityFilter, timeFilter }),
+    )
+  }, [filtersReady, sortOrder, cityFilter, timeFilter])
+
+  useEffect(() => {
+    if (!filtersReady) return
     let isMounted = true
     setLoading(true)
 
@@ -70,7 +104,45 @@ export default function EventsPage() {
     return () => {
       isMounted = false
     }
-  }, [i18n.language, cityFilter, timeFilter, sortOrder])
+  }, [filtersReady, cityFilter, timeFilter, sortOrder])
+
+  useEffect(() => {
+    const previousLocale = previousLocaleRef.current
+    if (previousLocale === locale) return
+    previousLocaleRef.current = locale
+    if (!filtersReady || !hasLoaded) return
+
+    let isMounted = true
+    setTextRefreshing(true)
+
+    api
+      .getEventsPage({
+        limit: Math.max(events.length, EVENTS_PAGE_SIZE),
+        offset: 0,
+        city: cityFilter,
+        time: timeFilter,
+        sort: sortOrder,
+      })
+      .then((data) => {
+        if (!isMounted) return
+        setEvents(Array.isArray(data.items) ? data.items : [])
+        setCityOptionsData(Array.isArray(data.cities) ? data.cities : [])
+        setTimeOptionsData(Array.isArray(data.times) ? data.times : [])
+        setHasMore(Boolean(data.hasMore))
+        setTotal(Number(data.total ?? 0))
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setHasMore(total > events.length)
+      })
+      .finally(() => {
+        if (isMounted) setTextRefreshing(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [locale, filtersReady, hasLoaded, events.length, cityFilter, timeFilter, sortOrder, total])
 
   async function handleLoadMore() {
     setLoadingMore(true)
@@ -111,6 +183,7 @@ export default function EventsPage() {
   ]
   const showInitialSkeleton = loading && !hasLoaded
   const skeletonLoading = useMinimumSkeleton(showInitialSkeleton)
+  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
 
   return (
     <div className="page">
@@ -144,6 +217,7 @@ export default function EventsPage() {
                 event={event}
                 detailsLabel={t('events.details')}
                 registerLabel={t('events.register')}
+                textLoading={textSkeletonLoading}
               />
             ))
           ) : (
@@ -158,15 +232,18 @@ export default function EventsPage() {
           <div className="content-shell flex justify-center py-10">
             <LoadingBlock className="h-[48px] w-36 border border-black bg-transparent" />
           </div>
+        ) : loadingMore ? (
+          <div className="content-shell py-10 flex justify-center" aria-live="polite" aria-busy="true">
+            <span className="loader" />
+          </div>
         ) : (hasMore || total > events.length) && (
           <div className="content-shell py-10 flex justify-center">
             <button
               type="button"
               onClick={handleLoadMore}
-              disabled={loadingMore}
               className="px-8 py-3 border border-black bg-transparent text-black font-sans text-[clamp(13px,1.2vw,18px)] uppercase cursor-pointer transition-colors duration-200 hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-black"
             >
-              {loadingMore ? <span className="loader" /> : t('events.loadMore')}
+              {t('events.loadMore')}
             </button>
           </div>
         )}

@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useTranslation, Trans } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'

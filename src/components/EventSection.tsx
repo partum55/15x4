@@ -17,6 +17,7 @@ type EventSectionProps =
       event: Event;
       detailsLabel: string;
       registerLabel: string;
+      textLoading?: boolean;
     };
 
 export default function EventSection(props: EventSectionProps) {
@@ -50,7 +51,7 @@ export default function EventSection(props: EventSectionProps) {
     );
   }
 
-  const { event, detailsLabel, registerLabel } = props;
+  const { event, detailsLabel, registerLabel, textLoading = false } = props;
   const lectures = event.lectures ?? [];
   const registerHref = event.registrationUrl?.trim();
   const registrationAvailable = Boolean(registerHref) && !isEventPast(event.date, event.time);
@@ -65,14 +66,23 @@ export default function EventSection(props: EventSectionProps) {
   return (
     <section className="border-t border-black">
       <div className="flex items-start justify-between gap-6 py-6 max-[767px]:flex-col max-[767px]:gap-5">
-        <div className="flex w-[clamp(220px,22.7vw,327px)] flex-col gap-6 max-[767px]:w-full">
+        <div className="relative flex w-[clamp(220px,22.7vw,327px)] flex-col gap-6 max-[767px]:w-full">
           <div className="flex items-center justify-between gap-6">
             <span className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">
               {event.city} [{formatEventDate(event.date, true)}]
             </span>
-            <span className="text-[clamp(14px,1.3vw,20px)] font-normal">{formatEventTime(event.time)}</span>
+            <span className="text-[clamp(22px,2.4vw,36px)] font-normal leading-none">{formatEventTime(event.time)}</span>
           </div>
           <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
+          {textLoading && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex flex-col gap-6 bg-white" aria-hidden="true">
+              <div className="flex items-center justify-between gap-6">
+                <LoadingBlock className="h-7 w-44" />
+                <LoadingBlock className="h-9 w-20" />
+              </div>
+              <LoadingBlock className="h-16 w-full" />
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-9 max-[1199px]:gap-6 max-[767px]:w-full max-[767px]:flex-col max-[767px]:gap-4">
@@ -94,7 +104,7 @@ export default function EventSection(props: EventSectionProps) {
       {lectures.length > 0 && (
         <div className="grid grid-cols-2 gap-x-9 gap-y-6 pb-9 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
           {lectures.slice(0, 4).map((lecture) => (
-            <LectureCard key={lecture.id} lecture={lecture} variant="compact" />
+            <LectureCard key={lecture.id} lecture={lecture} variant="compact" textLoading={textLoading} />
           ))}
         </div>
       )}
