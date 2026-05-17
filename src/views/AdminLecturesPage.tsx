@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
-import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORY_COLOR_VAR } from '@/constants/colors'
 import { LECTURE_CATEGORIES } from '@/constants/lectureCategories'
@@ -25,6 +24,26 @@ type Lecture = {
   isPublic: boolean
   createdAt: string
   user: { id: string; name: string; email: string } | null
+}
+
+function TableSkeleton() {
+  return (
+    <div className="overflow-x-auto" aria-hidden="true">
+      <table className="w-full border-collapse">
+        <tbody>
+          {Array.from({ length: 6 }).map((_, rowIndex) => (
+            <tr key={rowIndex} className="border-b border-black/20">
+              {Array.from({ length: 6 }).map((__, columnIndex) => (
+                <td key={columnIndex} className="p-3">
+                  <span className={`block h-5 animate-pulse bg-black/10 ${columnIndex === 0 ? 'w-56' : columnIndex === 5 ? 'ml-auto w-36' : 'w-24'}`} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 export default function AdminLecturesPage() {
@@ -238,7 +257,7 @@ export default function AdminLecturesPage() {
         )}
 
         {loadingLectures ? (
-          <Loader className="flex items-center justify-center py-12" />
+          <TableSkeleton />
         ) : lecturesError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{lecturesError}</p>
         ) : lectures.length === 0 ? (

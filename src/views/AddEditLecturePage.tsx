@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -52,6 +52,124 @@ const EMPTY: FormState = {
 }
 
 const LECTURE_SLOTS = ['1', '2', '3', '4']
+const LECTURE_DRAFT_STORAGE_PREFIX = '15x4:add-edit-lecture-draft'
+const LECTURE_DRAFT_VERSION = 1
+
+function getLectureDraftStorageKey(id?: string) {
+  return `${LECTURE_DRAFT_STORAGE_PREFIX}:${id || 'new'}`
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function stringValue(value: unknown, fallback = '') {
+  return typeof value === 'string' ? value : fallback
+}
+
+function normalizeLectureDraft(value: unknown): FormState | null {
+  if (!isRecord(value)) return null
+
+  return {
+    eventId: stringValue(value.eventId),
+    slot: stringValue(value.slot, EMPTY.slot),
+    titleUk: stringValue(value.titleUk),
+    titleEn: stringValue(value.titleEn),
+    authorUk: stringValue(value.authorUk),
+    authorEn: stringValue(value.authorEn),
+    category: stringValue(value.category),
+    summaryUk: stringValue(value.summaryUk),
+    summaryEn: stringValue(value.summaryEn),
+    image: stringValue(value.image),
+    authorBioUk: stringValue(value.authorBioUk),
+    authorBioEn: stringValue(value.authorBioEn),
+    videoUrl: stringValue(value.videoUrl),
+    presentationUrl: stringValue(value.presentationUrl),
+    sourcesText: stringValue(value.sourcesText),
+  }
+}
+
+function readLectureDraft(key: string): FormState | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return null
+
+    const parsed: unknown = JSON.parse(raw)
+    if (!isRecord(parsed) || parsed.version !== LECTURE_DRAFT_VERSION) return null
+
+    return normalizeLectureDraft(parsed.form)
+  } catch {
+    return null
+  }
+}
+
+function writeLectureDraft(key: string, form: FormState) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify({
+      version: LECTURE_DRAFT_VERSION,
+      form,
+    }))
+  } catch {
+    // Ignore storage failures so the form remains usable in private mode/quota edge cases.
+  }
+}
+
+function clearLectureDraft(key: string) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function LoadingBlock({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-black/10 ${className}`} />
+}
+
+function FormSkeleton() {
+  return (
+    <div className="grid grid-cols-[minmax(0,900px)_minmax(300px,380px)] gap-[clamp(24px,3vw,48px)] items-start max-[1100px]:grid-cols-1">
+      <div className="flex flex-col gap-5">
+        <div className="flex justify-end">
+          <LoadingBlock className="h-[42px] w-[128px] rounded-full" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+          <LoadingBlock className="h-[78px] w-full" />
+          <LoadingBlock className="h-[78px] w-full" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
+          <LoadingBlock className="h-[78px] w-full" />
+          <LoadingBlock className="h-[78px] w-full" />
+        </div>
+        <LoadingBlock className="h-[78px] w-full" />
+        <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
+          <LoadingBlock className="h-[132px] w-full" />
+          <LoadingBlock className="h-[132px] w-full" />
+        </div>
+        <LoadingBlock className="h-[78px] w-full" />
+        <LoadingBlock className="h-[78px] w-full" />
+        <div className="pt-6 border-t border-black">
+          <LoadingBlock className="h-[56px] w-[180px]" />
+        </div>
+      </div>
+      <aside className="border border-black bg-white">
+        <LoadingBlock className="aspect-[16/10] w-full border-b border-black" />
+        <div className="p-5 flex flex-col gap-4">
+          <LoadingBlock className="h-5 w-24" />
+          <LoadingBlock className="h-9 w-full" />
+          <LoadingBlock className="h-5 w-1/2" />
+          <LoadingBlock className="h-20 w-full" />
+        </div>
+      </aside>
+    </div>
+  )
+}
 
 export default function AddEditLecturePage() {
   const { t } = useTranslation()
@@ -59,60 +177,110 @@ export default function AddEditLecturePage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
   const isEdit = Boolean(id)
+  const draftStorageKey = getLectureDraftStorageKey(id)
 
-  const [form, setForm] = useState<FormState>(EMPTY)
+  const [initialDraft] = useState(() => readLectureDraft(draftStorageKey))
+  const [form, setForm] = useState<FormState>(() => initialDraft ?? EMPTY)
   const [errors, setErrors] = useState<FormErrors>({})
   const [formError, setFormError] = useState('')
   const [events, setEvents] = useState<Event[]>([])
+  const [eventsLoading, setEventsLoading] = useState(true)
+  const [loadingLecture, setLoadingLecture] = useState(isEdit && !initialDraft)
   const [translating, setTranslating] = useState(false)
   const [saving, setSaving] = useState(false)
+  const shouldPersistDraftRef = useRef(Boolean(initialDraft))
+
+  function markDraftDirty() {
+    shouldPersistDraftRef.current = true
+  }
 
   useEffect(() => {
+    if (!shouldPersistDraftRef.current) return
+    writeLectureDraft(draftStorageKey, form)
+  }, [draftStorageKey, form, shouldPersistDraftRef])
+
+  useEffect(() => {
+    let isMounted = true
+    setEventsLoading(true)
     Promise.all([api.getEvents(), api.getMyEvents()])
       .then(([publicEvents, ownEvents]) => {
+        if (!isMounted) return
         const byId = new Map<string, Event>()
         for (const event of [...ownEvents, ...publicEvents]) {
           byId.set(event.id, event)
         }
         setEvents([...byId.values()])
       })
+      .catch(() => {
+        if (isMounted) setEvents([])
+      })
+      .finally(() => {
+        if (isMounted) setEventsLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   useEffect(() => {
-    if (!id) return
-    api.getLecture(id).then((data: Lecture & { error?: string }) => {
-      if (!data.error) {
+    if (!id) {
+      setLoadingLecture(false)
+      return
+    }
+
+    let isMounted = true
+    setLoadingLecture(!shouldPersistDraftRef.current)
+    api.getLecture(id)
+      .then((data: Lecture & { error?: string }) => {
+      if (!isMounted) return
+      if (data && !data.error) {
         const normalizedCategory = normalizeLectureCategory(data.category ?? '')?.category ?? ''
-        setForm({
-          eventId: data.eventId ?? '',
-          slot: String(data.slot ?? '1'),
-          titleUk: data.titleUk ?? '',
-          titleEn: data.titleEn ?? '',
-          authorUk: data.authorUk ?? '',
-          authorEn: data.authorEn ?? '',
-          category: normalizedCategory,
-          summaryUk: data.summaryUk ?? '',
-          summaryEn: data.summaryEn ?? '',
-          image: data.image ?? '',
-          authorBioUk: data.authorBioUk ?? '',
-          authorBioEn: data.authorBioEn ?? '',
-          videoUrl: data.videoUrl ?? '',
-          presentationUrl: data.presentationUrl ?? '',
-          sourcesText: formatLectureSources(data.sources),
-        })
+        if (!shouldPersistDraftRef.current) {
+          setForm({
+            eventId: data.eventId ?? '',
+            slot: String(data.slot ?? '1'),
+            titleUk: data.titleUk ?? '',
+            titleEn: data.titleEn ?? '',
+            authorUk: data.authorUk ?? '',
+            authorEn: data.authorEn ?? '',
+            category: normalizedCategory,
+            summaryUk: data.summaryUk ?? '',
+            summaryEn: data.summaryEn ?? '',
+            image: data.image ?? '',
+            authorBioUk: data.authorBioUk ?? '',
+            authorBioEn: data.authorBioEn ?? '',
+            videoUrl: data.videoUrl ?? '',
+            presentationUrl: data.presentationUrl ?? '',
+            sourcesText: formatLectureSources(data.sources),
+          })
+        }
 
         if (data.eventId) {
           api.getEvent(data.eventId).then((event: Event & { error?: string }) => {
-            if (!event?.error) {
+            if (isMounted && !event?.error) {
               setEvents((prev) => prev.some((item) => item.id === event.id) ? prev : [event, ...prev])
             }
           })
         }
+      } else {
+        setFormError(t('lectureDetail.notFound'))
       }
-    })
-  }, [id])
+      })
+      .catch(() => {
+        if (isMounted) setFormError(t('addLecture.errorSave'))
+      })
+      .finally(() => {
+        if (isMounted) setLoadingLecture(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id, t])
 
   function set(field: keyof FormState, value: string) {
+    markDraftDirty()
     setForm((f) => ({ ...f, [field]: value }))
     if (errors[field]) {
       setErrors((current) => ({ ...current, [field]: undefined }))
@@ -134,7 +302,11 @@ export default function AddEditLecturePage() {
     if (form.slot && !occupiedSlots.has(form.slot)) return
 
     const nextSlot = LECTURE_SLOTS.find((slot) => !occupiedSlots.has(slot)) ?? ''
-    setForm((current) => current.slot === nextSlot ? current : { ...current, slot: nextSlot })
+    setForm((current) => {
+      if (current.slot === nextSlot) return current
+      if (shouldPersistDraftRef.current) markDraftDirty()
+      return { ...current, slot: nextSlot }
+    })
   }, [form.eventId, form.slot, selectedEvent, occupiedSlots])
 
   function validate(): FormErrors {
@@ -186,6 +358,7 @@ export default function AddEditLecturePage() {
         for (const [key, value] of results) {
           if (value && value.trim()) next[key] = value
         }
+        markDraftDirty()
         setForm(next)
       }
     } catch {
@@ -238,6 +411,7 @@ export default function AddEditLecturePage() {
         return
       }
 
+      clearLectureDraft(draftStorageKey)
       router.push('/account/lectures')
     } catch {
       setFormError(t('addLecture.errorSave'))
@@ -265,6 +439,9 @@ export default function AddEditLecturePage() {
             <p className="text-[clamp(13px,1.2vw,18px)] text-red mb-4 px-4 py-3 border border-red">{formError}</p>
           )}
 
+          {isEdit && loadingLecture ? (
+            <FormSkeleton />
+          ) : (
           <div className="grid grid-cols-[minmax(0,900px)_minmax(300px,380px)] gap-[clamp(24px,3vw,48px)] items-start max-[1100px]:grid-cols-1">
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
             <div className="flex justify-end">
@@ -281,8 +458,8 @@ export default function AddEditLecturePage() {
 
             <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
               <FormField label={t('addLecture.eventLabel')} error={errors.eventId} required>
-                <select value={form.eventId} onChange={(e) => set('eventId', e.target.value)} required>
-                  <option value="">{t('addLecture.eventPlaceholder')}</option>
+                <select value={form.eventId} onChange={(e) => set('eventId', e.target.value)} disabled={eventsLoading} required>
+                  <option value="">{eventsLoading ? t('addLecture.loading') : t('addLecture.eventPlaceholder')}</option>
                   {events.map((event) => (
                     <option key={event.id} value={event.id}>
                       {event.titleUk || event.cityUk}
@@ -435,6 +612,7 @@ export default function AddEditLecturePage() {
             </div>
           </aside>
           </div>
+          )}
         </div>
       </main>
     </div>

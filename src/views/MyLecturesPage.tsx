@@ -18,14 +18,37 @@ const colorStyles: Record<string, string> = {
 
 export default function MyLecturesPage() {
   const { t } = useTranslation()
-  const { user } = useCurrentUser()
+  const { user, loading: userLoading } = useCurrentUser()
   const [lectures, setLectures] = useState<Lecture[]>([])
+  const [loadingLectures, setLoadingLectures] = useState(true)
   const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (!user?.id) return
-    api.getMyLectures().then(setLectures)
-  }, [user?.id])
+    if (userLoading) return
+    if (!user?.id) {
+      setLectures([])
+      setLoadingLectures(false)
+      return
+    }
+
+    let isMounted = true
+    setLoadingLectures(true)
+    api
+      .getMyLectures()
+      .then((data) => {
+        if (isMounted) setLectures(data)
+      })
+      .catch(() => {
+        if (isMounted) setLectures([])
+      })
+      .finally(() => {
+        if (isMounted) setLoadingLectures(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [user?.id, userLoading])
 
   async function handleDelete(id: string) {
     if (deletingLectureIds.has(id)) return
@@ -64,7 +87,23 @@ export default function MyLecturesPage() {
 
         <div className="w-full h-px bg-black" />
 
-        {lectures.length === 0 ? (
+        {loadingLectures ? (
+          <ul className="list-none">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <li key={index} className="flex items-center justify-between gap-6 py-5 border-b border-black max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-3">
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <span className="h-7 w-28 animate-pulse bg-black/10" />
+                  <span className="h-6 w-4/5 animate-pulse bg-black/10" />
+                  <span className="h-4 w-1/3 animate-pulse bg-black/10" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="h-4 w-12 animate-pulse bg-black/10" />
+                  <span className="h-4 w-16 animate-pulse bg-black/10" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : lectures.length === 0 ? (
           <p className="py-8 text-[clamp(14px,1.3vw,20px)] text-black opacity-50">{t('myLectures.empty')}</p>
         ) : (
           <ul className="list-none">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -90,70 +90,259 @@ function emptyLecture(slot: number): EventLectureFormState {
   }
 }
 
+const EVENT_DRAFT_STORAGE_PREFIX = '15x4:add-edit-event-draft'
+const EVENT_DRAFT_VERSION = 1
+
+function getEventDraftStorageKey(id?: string) {
+  return `${EVENT_DRAFT_STORAGE_PREFIX}:${id || 'new'}`
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function stringValue(value: unknown, fallback = '') {
+  return typeof value === 'string' ? value : fallback
+}
+
+function normalizeEventDraftForm(value: unknown): EventFormState | null {
+  if (!isRecord(value)) return null
+
+  return {
+    titleUk: stringValue(value.titleUk),
+    titleEn: stringValue(value.titleEn),
+    descriptionUk: stringValue(value.descriptionUk),
+    descriptionEn: stringValue(value.descriptionEn),
+    cityUk: stringValue(value.cityUk),
+    cityEn: stringValue(value.cityEn),
+    date: stringValue(value.date),
+    locationUk: stringValue(value.locationUk),
+    locationEn: stringValue(value.locationEn),
+    time: stringValue(value.time),
+    image: stringValue(value.image),
+    registrationUrl: stringValue(value.registrationUrl),
+  }
+}
+
+function normalizeEventDraftLecture(value: unknown, index: number): EventLectureFormState | null {
+  if (!isRecord(value)) return null
+
+  return {
+    ...emptyLecture(index + 1),
+    slot: stringValue(value.slot, String(index + 1)),
+    titleUk: stringValue(value.titleUk),
+    titleEn: stringValue(value.titleEn),
+    authorUk: stringValue(value.authorUk),
+    authorEn: stringValue(value.authorEn),
+    category: stringValue(value.category),
+    summaryUk: stringValue(value.summaryUk),
+    summaryEn: stringValue(value.summaryEn),
+    image: stringValue(value.image),
+    authorBioUk: stringValue(value.authorBioUk),
+    authorBioEn: stringValue(value.authorBioEn),
+    videoUrl: stringValue(value.videoUrl),
+    presentationUrl: stringValue(value.presentationUrl),
+    sourcesText: stringValue(value.sourcesText),
+  }
+}
+
+function readEventDraft(key: string): { form: EventFormState; lectures: EventLectureFormState[] } | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return null
+
+    const parsed: unknown = JSON.parse(raw)
+    if (!isRecord(parsed) || parsed.version !== EVENT_DRAFT_VERSION) return null
+
+    const form = normalizeEventDraftForm(parsed.form)
+    if (!form) return null
+
+    const lectures = Array.isArray(parsed.lectures)
+      ? parsed.lectures
+          .map((lecture, index) => normalizeEventDraftLecture(lecture, index))
+          .filter((lecture): lecture is EventLectureFormState => Boolean(lecture))
+      : []
+
+    return { form, lectures }
+  } catch {
+    return null
+  }
+}
+
+function writeEventDraft(key: string, form: EventFormState, lectures: EventLectureFormState[]) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify({
+      version: EVENT_DRAFT_VERSION,
+      form,
+      lectures,
+    }))
+  } catch {
+    // Ignore storage failures so the form remains usable in private mode/quota edge cases.
+  }
+}
+
+function clearEventDraft(key: string) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function LoadingBlock({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-black/10 ${className}`} />
+}
+
+function FormSkeleton() {
+  return (
+    <div className="grid grid-cols-[minmax(0,960px)_minmax(320px,390px)] gap-[clamp(24px,3vw,48px)] items-start max-[1120px]:grid-cols-1">
+      <div className="flex flex-col gap-5">
+        <div className="flex justify-end">
+          <LoadingBlock className="h-[42px] w-[128px] rounded-full" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
+          <LoadingBlock className="h-[78px] w-full" />
+          <LoadingBlock className="h-[78px] w-full" />
+        </div>
+        <LoadingBlock className="h-[78px] w-full" />
+        <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
+          <LoadingBlock className="h-[78px] w-full" />
+          <LoadingBlock className="h-[78px] w-full" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
+          <LoadingBlock className="h-[118px] w-full" />
+          <LoadingBlock className="h-[118px] w-full" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
+          <LoadingBlock className="h-[78px] w-full" />
+          <LoadingBlock className="h-[78px] w-full" />
+        </div>
+        <div className="pt-6 border-t border-black">
+          <LoadingBlock className="h-[220px] w-full" />
+        </div>
+        <div className="pt-6 border-t border-black">
+          <LoadingBlock className="h-[56px] w-[180px]" />
+        </div>
+      </div>
+      <aside className="border border-black bg-white">
+        <LoadingBlock className="aspect-[16/10] w-full border-b border-black" />
+        <div className="p-5 flex flex-col gap-4">
+          <LoadingBlock className="h-5 w-full" />
+          <LoadingBlock className="h-10 w-full" />
+          <LoadingBlock className="h-12 w-3/4" />
+          <LoadingBlock className="h-20 w-full" />
+        </div>
+      </aside>
+    </div>
+  )
+}
+
 export default function AddEditEventPage() {
   const { i18n, t } = useTranslation()
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const id = params?.id
   const isEdit = Boolean(id)
+  const draftStorageKey = getEventDraftStorageKey(id)
 
-  const [form, setForm] = useState<EventFormState>(EMPTY_EVENT)
-  const [lectures, setLectures] = useState<EventLectureFormState[]>([])
+  const [initialDraft] = useState(() => readEventDraft(draftStorageKey))
+  const [form, setForm] = useState<EventFormState>(() => initialDraft?.form ?? EMPTY_EVENT)
+  const [lectures, setLectures] = useState<EventLectureFormState[]>(() => initialDraft?.lectures ?? [])
   const [errors, setErrors] = useState<FormErrors>({})
   const [lectureErrors, setLectureErrors] = useState<Record<string, EventLectureErrors>>({})
   const [formError, setFormError] = useState('')
+  const [loadingEvent, setLoadingEvent] = useState(isEdit && !initialDraft)
   const [translating, setTranslating] = useState(false)
   const [saving, setSaving] = useState(false)
+  const shouldPersistDraftRef = useRef(Boolean(initialDraft))
+
+  function markDraftDirty() {
+    shouldPersistDraftRef.current = true
+  }
 
   useEffect(() => {
-    if (!id) return
-    api.getEvent(id).then((data: EventFormState & { error?: string }) => {
-      if (!data.error) {
+    if (!shouldPersistDraftRef.current) return
+    writeEventDraft(draftStorageKey, form, lectures)
+  }, [draftStorageKey, form, lectures, shouldPersistDraftRef])
+
+  useEffect(() => {
+    if (!id) {
+      setLoadingEvent(false)
+      return
+    }
+
+    let isMounted = true
+    setLoadingEvent(!shouldPersistDraftRef.current)
+    api.getEvent(id)
+      .then((data: EventFormState & { error?: string }) => {
+      if (!isMounted) return
+      if (data && !data.error) {
         const cityOption = findCityOption(data.cityUk) ?? findCityOption(data.cityEn)
-        setForm({
-          titleUk: data.titleUk ?? '',
-          titleEn: data.titleEn ?? '',
-          descriptionUk: data.descriptionUk ?? '',
-          descriptionEn: data.descriptionEn ?? '',
-          cityUk: cityOption?.uk ?? data.cityUk ?? '',
-          cityEn: cityOption?.en ?? data.cityEn ?? '',
-          date: normalizeDateInput(data.date),
-          locationUk: data.locationUk ?? '',
-          locationEn: data.locationEn ?? '',
-          time: normalizeTimeInput(data.time),
-          image: data.image ?? '',
-          registrationUrl: data.registrationUrl ?? '',
-        })
-        setLectures(
-          Array.isArray((data as { lectures?: Array<Record<string, unknown>> }).lectures)
-            ? ((data as { lectures?: Array<Record<string, unknown>> }).lectures ?? []).map((lecture, index) => ({
-                tempId: String(++lectureTempCounter),
-                slot: String(lecture.slot ?? index + 1),
-                titleUk: String(lecture.titleUk ?? ''),
-                titleEn: String(lecture.titleEn ?? ''),
-                authorUk: String(lecture.authorUk ?? ''),
-                authorEn: String(lecture.authorEn ?? ''),
-                category: normalizeLectureCategory(String(lecture.category ?? ''))?.category ?? '',
-                summaryUk: String(lecture.summaryUk ?? ''),
-                summaryEn: String(lecture.summaryEn ?? ''),
-                image: String(lecture.image ?? ''),
-                authorBioUk: String(lecture.authorBioUk ?? ''),
-                authorBioEn: String(lecture.authorBioEn ?? ''),
-                videoUrl: String(lecture.videoUrl ?? ''),
-                presentationUrl: String(lecture.presentationUrl ?? ''),
-                sourcesText: formatLectureSources(
-                  Array.isArray(lecture.sources)
-                    ? (lecture.sources as Array<{ name?: string | null; url?: string | null }>)
-                    : null,
-                ),
-              }))
-            : [],
-        )
+        if (!shouldPersistDraftRef.current) {
+          setForm({
+            titleUk: data.titleUk ?? '',
+            titleEn: data.titleEn ?? '',
+            descriptionUk: data.descriptionUk ?? '',
+            descriptionEn: data.descriptionEn ?? '',
+            cityUk: cityOption?.uk ?? data.cityUk ?? '',
+            cityEn: cityOption?.en ?? data.cityEn ?? '',
+            date: normalizeDateInput(data.date),
+            locationUk: data.locationUk ?? '',
+            locationEn: data.locationEn ?? '',
+            time: normalizeTimeInput(data.time),
+            image: data.image ?? '',
+            registrationUrl: data.registrationUrl ?? '',
+          })
+          setLectures(
+            Array.isArray((data as { lectures?: Array<Record<string, unknown>> }).lectures)
+              ? ((data as { lectures?: Array<Record<string, unknown>> }).lectures ?? []).map((lecture, index) => ({
+                  tempId: String(++lectureTempCounter),
+                  slot: String(lecture.slot ?? index + 1),
+                  titleUk: String(lecture.titleUk ?? ''),
+                  titleEn: String(lecture.titleEn ?? ''),
+                  authorUk: String(lecture.authorUk ?? ''),
+                  authorEn: String(lecture.authorEn ?? ''),
+                  category: normalizeLectureCategory(String(lecture.category ?? ''))?.category ?? '',
+                  summaryUk: String(lecture.summaryUk ?? ''),
+                  summaryEn: String(lecture.summaryEn ?? ''),
+                  image: String(lecture.image ?? ''),
+                  authorBioUk: String(lecture.authorBioUk ?? ''),
+                  authorBioEn: String(lecture.authorBioEn ?? ''),
+                  videoUrl: String(lecture.videoUrl ?? ''),
+                  presentationUrl: String(lecture.presentationUrl ?? ''),
+                  sourcesText: formatLectureSources(
+                    Array.isArray(lecture.sources)
+                      ? (lecture.sources as Array<{ name?: string | null; url?: string | null }>)
+                      : null,
+                  ),
+                }))
+              : [],
+          )
+        }
+      } else {
+        setFormError(t('eventDetail.notFound'))
       }
-    })
-  }, [id])
+      })
+      .catch(() => {
+        if (isMounted) setFormError(t('addEvent.errorSave'))
+      })
+      .finally(() => {
+        if (isMounted) setLoadingEvent(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id, t])
 
   function setField(field: keyof EventFormState, value: string) {
+    markDraftDirty()
     setForm(f => ({ ...f, [field]: value }))
     if (errors[field]) {
       setErrors((current) => ({ ...current, [field]: undefined }))
@@ -161,6 +350,7 @@ export default function AddEditEventPage() {
   }
 
   function setCity(value: string) {
+    markDraftDirty()
     const city = findCityOption(value)
     setForm((current) => ({
       ...current,
@@ -173,6 +363,7 @@ export default function AddEditEventPage() {
   }
 
   function setLectureField(index: number, field: keyof EventLectureFormState, value: string) {
+    markDraftDirty()
     setLectures((prev) => prev.map((lecture, i) => (i === index ? { ...lecture, [field]: value } : lecture)))
     const tempId = lectures[index]?.tempId
     if (tempId && lectureErrors[tempId]?.[field]) {
@@ -187,11 +378,13 @@ export default function AddEditEventPage() {
     if (saving || translating) return
     if (lectures.length >= 4) return
     const slot = lectures.length + 1
+    markDraftDirty()
     setLectures((prev) => [...prev, emptyLecture(slot)])
   }
 
   function removeLecture(index: number) {
     if (saving || translating) return
+    markDraftDirty()
     setLectures((prev) =>
       prev
         .filter((_, i) => i !== index)
@@ -272,6 +465,7 @@ export default function AddEditEventPage() {
         for (const [key, value] of results) {
           if (value && value.trim()) nextForm[key] = value
         }
+        markDraftDirty()
         setForm(nextForm)
       }
 
@@ -299,6 +493,7 @@ export default function AddEditEventPage() {
             nextLectures[r.index] = { ...nextLectures[r.index], [r.key]: r.value }
           }
         }
+        markDraftDirty()
         setLectures(nextLectures)
       }
     } catch {
@@ -380,6 +575,7 @@ export default function AddEditEventPage() {
         return
       }
 
+      clearEventDraft(draftStorageKey)
       router.push('/account/events')
     } catch {
       setFormError(t('addEvent.errorSave'))
@@ -408,6 +604,9 @@ export default function AddEditEventPage() {
             <p className="text-[clamp(13px,1.2vw,18px)] text-red mb-4 px-4 py-3 border border-red">{formError}</p>
           )}
 
+          {isEdit && loadingEvent ? (
+            <FormSkeleton />
+          ) : (
           <div className="grid grid-cols-[minmax(0,960px)_minmax(320px,390px)] gap-[clamp(24px,3vw,48px)] items-start max-[1120px]:grid-cols-1">
           <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
             <div className="flex justify-end">
@@ -640,6 +839,7 @@ export default function AddEditEventPage() {
             </div>
           </aside>
           </div>
+          )}
         </div>
       </main>
     </div>

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Skeleton } from 'boneyard-js/react'
 import type { Lecture } from '@/lib/api'
 import Navbar from '../components/Navbar'
@@ -15,8 +15,15 @@ import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 import { resolveLectureVideo } from '../lib/lecture-video'
 import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
+function LoadingBlock({ className = '' }: { className?: string }) {
+  return <span className={`block animate-pulse bg-black/10 ${className}`} />
+}
+
 export default function LectureDetailPage() {
   const { t, i18n } = useTranslation()
+  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
+  const previousLocaleRef = useRef(locale)
+  const hasLoadedRef = useRef(false)
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const id = params?.id
@@ -24,7 +31,9 @@ export default function LectureDetailPage() {
   const [lecture, setLecture] = useState<Lecture | null>(null)
   const [related, setRelated] = useState<Lecture[]>([])
   const [loading, setLoading] = useState(!bonesMode)
+  const [textRefreshing, setTextRefreshing] = useState(false)
   const skeletonLoading = useMinimumSkeleton(bonesMode || loading)
+  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
   const [videoErrorLectureId, setVideoErrorLectureId] = useState<string | null>(null)
   const lectureCategoryLabel = lecture
     ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
@@ -38,6 +47,13 @@ export default function LectureDetailPage() {
     if (bonesMode) return
 
     let isMounted = true
+    const isLocaleRefresh = hasLoadedRef.current && previousLocaleRef.current !== locale
+    previousLocaleRef.current = locale
+    const pendingTimer = window.setTimeout(() => {
+      if (!isMounted) return
+      if (isLocaleRefresh) setTextRefreshing(true)
+      else setLoading(true)
+    }, 0)
 
     Promise.all([api.getLecture(id), api.getLecturesPage({ limit: 5 })])
       .then(([lectureData, lecturesPage]) => {
@@ -54,19 +70,24 @@ export default function LectureDetailPage() {
       })
       .catch(() => {
         if (!isMounted) return
-        setLecture(null)
-        setRelated([])
+        if (!isLocaleRefresh) {
+          setLecture(null)
+          setRelated([])
+        }
       })
       .finally(() => {
         if (isMounted) {
+          hasLoadedRef.current = true
           setLoading(false)
+          setTextRefreshing(false)
         }
       })
 
     return () => {
       isMounted = false
+      window.clearTimeout(pendingTimer)
     }
-  }, [id, bonesMode, i18n.language])
+  }, [id, bonesMode, locale])
 
   if (!bonesMode && !loading && !lecture) {
     return (
@@ -87,7 +108,9 @@ export default function LectureDetailPage() {
           <main className="content-shell border-t border-black pt-[clamp(28px,4.2vw,64px)] pb-[clamp(48px,6vw,96px)]">
         {/* Title */}
         <h1 className="text-[clamp(24px,3.2vw,48px)] font-bold text-center uppercase tracking-[0.03em] mb-[clamp(24px,3vw,48px)] leading-[1.1]">
-          {lecture.title.toUpperCase()}
+          {textSkeletonLoading ? (
+            <LoadingBlock className="mx-auto h-[1em] w-[min(72vw,680px)]" />
+          ) : lecture.title.toUpperCase()}
         </h1>
 
         {/* Hero: media + meta */}
@@ -142,13 +165,22 @@ export default function LectureDetailPage() {
               <span
                 className={`inline-flex items-center px-5 py-[7px] text-[clamp(12px,1.2vw,18px)] font-normal border leading-none whitespace-nowrap ${badgeBorderClass[lecture.categoryColor] || 'border-red'}`}
               >
-                {lectureCategoryLabel}
+                {textSkeletonLoading ? <LoadingBlock className="h-4 w-24 bg-black/10" /> : lectureCategoryLabel}
               </span>
               {lecture.duration && (
                 <span className="text-[clamp(12px,1.2vw,18px)] opacity-70 whitespace-nowrap">{lecture.duration}</span>
               )}
             </div>
-            <p className="text-[clamp(13px,1.3vw,20px)] leading-[1.55]">{lecture.summary}</p>
+            <p className="text-[clamp(13px,1.3vw,20px)] leading-[1.55]">
+              {textSkeletonLoading ? (
+                <span className="flex flex-col gap-3">
+                  <LoadingBlock className="h-5 w-full" />
+                  <LoadingBlock className="h-5 w-11/12" />
+                  <LoadingBlock className="h-5 w-4/5" />
+                  <LoadingBlock className="h-5 w-2/3" />
+                </span>
+              ) : lecture.summary}
+            </p>
             {lecture.videoUrl && !resolvedVideo && (
               <a
                 href={lecture.videoUrl}
@@ -173,7 +205,7 @@ export default function LectureDetailPage() {
             <div className="grid grid-cols-[auto_1fr] gap-8 items-start max-[767px]:grid-cols-1 max-[767px]:gap-5">
               <div className="flex flex-col gap-2 min-w-[140px]">
                 <p className="text-[clamp(12px,1.2vw,17px)] font-bold text-orange tracking-[0.04em] mb-1">
-                  {lecture.author.toUpperCase()}
+                  {textSkeletonLoading ? <LoadingBlock className="h-5 w-32" /> : lecture.author.toUpperCase()}
                 </p>
                 {lecture.socialLinks?.map((s) => (
                   <div key={s.type} className="flex items-baseline gap-2">
@@ -190,7 +222,15 @@ export default function LectureDetailPage() {
                 ))}
               </div>
               {lecture.authorBio && (
-                <p className="text-[clamp(13px,1.3vw,19px)] leading-[1.55]">{lecture.authorBio}</p>
+                <p className="text-[clamp(13px,1.3vw,19px)] leading-[1.55]">
+                  {textSkeletonLoading ? (
+                    <span className="flex flex-col gap-3">
+                      <LoadingBlock className="h-5 w-full" />
+                      <LoadingBlock className="h-5 w-11/12" />
+                      <LoadingBlock className="h-5 w-3/4" />
+                    </span>
+                  ) : lecture.authorBio}
+                </p>
               )}
             </div>
           </section>
@@ -266,10 +306,14 @@ export default function LectureDetailPage() {
               </h2>
               <div className="flex items-baseline gap-[clamp(16px,3vw,48px)] mb-[clamp(24px,3vw,40px)] max-[767px]:flex-wrap max-[767px]:gap-2">
                 {lecture.eventCity && (
-                  <span className="text-[clamp(13px,1.3vw,18px)] font-normal tracking-[0.05em]">{lecture.eventCity.toUpperCase()}</span>
+                  <span className="text-[clamp(13px,1.3vw,18px)] font-normal tracking-[0.05em]">
+                    {textSkeletonLoading ? <LoadingBlock className="h-5 w-32" /> : lecture.eventCity.toUpperCase()}
+                  </span>
                 )}
                 {lecture.eventDate && (
-                  <span className="text-[clamp(13px,1.3vw,18px)]">[{lecture.eventDate}]</span>
+                  <span className="text-[clamp(13px,1.3vw,18px)]">
+                    {textSkeletonLoading ? <LoadingBlock className="h-5 w-24" /> : `[${lecture.eventDate}]`}
+                  </span>
                 )}
                 {lecture.eventPhotosUrl && (
                   <a
@@ -306,8 +350,12 @@ export default function LectureDetailPage() {
                           {t(`lectureCategories.${r.category}`, { defaultValue: r.category })}
                         </span>
                       </div>
-                      <p className="text-[clamp(11px,1.1vw,15px)] font-normal uppercase tracking-[0.02em] leading-[1.3] mb-1.5 px-3">{r.title.toUpperCase()}</p>
-                      <p className="text-[clamp(10px,1vw,14px)] opacity-60 px-3">{r.author}</p>
+                      <p className="text-[clamp(11px,1.1vw,15px)] font-normal uppercase tracking-[0.02em] leading-[1.3] mb-1.5 px-3">
+                        {textSkeletonLoading ? <LoadingBlock className="h-4 w-4/5" /> : r.title.toUpperCase()}
+                      </p>
+                      <p className="text-[clamp(10px,1vw,14px)] opacity-60 px-3">
+                        {textSkeletonLoading ? <LoadingBlock className="h-4 w-1/2" /> : r.author}
+                      </p>
                     </Link>
                   ))}
                 </div>

@@ -183,6 +183,8 @@ export default function EventsPage() {
   ]
   const showInitialSkeleton = loading && !hasLoaded
   const skeletonLoading = useMinimumSkeleton(showInitialSkeleton)
+  const refreshSkeletonLoading = useMinimumSkeleton(loading && hasLoaded, 350)
+  const listSkeletonLoading = skeletonLoading || refreshSkeletonLoading
   const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
 
   return (
@@ -204,7 +206,7 @@ export default function EventsPage() {
         </div>
 
         <main className="content-shell">
-          {skeletonLoading ? (
+          {listSkeletonLoading ? (
             <>
               <EventSection loading />
               <EventSection loading />
@@ -228,7 +230,7 @@ export default function EventsPage() {
           <div className="h-px w-full bg-black" />
         </main>
 
-        {skeletonLoading ? (
+        {listSkeletonLoading ? (
           <div className="content-shell flex justify-center py-10">
             <LoadingBlock className="h-[48px] w-36 border border-black bg-transparent" />
           </div>

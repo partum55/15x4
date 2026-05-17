@@ -176,6 +176,8 @@ export default function LecturesPage() {
   const hasActiveFilters = !!(debouncedSearchQuery || (sortBy && sortBy !== 'dateDesc') || themeFilter)
   const showInitialSkeleton = loading && !hasLoaded
   const skeletonLoading = useMinimumSkeleton(showInitialSkeleton)
+  const refreshSkeletonLoading = useMinimumSkeleton(loading && hasLoaded, 350)
+  const listSkeletonLoading = skeletonLoading || refreshSkeletonLoading
   const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
 
   const sortOptions = [
@@ -345,10 +347,10 @@ export default function LecturesPage() {
         </div>
 
         <main className="content-shell border-t border-black">
-          {skeletonLoading ? renderLoadingGrid() : hasActiveFilters ? renderFilteredGrid() : renderDefaultGrid()}
+          {listSkeletonLoading ? renderLoadingGrid() : hasActiveFilters ? renderFilteredGrid() : renderDefaultGrid()}
         </main>
 
-        {skeletonLoading ? (
+        {listSkeletonLoading ? (
           <div className="content-shell py-10 flex justify-center">
             <div className="h-[48px] w-36 animate-pulse border border-black bg-black/10" />
           </div>

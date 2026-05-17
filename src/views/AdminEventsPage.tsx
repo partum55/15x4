@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
-import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { api } from '@/lib/api'
@@ -29,6 +28,26 @@ type Event = {
   createdAt: string
   user: { id: string; name: string; email: string } | null
   _count: { lectures: number }
+}
+
+function TableSkeleton() {
+  return (
+    <div className="overflow-x-auto" aria-hidden="true">
+      <table className="w-full border-collapse">
+        <tbody>
+          {Array.from({ length: 6 }).map((_, rowIndex) => (
+            <tr key={rowIndex} className="border-b border-black/20">
+              {Array.from({ length: 7 }).map((__, columnIndex) => (
+                <td key={columnIndex} className="p-3">
+                  <span className={`block h-5 animate-pulse bg-black/10 ${columnIndex === 0 ? 'w-56' : columnIndex === 6 ? 'ml-auto w-32' : 'w-24'}`} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 export default function AdminEventsPage() {
@@ -225,7 +244,7 @@ export default function AdminEventsPage() {
         )}
 
         {loadingEvents ? (
-          <Loader className="flex items-center justify-center py-12" />
+          <TableSkeleton />
         ) : eventsError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{eventsError}</p>
         ) : paginatedEvents.length === 0 ? (

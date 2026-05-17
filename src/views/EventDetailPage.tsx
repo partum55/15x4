@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Event } from '@/lib/api'
 import ArrowIcon from '../components/ArrowIcon'
 import Navbar from '../components/Navbar'
@@ -28,13 +28,19 @@ function LoadingBlock({ className = "" }: { className?: string }) {
 
 export default function EventDetailPage() {
   const { t, i18n } = useTranslation()
+  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
+  const previousLocaleRef = useRef(locale)
+  const hasLoadedRef = useRef(false)
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const id = params?.id
   const bonesMode = searchParams.get('bones') === '1'
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(!bonesMode)
+  const [textRefreshing, setTextRefreshing] = useState(false)
   const skeletonLoading = useMinimumSkeleton(bonesMode || loading)
+  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
+  const contentTextLoading = skeletonLoading || textSkeletonLoading
 
   useEffect(() => {
     if (!id) return
@@ -42,6 +48,13 @@ export default function EventDetailPage() {
     if (bonesMode) return
 
     let isMounted = true
+    const isLocaleRefresh = hasLoadedRef.current && previousLocaleRef.current !== locale
+    previousLocaleRef.current = locale
+    const pendingTimer = window.setTimeout(() => {
+      if (!isMounted) return
+      if (isLocaleRefresh) setTextRefreshing(true)
+      else setLoading(true)
+    }, 0)
 
     api.getEvent(id)
       .then((data: Event & { error?: string }) => {
@@ -54,18 +67,21 @@ export default function EventDetailPage() {
       })
       .catch(() => {
         if (!isMounted) return
-        setEvent(null)
+        if (!isLocaleRefresh) setEvent(null)
       })
       .finally(() => {
         if (isMounted) {
+          hasLoadedRef.current = true
           setLoading(false)
+          setTextRefreshing(false)
         }
       })
 
     return () => {
       isMounted = false
+      window.clearTimeout(pendingTimer)
     }
-  }, [id, bonesMode, i18n.language])
+  }, [id, bonesMode, locale])
 
   if (!bonesMode && !loading && !event) {
     return (
@@ -104,7 +120,7 @@ export default function EventDetailPage() {
                   </Link>
 
                   <div className="flex flex-col gap-5">
-                    {skeletonLoading ? (
+                    {contentTextLoading ? (
                       <div className="flex max-w-[690px] flex-col gap-3">
                         <LoadingBlock className="h-[clamp(34px,5.6vw,96px)] w-[min(68vw,440px)]" />
                         <LoadingBlock className="h-7 w-40" />
@@ -132,7 +148,7 @@ export default function EventDetailPage() {
                 <div className="grid max-w-[690px] grid-cols-3 gap-6 border-t border-black pt-6 max-[767px]:grid-cols-1">
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.date')}</p>
-                    {skeletonLoading ? (
+                    {contentTextLoading ? (
                       <LoadingBlock className="h-7 w-28" />
                     ) : (
                       <p className="text-[clamp(18px,1.6vw,24px)]">{event ? formatEventDate(event.date, true) : ''}</p>
@@ -140,7 +156,7 @@ export default function EventDetailPage() {
                   </div>
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.time')}</p>
-                    {skeletonLoading ? (
+                    {contentTextLoading ? (
                       <LoadingBlock className="h-7 w-20" />
                     ) : (
                       <p className="text-[clamp(18px,1.6vw,24px)]">{event ? formatEventTime(event.time) : ''}</p>
@@ -148,7 +164,7 @@ export default function EventDetailPage() {
                   </div>
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.talks')}</p>
-                    {skeletonLoading ? (
+                    {contentTextLoading ? (
                       <LoadingBlock className="h-7 w-12" />
                     ) : (
                       <p className="text-[clamp(18px,1.6vw,24px)]">{lectures.length}</p>
@@ -174,7 +190,7 @@ export default function EventDetailPage() {
                 )}
 
                 <div className="grid grid-cols-[1fr_auto] gap-6 max-[767px]:grid-cols-1">
-                  {skeletonLoading ? (
+                  {contentTextLoading ? (
                     <div className="flex flex-col gap-3">
                       <LoadingBlock className="h-6 w-full" />
                       <LoadingBlock className="h-6 w-4/5" />
@@ -214,7 +230,7 @@ export default function EventDetailPage() {
                   <h2 className="text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.15]">
                     <span className="text-red">{'//'}</span> {t('eventDetail.about')}
                   </h2>
-                  {skeletonLoading ? (
+                  {contentTextLoading ? (
                     <div className="flex flex-col gap-3">
                       <LoadingBlock className="h-6 w-full" />
                       <LoadingBlock className="h-6 w-11/12" />
@@ -240,7 +256,7 @@ export default function EventDetailPage() {
                   ) : lectures.length > 0 ? (
                     <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
                       {lectures.map((lecture) => (
-                        <LectureCard key={lecture.id} lecture={lecture} variant="compact" />
+                        <LectureCard key={lecture.id} lecture={lecture} variant="compact" textLoading={textSkeletonLoading} />
                       ))}
                     </div>
                   ) : (
@@ -262,7 +278,7 @@ export default function EventDetailPage() {
 
             <section className="content-shell pb-[clamp(32px,4.2vw,64px)]">
               <div className="flex items-center justify-between gap-6 border-t border-black pt-6 max-[767px]:flex-col max-[767px]:items-stretch">
-                {skeletonLoading ? (
+                {contentTextLoading ? (
                   <LoadingBlock className="h-7 w-72 max-w-full" />
                 ) : (
                   <p className="text-[clamp(18px,1.6vw,24px)] uppercase tracking-[-0.04em]">

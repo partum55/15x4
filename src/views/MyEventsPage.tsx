@@ -12,14 +12,37 @@ import type { Event } from '@/lib/api'
 
 export default function MyEventsPage() {
   const { t } = useTranslation()
-  const { user } = useCurrentUser()
+  const { user, loading: userLoading } = useCurrentUser()
   const [events, setEvents] = useState<Event[]>([])
+  const [loadingEvents, setLoadingEvents] = useState(true)
   const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (!user?.id) return
-    api.getMyEvents().then(setEvents)
-  }, [user?.id])
+    if (userLoading) return
+    if (!user?.id) {
+      setEvents([])
+      setLoadingEvents(false)
+      return
+    }
+
+    let isMounted = true
+    setLoadingEvents(true)
+    api
+      .getMyEvents()
+      .then((data) => {
+        if (isMounted) setEvents(data)
+      })
+      .catch(() => {
+        if (isMounted) setEvents([])
+      })
+      .finally(() => {
+        if (isMounted) setLoadingEvents(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [user?.id, userLoading])
 
   async function handleDelete(id: string) {
     if (deletingEventIds.has(id)) return
@@ -58,7 +81,23 @@ export default function MyEventsPage() {
 
         <div className="w-full h-px bg-black" />
 
-        {events.length === 0 ? (
+        {loadingEvents ? (
+          <ul className="list-none">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <li key={index} className="flex items-center justify-between gap-6 py-5 border-b border-black max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-3">
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <span className="h-6 w-3/5 animate-pulse bg-black/10" />
+                  <span className="h-4 w-4/5 animate-pulse bg-black/10" />
+                  <span className="h-4 w-1/3 animate-pulse bg-black/10" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="h-4 w-12 animate-pulse bg-black/10" />
+                  <span className="h-4 w-16 animate-pulse bg-black/10" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : events.length === 0 ? (
           <p className="py-8 text-[clamp(14px,1.3vw,20px)] text-black opacity-50">{t('myEvents.empty')}</p>
         ) : (
           <ul className="list-none">

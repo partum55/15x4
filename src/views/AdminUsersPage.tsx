@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
-import Loader from '@/components/Loader'
 import { useAuth } from '@/context/AuthContext'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { PROFILE_ROLES, type ProfileRole } from '@/lib/roles'
@@ -17,6 +16,26 @@ type User = {
   email: string
   role: ProfileRole
   createdAt: string
+}
+
+function TableSkeleton() {
+  return (
+    <div className="overflow-x-auto" aria-hidden="true">
+      <table className="w-full border-collapse">
+        <tbody>
+          {Array.from({ length: 6 }).map((_, rowIndex) => (
+            <tr key={rowIndex} className="border-b border-black/20">
+              {Array.from({ length: 5 }).map((__, columnIndex) => (
+                <td key={columnIndex} className="p-3">
+                  <span className={`block h-5 animate-pulse bg-black/10 ${columnIndex === 1 ? 'w-48' : columnIndex === 4 ? 'ml-auto w-40' : 'w-28'}`} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 export default function AdminUsersPage() {
@@ -215,7 +234,7 @@ export default function AdminUsersPage() {
         )}
 
         {loadingUsers ? (
-          <Loader className="flex items-center justify-center py-12" />
+          <TableSkeleton />
         ) : usersError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{usersError}</p>
         ) : paginatedUsers.length === 0 ? (

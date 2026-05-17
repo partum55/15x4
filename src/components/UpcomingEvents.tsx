@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -32,8 +32,15 @@ function matchesCity(event: Event, city: string) {
   )
 }
 
+function LoadingBlock({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-black/10 ${className}`} />
+}
+
 export default function UpcomingEvents() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
+  const previousLocaleRef = useRef(locale)
+  const hasLoadedRef = useRef(false)
   const { user } = useAuth()
   const router = useRouter()
   const [events, setEvents] = useState<Event[]>([])
@@ -41,10 +48,20 @@ export default function UpcomingEvents() {
   const [now, setNow] = useState(0)
   const [selectedCity, setSelectedCity] = useState('')
   const [citySelectionTouched, setCitySelectionTouched] = useState(false)
+  const [textRefreshing, setTextRefreshing] = useState(false)
   const skeletonLoading = useMinimumSkeleton(loading)
+  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
 
   useEffect(() => {
     let isMounted = true
+    const isLocaleRefresh = hasLoadedRef.current && previousLocaleRef.current !== locale
+    previousLocaleRef.current = locale
+    const pendingTimer = window.setTimeout(() => {
+      if (!isMounted) return
+      if (isLocaleRefresh) setTextRefreshing(true)
+      else setLoading(true)
+    }, 0)
+
     api
       .getEvents()
       .then((data) => {
@@ -57,12 +74,17 @@ export default function UpcomingEvents() {
         setEvents([])
       })
       .finally(() => {
-        if (isMounted) setLoading(false)
+        if (isMounted) {
+          hasLoadedRef.current = true
+          setLoading(false)
+          setTextRefreshing(false)
+        }
       })
     return () => {
       isMounted = false
+      window.clearTimeout(pendingTimer)
     }
-  }, [])
+  }, [locale])
 
   const upcomingEvents = useMemo(() => {
     if (!now) return []
@@ -164,9 +186,19 @@ export default function UpcomingEvents() {
                     {/* Col 1: info */}
                     <div className="flex w-[clamp(220px,23.1%,327px)] flex-shrink-0 flex-col justify-between py-6 max-[900px]:w-full max-[767px]:pb-4">
                       <div className="flex flex-col gap-6">
-                        <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.city} [{formatEventDate(event.date, true)}]</p>
-                        <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
-                        <p className="text-[clamp(13px,1.3vw,20px)] font-normal">{formatEventTime(event.time)}</p>
+                        {textSkeletonLoading ? (
+                          <>
+                            <LoadingBlock className="h-7 w-56 max-w-full" />
+                            <LoadingBlock className="h-14 w-full" />
+                            <LoadingBlock className="h-5 w-20" />
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">{event.city} [{formatEventDate(event.date, true)}]</p>
+                            <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
+                            <p className="text-[clamp(13px,1.3vw,20px)] font-normal">{formatEventTime(event.time)}</p>
+                          </>
+                        )}
                       </div>
                       {event.registrationUrl?.trim().startsWith('http') ? (
                         <a
@@ -206,7 +238,14 @@ export default function UpcomingEvents() {
 
                     {/* Col 3: talks */}
                     <div className="flex min-w-0 flex-1 flex-col gap-5 py-6 max-[900px]:col-start-2 max-[900px]:row-span-2 max-[767px]:w-full max-[767px]:gap-3 max-[767px]:pt-4">
-                      {(event.lectures ?? []).slice(0, 4).map((lecture) => (
+                      {textSkeletonLoading ? (
+                        Array.from({ length: 4 }).map((_, index) => (
+                          <div key={index} className="flex items-baseline justify-between gap-4">
+                            <LoadingBlock className="h-6 w-3/5" />
+                            <LoadingBlock className="h-5 w-1/4" />
+                          </div>
+                        ))
+                      ) : (event.lectures ?? []).slice(0, 4).map((lecture) => (
                         <Link
                           key={lecture.id}
                           href={`/lectures/${lecture.id}`}
