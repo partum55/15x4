@@ -36,6 +36,22 @@ function joinClassNames(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ')
 }
 
+function getLectureCardSizes(variant: LectureCardVariant) {
+  if (variant === 'featured') {
+    return '(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 34vw'
+  }
+
+  if (variant === 'detail') {
+    return '(max-width: 900px) 100vw, 327px'
+  }
+
+  if (variant === 'vertical') {
+    return '(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 22vw'
+  }
+
+  return '(max-width: 767px) 100vw, 50vw'
+}
+
 function CategoryBadge({
   label,
   color,
@@ -60,8 +76,8 @@ function CategoryBadge({
       )}
       style={{
         borderColor: active || inverse ? 'var(--color-white)' : color,
-        backgroundColor: active || inverse ? 'transparent' : 'var(--color-white)',
-        color: active || inverse ? 'var(--color-white)' : 'var(--color-black)',
+        backgroundColor: active ? 'var(--color-white)' : inverse ? 'transparent' : 'var(--color-white)',
+        color: active ? 'var(--color-black)' : inverse ? 'var(--color-white)' : 'var(--color-black)',
       }}
     >
       <span className="text-clamp-1">{label}</span>
@@ -84,6 +100,7 @@ function MediaBlock({
 }) {
   const hasImage = Boolean(lecture.image?.trim())
   const isHorizontal = variant === 'horizontal'
+  const revealImageOnHover = variant === 'compact' || variant === 'swatch'
   const imageHeight = variant === 'featured'
     ? 'h-[clamp(220px,22.5vw,324px)]'
     : variant === 'detail'
@@ -100,17 +117,21 @@ function MediaBlock({
       isHorizontal ? 'self-stretch' : '',
       variant === 'featured' || variant === 'vertical' || variant === 'detail' ? 'w-full' : 'w-[clamp(200px,22vw,327px)] max-[767px]:w-full',
     )}>
-      {hasImage && variant !== 'compact' && variant !== 'swatch' ? (
+      {hasImage ? (
         <Image
           src={lecture.image ?? ''}
           alt={lecture.title}
           width={variant === 'featured' ? 1200 : 900}
           height={variant === 'featured' ? 800 : 900}
-          unoptimized
+          sizes={getLectureCardSizes(variant)}
           className={joinClassNames(
             'block w-full object-cover transition-opacity duration-200 max-[767px]:h-[200px]',
             isHorizontal ? 'h-full min-h-[clamp(220px,22.3vw,321px)]' : imageHeight,
-            'opacity-50 group-hover:opacity-70',
+            revealImageOnHover
+              ? active
+                ? 'opacity-70'
+                : 'opacity-0'
+              : 'opacity-50 group-hover:opacity-70',
           )}
         />
       ) : (

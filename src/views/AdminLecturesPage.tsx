@@ -195,7 +195,7 @@ export default function AdminLecturesPage() {
               setPage(1)
               setCategoryFilter(event.target.value)
             }}
-            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+            className="ui-select"
           >
             <option value="">{t('admin.lectures.allCategories')}</option>
             {LECTURE_CATEGORIES.map(category => (
@@ -210,7 +210,7 @@ export default function AdminLecturesPage() {
               setPage(1)
               setStatusFilter(event.target.value)
             }}
-            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+            className="ui-select"
           >
             <option value="">{t('admin.lectures.allStatuses')}</option>
             <option value="public">{t('admin.lectures.statusPublic')}</option>
@@ -222,7 +222,7 @@ export default function AdminLecturesPage() {
               setPage(1)
               setSortBy(event.target.value)
             }}
-            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+            className="ui-select"
           >
             <option value="">{t('admin.lectures.newest')}</option>
             <option value="oldest">{t('admin.lectures.oldest')}</option>

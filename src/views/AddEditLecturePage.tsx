@@ -11,6 +11,7 @@ import { api } from '../lib/api'
 import { CATEGORY_COLOR_VAR } from '../constants/colors'
 import { LECTURE_CATEGORIES, getLectureCategoryColor, normalizeLectureCategory } from '../constants/lectureCategories'
 import type { Event } from '@/lib/api'
+import { formatLectureSources, parseLectureSources } from '@/lib/content-api'
 
 type FormState = {
   eventId: string
@@ -26,6 +27,8 @@ type FormState = {
   authorBioUk: string
   authorBioEn: string
   videoUrl: string
+  presentationUrl: string
+  sourcesText: string
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>
@@ -44,6 +47,8 @@ const EMPTY: FormState = {
   authorBioUk: '',
   authorBioEn: '',
   videoUrl: '',
+  presentationUrl: '',
+  sourcesText: '',
 }
 
 const LECTURE_SLOTS = ['1', '2', '3', '4']
@@ -92,6 +97,8 @@ export default function AddEditLecturePage() {
           authorBioUk: data.authorBioUk ?? '',
           authorBioEn: data.authorBioEn ?? '',
           videoUrl: data.videoUrl ?? '',
+          presentationUrl: data.presentationUrl ?? '',
+          sourcesText: formatLectureSources(data.sources),
         })
 
         if (data.eventId) {
@@ -217,8 +224,10 @@ export default function AddEditLecturePage() {
       summaryEn: form.summaryEn.trim(),
       image: form.image.trim(),
       videoUrl: form.videoUrl.trim() || undefined,
+      presentationUrl: form.presentationUrl.trim() || undefined,
       authorBioUk: form.authorBioUk.trim() || undefined,
       authorBioEn: form.authorBioEn.trim() || undefined,
+      sources: parseLectureSources(form.sourcesText),
     }
 
     setSaving(true)
@@ -283,7 +292,7 @@ export default function AddEditLecturePage() {
               </FormField>
 
               <FormField label={t('addLecture.slotLabel')} error={errors.slot} required>
-                <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label={t('addLecture.slotLabel')}>
+                <div className="ui-radio-group grid-cols-4" role="radiogroup" aria-label={t('addLecture.slotLabel')}>
                   {LECTURE_SLOTS.map((slot) => {
                     const occupied = occupiedSlots.has(slot)
                     const selected = form.slot === slot
@@ -297,12 +306,7 @@ export default function AddEditLecturePage() {
                         aria-disabled={occupied}
                         disabled={occupied || saving || translating}
                         onClick={() => set('slot', slot)}
-                        className={[
-                          'h-12 border text-[clamp(14px,1.2vw,18px)] font-normal uppercase transition-colors duration-150',
-                          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
-                          selected ? 'border-black bg-black text-white' : 'border-black bg-white text-black hover:bg-black hover:text-white',
-                          occupied ? 'cursor-not-allowed border-black/25 bg-black/5 text-black/30 hover:bg-black/5 hover:text-black/30' : 'cursor-pointer',
-                        ].join(' ')}
+                        className="ui-radio-button"
                       >
                         {slot}
                       </button>
@@ -358,6 +362,10 @@ export default function AddEditLecturePage() {
               <input type="text" value={form.videoUrl} onChange={(e) => set('videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
             </FormField>
 
+            <FormField label={t('addLecture.presentationUrlLabel')}>
+              <input type="url" value={form.presentationUrl} onChange={(e) => set('presentationUrl', e.target.value)} placeholder="https://" />
+            </FormField>
+
             <div className="grid grid-cols-2 gap-4 max-[991px]:grid-cols-1">
               <FormField label={t('addLecture.authorBioUkLabel')}>
                 <textarea rows={3} value={form.authorBioUk} onChange={(e) => set('authorBioUk', e.target.value)} />
@@ -366,6 +374,15 @@ export default function AddEditLecturePage() {
                 <textarea rows={3} value={form.authorBioEn} onChange={(e) => set('authorBioEn', e.target.value)} />
               </FormField>
             </div>
+
+            <FormField label={t('addLecture.sourcesLabel')}>
+              <textarea
+                rows={4}
+                value={form.sourcesText}
+                onChange={(e) => set('sourcesText', e.target.value)}
+                placeholder={t('addLecture.sourcesPlaceholder')}
+              />
+            </FormField>
 
             <div className="flex items-center gap-6 mt-2 pt-6 border-t border-black">
               <button

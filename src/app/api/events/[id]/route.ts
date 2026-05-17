@@ -123,8 +123,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         summaryEn: String(lecture.summaryEn ?? '').trim(),
         image: String(lecture.image ?? '').trim(),
         videoUrl: String(lecture.videoUrl ?? '').trim(),
+        presentationUrl: String(lecture.presentationUrl ?? '').trim(),
         authorBioUk: String(lecture.authorBioUk ?? '').trim(),
         authorBioEn: String(lecture.authorBioEn ?? '').trim(),
+        sources: Array.isArray(lecture.sources) ? lecture.sources : [],
       }
     })
 
@@ -138,6 +140,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       lecture.slot > 4 ||
       !isValidHttpUrl(lecture.image) ||
       !isValidOptionalHttpUrl(lecture.videoUrl) ||
+      !isValidOptionalHttpUrl(lecture.presentationUrl) ||
       !validCategoryPair(lecture.category, lecture.categoryColor),
     )
     if (invalidLecture) {
@@ -231,7 +234,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
-    const { slot, category, categoryColor, titleUk, titleEn, authorUk, authorEn, summaryUk, summaryEn, image } = body
+    const {
+      slot,
+      category,
+      categoryColor,
+      titleUk,
+      titleEn,
+      authorUk,
+      authorEn,
+      summaryUk,
+      summaryEn,
+      image,
+      videoUrl,
+      presentationUrl,
+      authorBioUk,
+      authorBioEn,
+      sources,
+    } = body
 
     if (!slot || !category || !categoryColor || !titleUk || !authorUk || !summaryUk || !image) {
       return NextResponse.json({ error: 'Missing required lecture fields' }, { status: 400 })
@@ -243,6 +262,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (!isValidHttpUrl(String(image))) {
       return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
+    }
+    if (!isValidOptionalHttpUrl(videoUrl)) {
+      return NextResponse.json({ error: 'videoUrl must be a valid http/https URL' }, { status: 400 })
+    }
+    if (!isValidOptionalHttpUrl(presentationUrl)) {
+      return NextResponse.json({ error: 'presentationUrl must be a valid http/https URL' }, { status: 400 })
     }
 
     const lecturePayload = {
@@ -258,6 +283,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       summaryUk: String(summaryUk).trim(),
       summaryEn: String(summaryEn ?? '').trim(),
       image: String(image).trim(),
+      videoUrl: videoUrl ? String(videoUrl).trim() : null,
+      presentationUrl: presentationUrl ? String(presentationUrl).trim() : null,
+      authorBioUk: authorBioUk ? String(authorBioUk).trim() : null,
+      authorBioEn: authorBioEn ? String(authorBioEn).trim() : null,
+      sources: Array.isArray(sources) ? JSON.stringify(sources) : null,
       isPublic: false,
     }
 

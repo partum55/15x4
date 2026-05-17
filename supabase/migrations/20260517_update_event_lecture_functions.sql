@@ -188,9 +188,4 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.create_event_with_lectures(JSONB, JSONB) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.update_event_with_lectures(UUID, JSONB, JSONB) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_event_with_lectures(JSONB, JSONB) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.update_event_with_lectures(UUID, JSONB, JSONB) TO authenticated, service_role;
-
 COMMIT;

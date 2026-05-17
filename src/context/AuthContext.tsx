@@ -3,13 +3,19 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { AuthUser } from '@/lib/auth'
+import type { AuthError } from '@supabase/supabase-js'
+
+type AuthResultError = {
+  code?: string
+  message?: string
+}
 
 type AuthContextType = {
   user: AuthUser | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: string; user?: AuthUser | null }>
-  signInWithGoogle: (next?: string) => Promise<{ error?: string }>
-  signUp: (email: string, password: string, name: string, city: string) => Promise<{ error?: string }>
+  signIn: (email: string, password: string) => Promise<{ error?: AuthResultError; user?: AuthUser | null }>
+  signInWithGoogle: (next?: string) => Promise<{ error?: AuthResultError }>
+  signUp: (email: string, password: string, name: string) => Promise<{ error?: AuthResultError }>
   signOut: () => Promise<void>
   refresh: () => Promise<void>
 }
@@ -27,6 +33,13 @@ function getSiteOrigin() {
 function getAuthCallbackURL(next?: string) {
   const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : '/'
   return `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent(safeNext)}`
+}
+
+function toAuthResultError(error: AuthError): AuthResultError {
+  return {
+    code: error.code,
+    message: error.message,
+  }
 }
 
 async function fetchCurrentUser() {
@@ -93,7 +106,7 @@ export function AuthProvider({
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: 'AUTH_INVALID_CREDENTIALS' }
+    if (error) return { error: toAuthResultError(error) }
     if (data.user) {
       const userData = await fetchCurrentUser()
       setUser(userData)
@@ -115,20 +128,20 @@ export function AuthProvider({
         },
       },
     })
-    if (error) return { error: 'AUTH_OAUTH_FAILED' }
+    if (error) return { error: toAuthResultError(error) }
     return {}
   }, [supabase])
 
-  const signUp = useCallback(async (email: string, password: string, name: string, city: string) => {
+  const signUp = useCallback(async (email: string, password: string, name: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name, city },
+        data: { name },
         emailRedirectTo: getAuthCallbackURL('/account/settings'),
       },
     })
-    if (error) return { error: 'AUTH_SIGNUP_FAILED' }
+    if (error) return { error: toAuthResultError(error) }
     if (data.session) {
       const currentUser = await fetchCurrentUser()
       setUser(currentUser)

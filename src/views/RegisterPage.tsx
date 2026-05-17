@@ -10,15 +10,14 @@ import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
 import { evaluatePasswordStrength } from '../lib/password-strength'
 import { buildLoginHref, normalizeRedirectTarget } from '@/lib/auth'
-import { CITY_OPTIONS, getCityLabel } from '../constants/cities'
+import { getAuthErrorTranslationKey } from '@/lib/auth-errors'
 
 export default function RegisterPage() {
-  const { i18n, t } = useTranslation()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const { signUp, signInWithGoogle } = useAuth()
 
   const [name, setName] = useState('')
-  const [city, setCity] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
@@ -26,7 +25,7 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [errors, setErrors] = useState<{
-    name?: string; city?: string; email?: string; password?: string; passwordConfirm?: string; form?: string
+    name?: string; email?: string; password?: string; passwordConfirm?: string; form?: string
   }>({})
   const redirectParam = normalizeRedirectTarget(searchParams.get('redirect'))
   const loginHref = buildLoginHref(redirectParam)
@@ -48,7 +47,6 @@ export default function RegisterPage() {
   function validate() {
     const e: typeof errors = {}
     if (!name.trim()) e.name = t('auth.register.errorRequired')
-    if (!city.trim()) e.city = t('auth.register.errorRequired')
     if (!email.trim()) e.email = t('auth.register.errorRequired')
     if (!password) e.password = t('auth.register.errorRequired')
     else if (!passwordStrength.isStrong) e.password = t('auth.register.errorPasswordWeak')
@@ -64,10 +62,10 @@ export default function RegisterPage() {
     if (Object.keys(e).length) { setErrors(e); return }
 
     setSubmitting(true)
-    const result = await signUp(email.trim(), password, name.trim(), city)
+    const result = await signUp(email.trim(), password, name.trim())
     setSubmitting(false)
     if (result.error) {
-      setErrors({ form: t('auth.register.errorGeneric') })
+      setErrors({ form: t(getAuthErrorTranslationKey('register', result.error)) })
       return
     }
     setSubmitted(true)
@@ -173,22 +171,6 @@ export default function RegisterPage() {
                 autoComplete="email"
                 required
               />
-            </FormField>
-
-            <FormField label={t('auth.register.cityLabel')} error={errors.city} required>
-              <select
-                value={city}
-                onChange={e => setField('city', e.target.value, setCity)}
-                autoComplete="address-level2"
-                required
-              >
-                <option value="">{t('auth.register.cityPlaceholder')}</option>
-                {CITY_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {getCityLabel(option, i18n.language)}
-                  </option>
-                ))}
-              </select>
             </FormField>
 
             <FormField label={t('auth.register.passwordLabel')} error={errors.password} required>

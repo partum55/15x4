@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
           <select
             value={roleFilter}
             onChange={(event) => setRoleFilter(event.target.value)}
-            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+            className="ui-select"
           >
             <option value="">{t('admin.users.allRoles', { defaultValue: 'усі ролі' })}</option>
             {PROFILE_ROLES.map(role => (
@@ -199,7 +199,7 @@ export default function AdminUsersPage() {
           <select
             value={sortBy}
             onChange={(event) => setSortBy(event.target.value)}
-            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+            className="ui-select"
           >
             <option value="">{t('admin.users.newest', { defaultValue: 'спочатку новіші' })}</option>
             <option value="oldest">{t('admin.users.oldest', { defaultValue: 'спочатку старіші' })}</option>

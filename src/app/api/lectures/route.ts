@@ -5,6 +5,7 @@ import {
   isValidHttpUrl,
   isValidOptionalHttpUrl,
   mapLectureRow,
+  parseLectureSources,
   parsePositiveInt,
   resolveLocale,
   sanitizeSearch,
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
       summaryEn,
       duration,
       videoUrl,
+      presentationUrl,
       authorBioUk,
       authorBioEn,
       sources,
@@ -142,6 +144,10 @@ export async function POST(req: NextRequest) {
 
     if (!isValidOptionalHttpUrl(videoUrl)) {
       return NextResponse.json({ error: 'videoUrl must be a valid http/https URL' }, { status: 400 })
+    }
+
+    if (!isValidOptionalHttpUrl(presentationUrl)) {
+      return NextResponse.json({ error: 'presentationUrl must be a valid http/https URL' }, { status: 400 })
     }
 
     if (!isValidOptionalHttpUrl(eventPhotosUrl)) {
@@ -179,9 +185,12 @@ export async function POST(req: NextRequest) {
         summaryEn: String(summaryEn ?? '').trim(),
         duration: duration ? String(duration).trim() : null,
         videoUrl: videoUrl ? String(videoUrl).trim() : null,
+        presentationUrl: presentationUrl ? String(presentationUrl).trim() : null,
         authorBioUk: authorBioUk ? String(authorBioUk).trim() : null,
         authorBioEn: authorBioEn ? String(authorBioEn).trim() : null,
-        sources: sources ? JSON.stringify(sources) : null,
+        sources: sources
+          ? JSON.stringify(Array.isArray(sources) ? sources : parseLectureSources(String(sources)))
+          : null,
         socialLinks: socialLinks ? JSON.stringify(socialLinks) : null,
         eventCity: eventCity ? String(eventCity).trim() : null,
         eventDate: eventDate ? String(eventDate).trim() : null,

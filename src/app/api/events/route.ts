@@ -248,8 +248,10 @@ export async function POST(req: NextRequest) {
         summaryEn: String(lecture.summaryEn ?? '').trim(),
         image: String(lecture.image ?? '').trim(),
         videoUrl: String(lecture.videoUrl ?? '').trim(),
+        presentationUrl: String(lecture.presentationUrl ?? '').trim(),
         authorBioUk: String(lecture.authorBioUk ?? '').trim(),
         authorBioEn: String(lecture.authorBioEn ?? '').trim(),
+        sources: Array.isArray(lecture.sources) ? lecture.sources : [],
       }
     })
 
@@ -263,6 +265,7 @@ export async function POST(req: NextRequest) {
       lecture.slot > 4 ||
       !isValidHttpUrl(lecture.image) ||
       !isValidOptionalHttpUrl(lecture.videoUrl) ||
+      !isValidOptionalHttpUrl(lecture.presentationUrl) ||
       !validCategoryPair(lecture.category, lecture.categoryColor),
     )
 
