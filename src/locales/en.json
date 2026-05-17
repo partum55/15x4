@@ -54,6 +54,8 @@
     "theme": "theme",
     "search": "search",
     "allThemes": "all themes",
+    "dateAsc": "oldest first",
+    "dateDesc": "newest first",
     "titleAZ": "title A–Z",
     "titleZA": "title Z–A",
     "noResults": "No lectures found",

@@ -52,6 +52,10 @@ export async function GET(req: NextRequest) {
 
     if (sort === 'titleAZ' || sort === 'titleZA') {
       query = query.order(locale === 'en' ? 'titleEn' : 'titleUk', { ascending: sort === 'titleAZ' })
+    } else if (sort === 'dateAsc') {
+      query = query.order('eventDate', { ascending: true, nullsFirst: false }).order('createdAt', { ascending: true })
+    } else if (sort === 'dateDesc' || !sort) {
+      query = query.order('eventDate', { ascending: false, nullsFirst: false }).order('createdAt', { ascending: false })
     } else {
       query = query.order('createdAt', { ascending: false })
     }

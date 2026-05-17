@@ -36,7 +36,7 @@ export default function LecturesPage() {
   const previousLocaleRef = useRef(locale)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState('')
+  const [sortBy, setSortBy] = useState('dateDesc')
   const [themeFilter, setThemeFilter] = useState('')
   const [filtersReady, setFiltersReady] = useState(false)
   const [lectures, setLectures] = useState<Lecture[]>([])
@@ -173,13 +173,14 @@ export default function LecturesPage() {
     }
   }
 
-  const hasActiveFilters = !!(debouncedSearchQuery || sortBy || themeFilter)
+  const hasActiveFilters = !!(debouncedSearchQuery || (sortBy && sortBy !== 'dateDesc') || themeFilter)
   const showInitialSkeleton = loading && !hasLoaded
   const skeletonLoading = useMinimumSkeleton(showInitialSkeleton)
   const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
 
   const sortOptions = [
-    { value: '', label: t('lectures.sortBy') },
+    { value: 'dateDesc', label: t('lectures.dateDesc') },
+    { value: 'dateAsc', label: t('lectures.dateAsc') },
     { value: 'titleAZ', label: t('lectures.titleAZ') },
     { value: 'titleZA', label: t('lectures.titleZA') },
   ]
