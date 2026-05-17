@@ -167,9 +167,6 @@ export default function LectureDetailPage() {
               >
                 {textSkeletonLoading ? <LoadingBlock className="h-4 w-24 bg-black/10" /> : lectureCategoryLabel}
               </span>
-              {lecture.duration && (
-                <span className="text-[clamp(12px,1.2vw,18px)] opacity-70 whitespace-nowrap">{lecture.duration}</span>
-              )}
             </div>
             <p className="text-[clamp(13px,1.3vw,20px)] leading-[1.55]">
               {textSkeletonLoading ? (
@@ -207,19 +204,6 @@ export default function LectureDetailPage() {
                 <p className="text-[clamp(12px,1.2vw,17px)] font-bold text-orange tracking-[0.04em] mb-1">
                   {textSkeletonLoading ? <LoadingBlock className="h-5 w-32" /> : lecture.author.toUpperCase()}
                 </p>
-                {lecture.socialLinks?.map((s) => (
-                  <div key={s.type} className="flex items-baseline gap-2">
-                    <span className="text-[clamp(11px,1.1vw,15px)] text-black whitespace-nowrap">[{s.type}]</span>
-                    <a
-                      href={s.url}
-                      className="text-[clamp(11px,1.1vw,15px)] text-orange no-underline hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {s.url}
-                    </a>
-                  </div>
-                ))}
               </div>
               {lecture.authorBio && (
                 <p className="text-[clamp(13px,1.3vw,19px)] leading-[1.55]">
@@ -296,70 +280,44 @@ export default function LectureDetailPage() {
           )}
         </div>
 
-        {/* About event */}
-        {(lecture.eventCity || lecture.eventDate) && (
+        {related.length > 0 && (
           <>
             <div className="w-full h-px bg-black my-[clamp(32px,4vw,56px)]" />
             <section>
               <h2 className="text-[clamp(16px,1.8vw,26px)] font-normal uppercase mb-[clamp(20px,2.4vw,36px)] tracking-[0.02em]">
                 <span className="text-red">{'//'}</span> {t('lectureDetail.aboutEvent')}
               </h2>
-              <div className="flex items-baseline gap-[clamp(16px,3vw,48px)] mb-[clamp(24px,3vw,40px)] max-[767px]:flex-wrap max-[767px]:gap-2">
-                {lecture.eventCity && (
-                  <span className="text-[clamp(13px,1.3vw,18px)] font-normal tracking-[0.05em]">
-                    {textSkeletonLoading ? <LoadingBlock className="h-5 w-32" /> : lecture.eventCity.toUpperCase()}
-                  </span>
-                )}
-                {lecture.eventDate && (
-                  <span className="text-[clamp(13px,1.3vw,18px)]">
-                    {textSkeletonLoading ? <LoadingBlock className="h-5 w-24" /> : `[${lecture.eventDate}]`}
-                  </span>
-                )}
-                {lecture.eventPhotosUrl && (
-                  <a
-                    href={lecture.eventPhotosUrl}
-                    className="ml-auto text-[clamp(12px,1.2vw,17px)] text-orange no-underline flex items-baseline gap-1 hover:underline max-[767px]:ml-0 max-[767px]:w-full"
-                    target="_blank"
-                    rel="noreferrer"
+              <div className="grid grid-cols-4 gap-0 border-y border-black max-[1023px]:grid-cols-2">
+                {related.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/lectures/${r.id}`}
+                    className="no-underline text-inherit flex flex-col pb-6 border-r border-black cursor-pointer last:border-r-0 max-[1023px]:[&:nth-child(2)]:border-r-0 max-[1023px]:[&:nth-child(1)]:border-b max-[1023px]:[&:nth-child(2)]:border-b"
                   >
-                    {t('lectureDetail.eventPhotos')}&nbsp;<span className="text-[0.9em]">↗</span>
-                  </a>
-                )}
+                    <div className="relative mb-3">
+                      <Image
+                        src={r.image}
+                        alt={r.title}
+                        width={900}
+                        height={600}
+                        sizes="(max-width: 1023px) 50vw, 25vw"
+                        className="w-full aspect-[3/2] object-cover block transition-opacity duration-200 hover:opacity-85"
+                      />
+                      <span
+                        className={`absolute top-2 left-2 text-[clamp(10px,1vw,14px)] px-[10px] py-1 bg-white border leading-none ${badgeBorderClass[r.categoryColor] || 'border-red'}`}
+                      >
+                        {t(`lectureCategories.${r.category}`, { defaultValue: r.category })}
+                      </span>
+                    </div>
+                    <p className="text-[clamp(11px,1.1vw,15px)] font-normal uppercase tracking-[0.02em] leading-[1.3] mb-1.5 px-3">
+                      {textSkeletonLoading ? <LoadingBlock className="h-4 w-4/5" /> : r.title.toUpperCase()}
+                    </p>
+                    <p className="text-[clamp(10px,1vw,14px)] opacity-60 px-3">
+                      {textSkeletonLoading ? <LoadingBlock className="h-4 w-1/2" /> : r.author}
+                    </p>
+                  </Link>
+                ))}
               </div>
-
-              {related.length > 0 && (
-                <div className="grid grid-cols-4 gap-0 border-y border-black max-[1023px]:grid-cols-2">
-                  {related.map((r) => (
-                    <Link
-                      key={r.id}
-                      href={`/lectures/${r.id}`}
-                      className="no-underline text-inherit flex flex-col pb-6 border-r border-black cursor-pointer last:border-r-0 max-[1023px]:[&:nth-child(2)]:border-r-0 max-[1023px]:[&:nth-child(1)]:border-b max-[1023px]:[&:nth-child(2)]:border-b"
-                    >
-                      <div className="relative mb-3">
-                        <Image
-                          src={r.image}
-                          alt={r.title}
-                          width={900}
-                          height={600}
-                          sizes="(max-width: 1023px) 50vw, 25vw"
-                          className="w-full aspect-[3/2] object-cover block transition-opacity duration-200 hover:opacity-85"
-                        />
-                        <span
-                          className={`absolute top-2 left-2 text-[clamp(10px,1vw,14px)] px-[10px] py-1 bg-white border leading-none ${badgeBorderClass[r.categoryColor] || 'border-red'}`}
-                        >
-                          {t(`lectureCategories.${r.category}`, { defaultValue: r.category })}
-                        </span>
-                      </div>
-                      <p className="text-[clamp(11px,1.1vw,15px)] font-normal uppercase tracking-[0.02em] leading-[1.3] mb-1.5 px-3">
-                        {textSkeletonLoading ? <LoadingBlock className="h-4 w-4/5" /> : r.title.toUpperCase()}
-                      </p>
-                      <p className="text-[clamp(10px,1vw,14px)] opacity-60 px-3">
-                        {textSkeletonLoading ? <LoadingBlock className="h-4 w-1/2" /> : r.author}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
             </section>
           </>
         )}

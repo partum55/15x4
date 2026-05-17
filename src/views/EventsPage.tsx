@@ -219,6 +219,8 @@ export default function EventsPage() {
                 event={event}
                 detailsLabel={t('events.details')}
                 registerLabel={t('events.register')}
+                ongoingLabel={t('events.ongoing')}
+                photosLabel={t('events.photos')}
                 textLoading={textSkeletonLoading}
               />
             ))

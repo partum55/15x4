@@ -4,11 +4,11 @@ import { getProfileRole, requireContentRole } from '@/lib/authz'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import {
   isValidHttpUrl,
+  isValidLectureCategory,
   isValidOptionalHttpUrl,
   mapLectureRow,
   parseLectureSources,
   resolveLocale,
-  validCategoryPair,
 } from '@/lib/content-api'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -64,7 +64,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       eventId,
       slot,
       category,
-      categoryColor,
       authorUk,
       authorEn,
       image,
@@ -72,23 +71,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       titleEn,
       summaryUk,
       summaryEn,
-      duration,
       videoUrl,
       presentationUrl,
       authorBioUk,
       authorBioEn,
       sources,
-      socialLinks,
-      eventCity,
-      eventDate,
-      eventPhotosUrl,
     } = body
 
     const normalizedCategory = String(category ?? lecture.category)
-    const normalizedCategoryColor = String(categoryColor ?? lecture.categoryColor)
     const nextEventId = eventId !== undefined ? String(eventId) : String(lecture.eventId)
 
-    if (!validCategoryPair(normalizedCategory, normalizedCategoryColor)) {
+    if (!isValidLectureCategory(normalizedCategory)) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
     }
 
@@ -112,7 +105,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       eventId: nextEventId,
       slot: slot ? Number(slot) : lecture.slot,
       category: normalizedCategory,
-      categoryColor: normalizedCategoryColor,
       authorUk: authorUk !== undefined ? String(authorUk).trim() : lecture.authorUk,
       authorEn: authorEn !== undefined ? String(authorEn).trim() : lecture.authorEn,
       image: image !== undefined ? String(image).trim() : lecture.image,
@@ -120,7 +112,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       titleEn: titleEn !== undefined ? String(titleEn).trim() : lecture.titleEn,
       summaryUk: summaryUk !== undefined ? String(summaryUk).trim() : lecture.summaryUk,
       summaryEn: summaryEn !== undefined ? String(summaryEn).trim() : lecture.summaryEn,
-      duration: duration !== undefined ? (duration ? String(duration).trim() : null) : lecture.duration,
       videoUrl: videoUrl !== undefined ? (videoUrl ? String(videoUrl).trim() : null) : lecture.videoUrl,
       presentationUrl:
         presentationUrl !== undefined ? (presentationUrl ? String(presentationUrl).trim() : null) : lecture.presentationUrl,
@@ -132,10 +123,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
               ? JSON.stringify(Array.isArray(sources) ? sources : parseLectureSources(String(sources)))
               : null)
           : lecture.sources,
-      socialLinks: socialLinks !== undefined ? (socialLinks ? JSON.stringify(socialLinks) : null) : lecture.socialLinks,
-      eventCity: eventCity !== undefined ? (eventCity ? String(eventCity).trim() : null) : lecture.eventCity,
-      eventDate: eventDate !== undefined ? (eventDate ? String(eventDate).trim() : null) : lecture.eventDate,
-      eventPhotosUrl: eventPhotosUrl !== undefined ? (eventPhotosUrl ? String(eventPhotosUrl).trim() : null) : lecture.eventPhotosUrl,
     }
 
     if (titleUk !== undefined && !data.titleUk) {
@@ -159,10 +146,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!isValidOptionalHttpUrl(data.presentationUrl)) {
       return NextResponse.json({ error: 'presentationUrl must be a valid http/https URL' }, { status: 400 })
     }
-    if (!isValidOptionalHttpUrl(data.eventPhotosUrl)) {
-      return NextResponse.json({ error: 'eventPhotosUrl must be a valid http/https URL' }, { status: 400 })
-    }
-
     const { data: updated, error } = await queryClient
       .from('Lecture')
       .update(data)

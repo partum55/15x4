@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
     let query = supabaseAdmin
       .from('Event')
-      .select('id, titleUk, titleEn, cityUk, cityEn, date, locationUk, locationEn, time, image, isPublic, createdAt, userId', { count: 'exact' })
+      .select('id, titleUk, titleEn, city, cities(nameUk, nameEn), date, locationUk, locationEn, time, image, isPublic, createdAt, userId', { count: 'exact' })
 
     if (status === 'public') {
       query = query.eq('isPublic', true)
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     if (search) {
       const pattern = `%${search}%`
       query = query.or(
-        `titleUk.ilike.${pattern},titleEn.ilike.${pattern},cityUk.ilike.${pattern},cityEn.ilike.${pattern},locationUk.ilike.${pattern},locationEn.ilike.${pattern}`,
+        `titleUk.ilike.${pattern},titleEn.ilike.${pattern},city.ilike.${pattern},locationUk.ilike.${pattern},locationEn.ilike.${pattern}`,
       )
     }
 
@@ -76,7 +76,7 @@ export async function GET(req: Request) {
     const response = events.map((event) => ({
       ...event,
       title: locale === 'en' ? event.titleEn ?? event.titleUk : event.titleUk ?? event.titleEn,
-      city: locale === 'en' ? event.cityEn ?? event.cityUk : event.cityUk ?? event.cityEn,
+      city: (() => { const c = (Array.isArray(event.cities) ? event.cities[0] : event.cities) as { nameUk?: string; nameEn?: string } | null; return locale === 'en' ? c?.nameEn ?? c?.nameUk : c?.nameUk ?? c?.nameEn })(),
       location: locale === 'en' ? event.locationEn ?? event.locationUk : event.locationUk ?? event.locationEn,
       user: event.userId ? profilesById.get(event.userId) ?? null : null,
       _count: { lectures: lecturesCountByEventId.get(event.id) ?? 0 },

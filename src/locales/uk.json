@@ -14,6 +14,8 @@
   "upcomingEvents": {
     "title": "МАЙБУТНІ ПОДІЇ",
     "register": "реєстрація",
+    "ongoing": "триває...",
+    "photos": "фото",
     "allCities": "усі міста",
     "noEvents": "Немає майбутніх подій",
     "imageAlt": "Подія 15x4 у {{city}}"
@@ -41,6 +43,8 @@
     "time": "час",
     "details": "детальніше",
     "register": "реєстрація",
+    "ongoing": "триває...",
+    "photos": "фото",
     "allCities": "усі міста",
     "dateAsc": "спочатку старіші",
     "dateDesc": "спочатку новіші",
@@ -81,6 +85,8 @@
   "eventDetail": {
     "back": "події",
     "register": "реєстрація",
+    "ongoing": "триває...",
+    "photos": "фото",
     "talks": "Доповіді",
     "date": "дата",
     "time": "час",
@@ -257,6 +263,7 @@
     "titleEdit": "// РЕДАГУВАТИ ЛЕКЦІЮ",
     "eventLabel": "подія",
     "eventPlaceholder": "оберіть подію",
+    "loading": "завантажуємо...",
     "slotLabel": "слот (1-4)",
     "titleLabel": "назва лекції",
     "titleUkLabel": "назва лекції (UA)",
@@ -303,6 +310,7 @@
     "timeLabel": "час",
     "imageLabel": "URL зображення події",
     "registrationUrlLabel": "посилання на реєстрацію (Google Forms тощо)",
+    "eventPhotosUrlLabel": "посилання на фото після події",
     "lecturesTitle": "// ЛЕКЦІЇ",
     "addLectureBtn": "додати лекцію",
     "removeLectureBtn": "видалити",

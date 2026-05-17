@@ -11,7 +11,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
-import { formatEventDate, formatEventTime, isEventPast } from '../lib/date-time'
+import { formatEventDate, formatEventTime, getEventPhase } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 function eventDescription(event: Event, language: string) {
@@ -101,10 +101,37 @@ export default function EventDetailPage() {
   const description = event ? eventDescription(event, i18n.language) : ''
   const lectures = event?.lectures ?? []
   const registerHref = event?.registrationUrl?.trim()
-  const registrationClosed = event ? isEventPast(event.date, event.time) : false
-  const registrationAvailable = Boolean(registerHref) && !registrationClosed
+  const photosHref = event?.eventPhotosUrl?.trim()
+  const eventPhase = event ? getEventPhase(event.date, event.time) : 'upcoming'
+  const registrationAvailable = Boolean(registerHref) && eventPhase === 'upcoming'
+  const photosAvailable = Boolean(photosHref) && eventPhase === 'past'
   const activeRegisterClassName = "flex h-[69px] min-w-[220px] items-center justify-center gap-[10px] bg-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:w-full"
   const disabledRegisterClassName = "flex h-[69px] min-w-[220px] cursor-not-allowed items-center justify-center gap-[10px] border border-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] opacity-40 max-[767px]:w-full"
+  const eventAction = registrationAvailable && registerHref ? (
+    <a
+      href={registerHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={activeRegisterClassName}
+    >
+      <span>{t('eventDetail.register')}</span>
+      <ArrowIcon />
+    </a>
+  ) : eventPhase === 'live' ? (
+    <span className={disabledRegisterClassName} aria-disabled="true">
+      <span>{t('eventDetail.ongoing')}</span>
+    </span>
+  ) : photosAvailable && photosHref ? (
+    <a
+      href={photosHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={activeRegisterClassName}
+    >
+      <span>{t('eventDetail.photos')}</span>
+      <ArrowIcon />
+    </a>
+  ) : null
 
   return (
     <div className="page">
@@ -200,26 +227,7 @@ export default function EventDetailPage() {
                   )}
                   {skeletonLoading ? (
                     <LoadingBlock className="h-[69px] min-w-[220px] max-[767px]:w-full" />
-                  ) : registrationAvailable && registerHref ? (
-                    <a
-                      href={registerHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={activeRegisterClassName}
-                    >
-                      <span>{t('eventDetail.register')}</span>
-                      <ArrowIcon />
-                    </a>
-                  ) : registrationClosed ? (
-                    <span className={disabledRegisterClassName} aria-disabled="true">
-                      <span>{t('eventDetail.register')}</span>
-                      <ArrowIcon />
-                    </span>
-                  ) : (
-                    <span className="flex h-[69px] min-w-[220px] items-center justify-center border border-black px-6 py-5 text-[clamp(16px,1.6vw,24px)] opacity-50 max-[767px]:w-full">
-                      {t('eventDetail.registrationSoon')}
-                    </span>
-                  )}
+                  ) : eventAction}
                 </div>
               </div>
             </section>
@@ -294,22 +302,7 @@ export default function EventDetailPage() {
                   </Link>
                   {skeletonLoading ? (
                     <LoadingBlock className="h-[69px] min-w-[220px] max-[767px]:w-full" />
-                  ) : registrationAvailable && registerHref ? (
-                    <a
-                      href={registerHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={activeRegisterClassName}
-                    >
-                      <span>{t('eventDetail.register')}</span>
-                      <ArrowIcon />
-                    </a>
-                  ) : registrationClosed ? (
-                    <span className={disabledRegisterClassName} aria-disabled="true">
-                      <span>{t('eventDetail.register')}</span>
-                      <ArrowIcon />
-                    </span>
-                  ) : null}
+                  ) : eventAction}
                 </div>
               </div>
             </section>

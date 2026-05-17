@@ -7,13 +7,13 @@ import {
   type Locale,
   isValidDate,
   isValidHttpUrl,
+  isValidLectureCategory,
   isValidOptionalHttpUrl,
   isValidTime,
   mapEventRow,
   mapLectureRow,
   parsePositiveInt,
   resolveLocale,
-  validCategoryPair,
 } from '@/lib/content-api'
 
 function facetKey(value: unknown) {
@@ -26,7 +26,8 @@ function buildEventFacets(events: Array<Record<string, unknown>>, locale: Locale
 
   for (const event of events) {
     const cityValue = facetKey(event.city)
-    const cityLabel = facetKey(locale === 'en' ? event.cityEn ?? event.cityUk : event.cityUk ?? event.cityEn)
+    const cities = (Array.isArray(event.cities) ? event.cities[0] : event.cities) as { nameUk?: string; nameEn?: string } | null
+    const cityLabel = facetKey(locale === 'en' ? cities?.nameEn ?? cities?.nameUk : cities?.nameUk ?? cities?.nameEn)
     if (cityValue && cityLabel && !cityMap.has(cityValue)) cityMap.set(cityValue, cityLabel)
 
     const time = facetKey(event.time)
@@ -87,8 +88,8 @@ export async function GET(req: NextRequest) {
     const userId = user?.id
 
     let query = wantsPagination
-      ? supabase.from('Event').select('*', { count: 'exact' })
-      : supabase.from('Event').select('*')
+      ? supabase.from('Event').select('*, cities(nameUk, nameEn)', { count: 'exact' })
+      : supabase.from('Event').select('*, cities(nameUk, nameEn)')
 
     if (scope === 'mine') {
       query = query.eq('userId', userId)
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest) {
       query = query.eq('isPublic', true)
     }
 
-    let facetsQuery = supabase.from('Event').select('city, cityUk, cityEn, time')
+    let facetsQuery = supabase.from('Event').select('city, cities(nameUk, nameEn), time')
     if (scope === 'mine') {
       facetsQuery = facetsQuery.eq('userId', userId)
     } else {
@@ -197,20 +198,20 @@ export async function POST(req: NextRequest) {
       titleEn,
       descriptionUk,
       descriptionEn,
-      cityUk,
-      cityEn,
+      cityId,
       date,
       locationUk,
       locationEn,
       time,
       image,
       registrationUrl,
+      eventPhotosUrl,
       lectures,
     } = body
 
     const normalizedDate = normalizeDateInput(String(date ?? ''))
     const normalizedTime = normalizeTimeInput(String(time ?? ''))
-    const cityOption = findCityOption(String(cityUk ?? '')) ?? findCityOption(String(cityEn ?? ''))
+    const cityOption = findCityOption(String(cityId ?? ''))
 
     if (!titleUk || !cityOption || !normalizedDate || !locationUk || !normalizedTime || !image) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -228,6 +229,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'registrationUrl must be a valid http/https URL' }, { status: 400 })
     }
 
+    if (!isValidOptionalHttpUrl(eventPhotosUrl)) {
+      return NextResponse.json({ error: 'eventPhotosUrl must be a valid http/https URL' }, { status: 400 })
+    }
+
     const rawLectures = Array.isArray(lectures) ? lectures : []
     if (rawLectures.length > 4) {
       return NextResponse.json({ error: 'Too many lectures' }, { status: 400 })
@@ -243,7 +248,6 @@ export async function POST(req: NextRequest) {
         authorUk: String(lecture.authorUk ?? '').trim(),
         authorEn: String(lecture.authorEn ?? '').trim(),
         category: String(lecture.category ?? '').trim(),
-        categoryColor: String(lecture.categoryColor ?? '').trim(),
         summaryUk: String(lecture.summaryUk ?? '').trim(),
         summaryEn: String(lecture.summaryEn ?? '').trim(),
         image: String(lecture.image ?? '').trim(),
@@ -266,7 +270,7 @@ export async function POST(req: NextRequest) {
       !isValidHttpUrl(lecture.image) ||
       !isValidOptionalHttpUrl(lecture.videoUrl) ||
       !isValidOptionalHttpUrl(lecture.presentationUrl) ||
-      !validCategoryPair(lecture.category, lecture.categoryColor),
+      !isValidLectureCategory(lecture.category),
     )
 
     if (invalidLecture) {
@@ -279,14 +283,13 @@ export async function POST(req: NextRequest) {
       descriptionUk: String(descriptionUk ?? '').trim(),
       descriptionEn: String(descriptionEn ?? '').trim(),
       city: cityOption.id,
-      cityUk: cityOption.uk,
-      cityEn: cityOption.en,
       date: normalizedDate,
       locationUk: String(locationUk).trim(),
       locationEn: String(locationEn ?? '').trim(),
       time: normalizedTime,
       image: String(image).trim(),
       registrationUrl: registrationUrl ? String(registrationUrl).trim() : '',
+      eventPhotosUrl: eventPhotosUrl ? String(eventPhotosUrl).trim() : '',
       userId: user.id,
     }
 
@@ -302,7 +305,8 @@ export async function POST(req: NextRequest) {
     }
 
     const locale = resolveLocale(req)
-    return NextResponse.json(mapEventRow(event as Record<string, unknown>, locale), { status: 201 })
+    const eventWithCity = { ...(event as Record<string, unknown>), cities: { nameUk: cityOption.uk, nameEn: cityOption.en } }
+    return NextResponse.json(mapEventRow(eventWithCity, locale), { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

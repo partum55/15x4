@@ -1,5 +1,60 @@
 BEGIN;
 
+ALTER TABLE public."Event"
+  ADD COLUMN IF NOT EXISTS "eventPhotosUrl" TEXT;
+
+ALTER TABLE public."Lecture"
+  ADD COLUMN IF NOT EXISTS "presentationUrl" TEXT;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'event_photos_url_http'
+      AND conrelid = 'public."Event"'::regclass
+  ) THEN
+    ALTER TABLE public."Event"
+      ADD CONSTRAINT event_photos_url_http
+      CHECK ("eventPhotosUrl" IS NULL OR "eventPhotosUrl" ~* '^https?://');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'lecture_presentation_url_http'
+      AND conrelid = 'public."Lecture"'::regclass
+  ) THEN
+    ALTER TABLE public."Lecture"
+      ADD CONSTRAINT lecture_presentation_url_http
+      CHECK ("presentationUrl" IS NULL OR "presentationUrl" ~* '^https?://');
+  END IF;
+END;
+$$;
+
+DO $$
+DECLARE
+  constraint_record RECORD;
+BEGIN
+  FOR constraint_record IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'public."Lecture"'::regclass
+      AND pg_get_constraintdef(oid) ILIKE '%categoryColor%'
+  LOOP
+    EXECUTE format('ALTER TABLE public."Lecture" DROP CONSTRAINT IF EXISTS %I', constraint_record.conname);
+  END LOOP;
+END;
+$$;
+
+ALTER TABLE public."Lecture"
+  DROP COLUMN IF EXISTS duration,
+  DROP COLUMN IF EXISTS "socialLinks",
+  DROP COLUMN IF EXISTS "eventCity",
+  DROP COLUMN IF EXISTS "eventDate",
+  DROP COLUMN IF EXISTS "eventPhotosUrl",
+  DROP COLUMN IF EXISTS "categoryColor";
+
 CREATE OR REPLACE FUNCTION public.create_event_with_lectures(
   p_event JSONB,
   p_lectures JSONB DEFAULT '[]'::JSONB
@@ -26,6 +81,7 @@ BEGIN
     time,
     image,
     "registrationUrl",
+    "eventPhotosUrl",
     "isPublic",
     "userId"
   )
@@ -43,6 +99,7 @@ BEGIN
     (p_event->>'time')::TIME,
     p_event->>'image',
     NULLIF(p_event->>'registrationUrl', ''),
+    NULLIF(p_event->>'eventPhotosUrl', ''),
     FALSE,
     (p_event->>'userId')::UUID
   )
@@ -59,7 +116,6 @@ BEGIN
       "authorUk",
       "authorEn",
       category,
-      "categoryColor",
       "summaryUk",
       "summaryEn",
       image,
@@ -79,7 +135,6 @@ BEGIN
       v_lecture->>'authorUk',
       COALESCE(v_lecture->>'authorEn', ''),
       v_lecture->>'category',
-      v_lecture->>'categoryColor',
       v_lecture->>'summaryUk',
       COALESCE(v_lecture->>'summaryEn', ''),
       v_lecture->>'image',
@@ -126,7 +181,8 @@ BEGIN
     "locationEn" = COALESCE(p_event->>'locationEn', ''),
     time = (p_event->>'time')::TIME,
     image = p_event->>'image',
-    "registrationUrl" = NULLIF(p_event->>'registrationUrl', '')
+    "registrationUrl" = NULLIF(p_event->>'registrationUrl', ''),
+    "eventPhotosUrl" = NULLIF(p_event->>'eventPhotosUrl', '')
   WHERE id = p_event_id
   RETURNING * INTO v_event;
 
@@ -148,7 +204,6 @@ BEGIN
       "authorUk",
       "authorEn",
       category,
-      "categoryColor",
       "summaryUk",
       "summaryEn",
       image,
@@ -168,7 +223,6 @@ BEGIN
       v_lecture->>'authorUk',
       COALESCE(v_lecture->>'authorEn', ''),
       v_lecture->>'category',
-      v_lecture->>'categoryColor',
       v_lecture->>'summaryUk',
       COALESCE(v_lecture->>'summaryEn', ''),
       v_lecture->>'image',
@@ -187,5 +241,16 @@ BEGIN
   RETURN NEXT v_event;
 END;
 $$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_created_create_profile_public ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS public.set_profiles_updated_at() CASCADE;
+DROP FUNCTION IF EXISTS public.set_updated_at_profiles() CASCADE;
+
+REVOKE ALL ON FUNCTION public.create_event_with_lectures(JSONB, JSONB) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.update_event_with_lectures(UUID, JSONB, JSONB) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_event_with_lectures(JSONB, JSONB) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.update_event_with_lectures(UUID, JSONB, JSONB) TO authenticated, service_role;
 
 COMMIT;

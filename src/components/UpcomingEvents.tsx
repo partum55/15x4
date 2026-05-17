@@ -9,7 +9,7 @@ import { Skeleton } from 'boneyard-js/react'
 import ArrowIcon from './ArrowIcon'
 import type { Event } from '@/lib/api'
 import { api } from '../lib/api'
-import { formatEventDate, formatEventTime } from '../lib/date-time'
+import { formatEventDate, formatEventTime, getEventPhase, getEventStartTimestamp } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 import { useAuth } from '../context/AuthContext'
 import { findCityOption } from '../constants/cities'
@@ -21,7 +21,7 @@ function normalizeCity(value?: string | null) {
 }
 
 function eventTimestamp(event: Event) {
-  return new Date(`${event.date}T${event.time || '00:00'}`).getTime()
+  return getEventStartTimestamp(event.date, event.time) ?? Number.POSITIVE_INFINITY
 }
 
 function matchesCity(event: Event, city: string) {
@@ -91,7 +91,7 @@ export default function UpcomingEvents() {
     return events
       .filter((event) => {
         const ts = eventTimestamp(event)
-        return Number.isFinite(ts) && ts >= now
+        return Number.isFinite(ts) && getEventPhase(event.date, event.time, now) !== 'past'
       })
       .sort((a, b) => eventTimestamp(a) - eventTimestamp(b))
   }, [events, now])
@@ -200,25 +200,40 @@ export default function UpcomingEvents() {
                           </>
                         )}
                       </div>
-                      {event.registrationUrl?.trim().startsWith('http') ? (
-                        <a
-                          href={event.registrationUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-6 flex h-[69px] w-full items-center justify-center gap-[10px] bg-black px-6 py-5 font-sans text-[clamp(16px,1.6vw,24px)] font-normal text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:justify-between"
-                        >
-                          <span>{t('upcomingEvents.register')}</span>
-                          <ArrowIcon />
-                        </a>
-                      ) : (
-                        <Link
-                          href={`/events/${event.id}`}
-                          className="mt-6 flex h-[69px] w-full items-center justify-center gap-[10px] bg-black px-6 py-5 font-sans text-[clamp(16px,1.6vw,24px)] font-normal text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:justify-between"
-                        >
-                          <span>{t('upcomingEvents.register')}</span>
-                          <ArrowIcon />
-                        </Link>
-                      )}
+                      {(() => {
+                        const eventPhase = getEventPhase(event.date, event.time, now)
+                        const registerHref = event.registrationUrl?.trim()
+                        const photosHref = event.eventPhotosUrl?.trim()
+                        const actionClassName = "mt-6 flex h-[69px] w-full items-center justify-center gap-[10px] bg-black px-6 py-5 font-sans text-[clamp(16px,1.6vw,24px)] font-normal text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:justify-between"
+
+                        if (eventPhase === 'upcoming' && registerHref?.startsWith('http')) {
+                          return (
+                            <a href={registerHref} target="_blank" rel="noopener noreferrer" className={actionClassName}>
+                              <span>{t('upcomingEvents.register')}</span>
+                              <ArrowIcon />
+                            </a>
+                          )
+                        }
+
+                        if (eventPhase === 'live') {
+                          return (
+                            <span className="mt-6 flex h-[69px] w-full cursor-not-allowed items-center justify-center border border-black px-6 py-5 font-sans text-[clamp(16px,1.6vw,24px)] font-normal text-black/50 max-[767px]:justify-between" aria-disabled="true">
+                              <span>{t('upcomingEvents.ongoing')}</span>
+                            </span>
+                          )
+                        }
+
+                        if (eventPhase === 'past' && photosHref?.startsWith('http')) {
+                          return (
+                            <a href={photosHref} target="_blank" rel="noopener noreferrer" className={actionClassName}>
+                              <span>{t('upcomingEvents.photos')}</span>
+                              <ArrowIcon />
+                            </a>
+                          )
+                        }
+
+                        return null
+                      })()}
                     </div>
 
                     {/* Col 2: image */}

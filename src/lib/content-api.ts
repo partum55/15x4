@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server'
+import { getLectureCategoryColor } from '@/constants/lectureCategories'
 
 export type Locale = 'uk' | 'en'
 export type ContentRow = Record<string, unknown>
@@ -63,13 +64,8 @@ export function sanitizeSearch(value: string | null) {
   return value?.replace(/[%,()]/g, ' ').trim() ?? ''
 }
 
-export function validCategoryPair(category: string, categoryColor: string) {
-  return (
-    (category === 'tech' && categoryColor === 'blue') ||
-    (category === 'nature' && categoryColor === 'green') ||
-    (category === 'artes' && categoryColor === 'red') ||
-    (category === 'wild-card' && categoryColor === 'orange')
-  )
+export function isValidLectureCategory(category: string) {
+  return getLectureCategoryColor(category) !== null
 }
 
 export function pickLocalized(en: unknown, uk: unknown, locale: Locale) {
@@ -81,24 +77,31 @@ export function pickLocalized(en: unknown, uk: unknown, locale: Locale) {
 }
 
 export function mapEventRow(row: ContentRow, locale: Locale) {
+  const citiesData = (Array.isArray(row.cities) ? row.cities[0] : row.cities) as { nameUk?: string; nameEn?: string } | null
+  const cityUk = (citiesData?.nameUk ?? row.cityUk ?? '') as string
+  const cityEn = (citiesData?.nameEn ?? row.cityEn ?? '') as string
   return {
     ...row,
     cityId: row.city,
+    cityUk,
+    cityEn,
     title: pickLocalized(row.titleEn, row.titleUk, locale),
-    city: pickLocalized(row.cityEn, row.cityUk, locale),
+    city: pickLocalized(cityEn, cityUk, locale),
     location: pickLocalized(row.locationEn, row.locationUk, locale),
   }
 }
 
 export function mapLectureRow(row: ContentRow, locale: Locale) {
+  const category = typeof row.category === 'string' ? row.category : ''
+
   return {
     ...row,
+    categoryColor: getLectureCategoryColor(category) ?? 'red',
     title: pickLocalized(row.titleEn, row.titleUk, locale),
     author: pickLocalized(row.authorEn, row.authorUk, locale),
     summary: pickLocalized(row.summaryEn, row.summaryUk, locale),
     authorBio: pickLocalized(row.authorBioEn, row.authorBioUk, locale),
     sources: safeParse(row.sources),
-    socialLinks: safeParse(row.socialLinks),
   }
 }
 

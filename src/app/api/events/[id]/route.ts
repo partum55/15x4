@@ -7,12 +7,12 @@ import { findCityOption } from '@/constants/cities'
 import {
   isValidDate,
   isValidHttpUrl,
+  isValidLectureCategory,
   isValidOptionalHttpUrl,
   isValidTime,
   mapEventRow,
   mapLectureRow,
   resolveLocale,
-  validCategoryPair,
 } from '@/lib/content-api'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const role = user ? await getProfileRole(user.id, supabase) : null
 
     const queryClient = role === 'admin' ? supabaseAdmin : supabase
-    const { data: event } = await queryClient.from('Event').select('*').eq('id', id).maybeSingle()
+    const { data: event } = await queryClient.from('Event').select('*, cities(nameUk, nameEn)').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const canReadPrivate = Boolean(user && (event.userId === user.id || role === 'admin'))
     if (!event.isPublic && !canReadPrivate) {
@@ -75,17 +75,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const queryClient = access.role === 'admin' ? supabaseAdmin : supabase
-    const { data: event } = await queryClient.from('Event').select('*').eq('id', id).maybeSingle()
+    const { data: event } = await queryClient.from('Event').select('*, cities(nameUk, nameEn)').eq('id', id).maybeSingle()
     if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (event.userId !== user.id && access.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const ownerId = String(event.userId ?? user.id)
 
     const body = await req.json()
-    const { titleUk, titleEn, descriptionUk, descriptionEn, cityUk, cityEn, date, locationUk, locationEn, time, image, registrationUrl, lectures } = body
+    const { titleUk, titleEn, descriptionUk, descriptionEn, cityId, date, locationUk, locationEn, time, image, registrationUrl, eventPhotosUrl, lectures } = body
 
     const normalizedDate = normalizeDateInput(String(date ?? ''))
     const normalizedTime = normalizeTimeInput(String(time ?? ''))
-    const cityOption = findCityOption(String(cityUk ?? '')) ?? findCityOption(String(cityEn ?? ''))
+    const cityOption = findCityOption(String(cityId ?? ''))
 
     if (!titleUk || !cityOption || !normalizedDate || !locationUk || !normalizedTime || !image) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -103,6 +103,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'registrationUrl must be a valid http/https URL' }, { status: 400 })
     }
 
+    if (!isValidOptionalHttpUrl(eventPhotosUrl)) {
+      return NextResponse.json({ error: 'eventPhotosUrl must be a valid http/https URL' }, { status: 400 })
+    }
+
     const rawLectures = Array.isArray(lectures) ? lectures : []
     if (rawLectures.length > 4) {
       return NextResponse.json({ error: 'Too many lectures' }, { status: 400 })
@@ -118,7 +122,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         authorUk: String(lecture.authorUk ?? '').trim(),
         authorEn: String(lecture.authorEn ?? '').trim(),
         category: String(lecture.category ?? '').trim(),
-        categoryColor: String(lecture.categoryColor ?? '').trim(),
         summaryUk: String(lecture.summaryUk ?? '').trim(),
         summaryEn: String(lecture.summaryEn ?? '').trim(),
         image: String(lecture.image ?? '').trim(),
@@ -141,7 +144,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       !isValidHttpUrl(lecture.image) ||
       !isValidOptionalHttpUrl(lecture.videoUrl) ||
       !isValidOptionalHttpUrl(lecture.presentationUrl) ||
-      !validCategoryPair(lecture.category, lecture.categoryColor),
+      !isValidLectureCategory(lecture.category),
     )
     if (invalidLecture) {
       return NextResponse.json({ error: 'Invalid lecture payload' }, { status: 400 })
@@ -153,14 +156,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       descriptionUk: String(descriptionUk ?? '').trim(),
       descriptionEn: String(descriptionEn ?? '').trim(),
       city: cityOption.id,
-      cityUk: cityOption.uk,
-      cityEn: cityOption.en,
       date: normalizedDate,
       locationUk: String(locationUk).trim(),
       locationEn: String(locationEn ?? '').trim(),
       time: normalizedTime,
       image: String(image).trim(),
       registrationUrl: registrationUrl ? String(registrationUrl).trim() : '',
+      eventPhotosUrl: eventPhotosUrl ? String(eventPhotosUrl).trim() : '',
     }
 
     const { data: updated, error: updateError } = await queryClient
@@ -176,7 +178,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const locale = resolveLocale(req)
-    return NextResponse.json(mapEventRow(updated as Record<string, unknown>, locale))
+    const updatedWithCity = { ...(updated as Record<string, unknown>), cities: { nameUk: cityOption.uk, nameEn: cityOption.en } }
+    return NextResponse.json(mapEventRow(updatedWithCity, locale))
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -237,7 +240,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const {
       slot,
       category,
-      categoryColor,
       titleUk,
       titleEn,
       authorUk,
@@ -252,11 +254,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       sources,
     } = body
 
-    if (!slot || !category || !categoryColor || !titleUk || !authorUk || !summaryUk || !image) {
+    if (!slot || !category || !titleUk || !authorUk || !summaryUk || !image) {
       return NextResponse.json({ error: 'Missing required lecture fields' }, { status: 400 })
     }
 
-    if (!validCategoryPair(String(category), String(categoryColor))) {
+    if (!isValidLectureCategory(String(category))) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
     }
 
@@ -275,7 +277,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       userId: String(event.userId ?? user.id),
       slot: Number(slot),
       category: String(category),
-      categoryColor: String(categoryColor),
       titleUk: String(titleUk).trim(),
       titleEn: String(titleEn ?? '').trim(),
       authorUk: String(authorUk).trim(),

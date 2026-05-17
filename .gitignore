@@ -41,3 +41,6 @@ CLAUDE.md
 
 .vscode/
 .idea/
+
+# local admin scripts
+/scripts/

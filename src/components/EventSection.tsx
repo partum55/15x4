@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Event } from "@/lib/api";
 import ArrowIcon from "@/components/ArrowIcon";
 import LectureCard from "@/components/LectureCard";
-import { formatEventDate, formatEventTime, isEventPast } from "@/lib/date-time";
+import { formatEventDate, formatEventTime, getEventPhase } from "@/lib/date-time";
 
 function LoadingBlock({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse bg-black/10 ${className}`} />;
@@ -17,6 +17,8 @@ type EventSectionProps =
       event: Event;
       detailsLabel: string;
       registerLabel: string;
+      ongoingLabel?: string;
+      photosLabel?: string;
       textLoading?: boolean;
     };
 
@@ -51,14 +53,24 @@ export default function EventSection(props: EventSectionProps) {
     );
   }
 
-  const { event, detailsLabel, registerLabel, textLoading = false } = props;
+  const { event, detailsLabel, registerLabel, ongoingLabel = "триває...", photosLabel = "фото", textLoading = false } = props;
   const lectures = event.lectures ?? [];
   const registerHref = event.registrationUrl?.trim();
-  const registrationAvailable = Boolean(registerHref) && !isEventPast(event.date, event.time);
+  const photosHref = event.eventPhotosUrl?.trim();
+  const eventPhase = getEventPhase(event.date, event.time);
+  const registrationAvailable = Boolean(registerHref) && eventPhase === 'upcoming';
+  const photosAvailable = Boolean(photosHref) && eventPhase === 'past';
   const registerClassName = `${actionClassName} bg-black text-white transition-opacity duration-200 hover:opacity-85`;
+  const disabledClassName = `${actionClassName} cursor-not-allowed border border-black text-black/50`;
   const registerContent = (
     <>
       <span>{registerLabel}</span>
+      <ArrowIcon />
+    </>
+  );
+  const photosContent = (
+    <>
+      <span>{photosLabel}</span>
       <ArrowIcon />
     </>
   );
@@ -89,6 +101,16 @@ export default function EventSection(props: EventSectionProps) {
           {registrationAvailable && registerHref && (
             <a href={registerHref} target="_blank" rel="noopener noreferrer" className={registerClassName}>
               {registerContent}
+            </a>
+          )}
+          {eventPhase === 'live' && (
+            <span className={disabledClassName} aria-disabled="true">
+              <span>{ongoingLabel}</span>
+            </span>
+          )}
+          {photosAvailable && photosHref && (
+            <a href={photosHref} target="_blank" rel="noopener noreferrer" className={registerClassName}>
+              {photosContent}
             </a>
           )}
           <Link

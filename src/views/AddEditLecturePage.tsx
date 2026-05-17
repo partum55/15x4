@@ -392,7 +392,6 @@ export default function AddEditLecturePage() {
       authorUk: form.authorUk.trim(),
       authorEn: form.authorEn.trim(),
       category: form.category.trim(),
-      categoryColor,
       summaryUk: form.summaryUk.trim(),
       summaryEn: form.summaryEn.trim(),
       image: form.image.trim(),

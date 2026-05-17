@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdminSession } from '@/lib/admin'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { parsePositiveInt, resolveLocaleFromUrl, sanitizeSearch } from '@/lib/content-api'
+import { getLectureCategoryColor } from '@/constants/lectureCategories'
 
 export async function GET(req: Request) {
   try {
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
 
     let query = supabaseAdmin
       .from('Lecture')
-      .select('id, titleUk, titleEn, authorUk, authorEn, category, categoryColor, isPublic, createdAt, userId', { count: 'exact' })
+      .select('id, titleUk, titleEn, authorUk, authorEn, category, isPublic, createdAt, userId', { count: 'exact' })
 
     if (category) {
       query = query.eq('category', category)
@@ -62,6 +63,7 @@ export async function GET(req: Request) {
     const profilesById = new Map((profiles ?? []).map((p) => [p.id, { ...p, email: '' }]))
     const response = lectures.map((lecture) => ({
       ...lecture,
+      categoryColor: getLectureCategoryColor(lecture.category ?? '') ?? 'red',
       title: locale === 'en' ? lecture.titleEn ?? lecture.titleUk : lecture.titleUk ?? lecture.titleEn,
       author: locale === 'en' ? lecture.authorEn ?? lecture.authorUk : lecture.authorUk ?? lecture.authorEn,
       user: lecture.userId ? profilesById.get(lecture.userId) ?? null : null,

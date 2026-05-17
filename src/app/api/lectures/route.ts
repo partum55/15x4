@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireContentRole } from '@/lib/authz'
 import {
+  isValidLectureCategory,
   isValidHttpUrl,
   isValidOptionalHttpUrl,
   mapLectureRow,
@@ -9,7 +10,6 @@ import {
   parsePositiveInt,
   resolveLocale,
   sanitizeSearch,
-  validCategoryPair,
 } from '@/lib/content-api'
 
 export async function GET(req: NextRequest) {
@@ -28,9 +28,10 @@ export async function GET(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    let query = wantsPagination
-      ? supabase.from('Lecture').select('*', { count: 'exact' })
-      : supabase.from('Lecture').select('*')
+    const sortByEventDate = sort === 'dateAsc' || sort === 'dateDesc' || !sort
+    let query = wantsPagination && !sortByEventDate
+      ? supabase.from('Lecture').select('*, Event!inner(date, time)', { count: 'exact' })
+      : supabase.from('Lecture').select('*, Event!inner(date, time)')
 
     if (scope === 'mine') {
       if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -52,15 +53,13 @@ export async function GET(req: NextRequest) {
 
     if (sort === 'titleAZ' || sort === 'titleZA') {
       query = query.order(locale === 'en' ? 'titleEn' : 'titleUk', { ascending: sort === 'titleAZ' })
-    } else if (sort === 'dateAsc') {
-      query = query.order('eventDate', { ascending: true, nullsFirst: false }).order('createdAt', { ascending: true })
-    } else if (sort === 'dateDesc' || !sort) {
-      query = query.order('eventDate', { ascending: false, nullsFirst: false }).order('createdAt', { ascending: false })
+    } else if (sortByEventDate) {
+      query = query.order('createdAt', { ascending: false })
     } else {
       query = query.order('createdAt', { ascending: false })
     }
 
-    if (wantsPagination) {
+    if (wantsPagination && !sortByEventDate) {
       query = query.range(offset, offset + limit - 1)
     }
 
@@ -69,7 +68,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    const parsed = (lectures ?? []).map((lecture) => {
+    const sortedLectures = sortByEventDate
+      ? [...(lectures ?? [])].sort((a, b) => {
+          const eventA = (a as { Event?: { date?: string | null; time?: string | null } }).Event
+          const eventB = (b as { Event?: { date?: string | null; time?: string | null } }).Event
+          const dateA = `${eventA?.date ?? ''}T${eventA?.time ?? ''}`
+          const dateB = `${eventB?.date ?? ''}T${eventB?.time ?? ''}`
+          const dateCompare = dateA.localeCompare(dateB)
+          if (dateCompare !== 0) return sort === 'dateAsc' ? dateCompare : -dateCompare
+          return String(a.createdAt ?? '').localeCompare(String(b.createdAt ?? '')) * (sort === 'dateAsc' ? 1 : -1)
+        })
+      : (lectures ?? [])
+
+    const visibleLectures = wantsPagination && sortByEventDate
+      ? sortedLectures.slice(offset, offset + limit)
+      : sortedLectures
+
+    const parsed = visibleLectures.map((lecture) => {
       const lectureRow = lecture as Record<string, unknown>
       const mapped = mapLectureRow(lectureRow, locale)
       return {
@@ -79,7 +94,7 @@ export async function GET(req: NextRequest) {
     })
 
     if (wantsPagination) {
-      const total = count ?? parsed.length
+      const total = sortByEventDate ? (lectures ?? []).length : count ?? parsed.length
       return NextResponse.json({
         items: parsed,
         total,
@@ -114,7 +129,6 @@ export async function POST(req: NextRequest) {
       eventId,
       slot,
       category,
-      categoryColor,
       authorUk,
       authorEn,
       image,
@@ -122,19 +136,14 @@ export async function POST(req: NextRequest) {
       titleEn,
       summaryUk,
       summaryEn,
-      duration,
       videoUrl,
       presentationUrl,
       authorBioUk,
       authorBioEn,
       sources,
-      socialLinks,
-      eventCity,
-      eventDate,
-      eventPhotosUrl,
     } = body
 
-    if (!eventId || !slot || !category || !categoryColor || !authorUk || !image || !titleUk || !summaryUk) {
+    if (!eventId || !slot || !category || !authorUk || !image || !titleUk || !summaryUk) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -142,7 +151,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'image must be a valid http/https URL' }, { status: 400 })
     }
 
-    if (!validCategoryPair(String(category), String(categoryColor))) {
+    if (!isValidLectureCategory(String(category))) {
       return NextResponse.json({ error: 'Invalid lecture category' }, { status: 400 })
     }
 
@@ -152,10 +161,6 @@ export async function POST(req: NextRequest) {
 
     if (!isValidOptionalHttpUrl(presentationUrl)) {
       return NextResponse.json({ error: 'presentationUrl must be a valid http/https URL' }, { status: 400 })
-    }
-
-    if (!isValidOptionalHttpUrl(eventPhotosUrl)) {
-      return NextResponse.json({ error: 'eventPhotosUrl must be a valid http/https URL' }, { status: 400 })
     }
 
     if (access.role !== 'admin') {
@@ -179,7 +184,6 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         slot: Number(slot),
         category: String(category),
-        categoryColor: String(categoryColor),
         authorUk: String(authorUk).trim(),
         authorEn: String(authorEn ?? '').trim(),
         image: String(image).trim(),
@@ -187,7 +191,6 @@ export async function POST(req: NextRequest) {
         titleEn: String(titleEn ?? '').trim(),
         summaryUk: String(summaryUk).trim(),
         summaryEn: String(summaryEn ?? '').trim(),
-        duration: duration ? String(duration).trim() : null,
         videoUrl: videoUrl ? String(videoUrl).trim() : null,
         presentationUrl: presentationUrl ? String(presentationUrl).trim() : null,
         authorBioUk: authorBioUk ? String(authorBioUk).trim() : null,
@@ -195,10 +198,6 @@ export async function POST(req: NextRequest) {
         sources: sources
           ? JSON.stringify(Array.isArray(sources) ? sources : parseLectureSources(String(sources)))
           : null,
-        socialLinks: socialLinks ? JSON.stringify(socialLinks) : null,
-        eventCity: eventCity ? String(eventCity).trim() : null,
-        eventDate: eventDate ? String(eventDate).trim() : null,
-        eventPhotosUrl: eventPhotosUrl ? String(eventPhotosUrl).trim() : null,
         isPublic: false,
       })
       .select('*')

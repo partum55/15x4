@@ -14,6 +14,8 @@
   "upcomingEvents": {
     "title": "UPCOMING EVENTS",
     "register": "register",
+    "ongoing": "ongoing...",
+    "photos": "photos",
     "allCities": "all cities",
     "noEvents": "No upcoming events",
     "imageAlt": "15x4 event in {{city}}"
@@ -41,6 +43,8 @@
     "time": "time",
     "details": "details",
     "register": "register",
+    "ongoing": "ongoing...",
+    "photos": "photos",
     "allCities": "all cities",
     "dateAsc": "oldest first",
     "dateDesc": "newest first",
@@ -81,6 +85,8 @@
   "eventDetail": {
     "back": "events",
     "register": "register",
+    "ongoing": "ongoing...",
+    "photos": "photos",
     "talks": "Talks",
     "date": "date",
     "time": "time",
@@ -255,6 +261,7 @@
     "titleEdit": "// EDIT LECTURE",
     "eventLabel": "event",
     "eventPlaceholder": "select event",
+    "loading": "loading...",
     "slotLabel": "slot (1-4)",
     "titleLabel": "lecture title",
     "titleUkLabel": "lecture title (UA)",
@@ -301,6 +308,7 @@
     "timeLabel": "time",
     "imageLabel": "event image URL",
     "registrationUrlLabel": "registration link (Google Forms, etc.)",
+    "eventPhotosUrlLabel": "post-event photos link",
     "lecturesTitle": "// LECTURES",
     "addLectureBtn": "add lecture",
     "removeLectureBtn": "remove",

@@ -23,14 +23,14 @@ type EventFormState = {
   titleEn: string
   descriptionUk: string
   descriptionEn: string
-  cityUk: string
-  cityEn: string
+  cityId: string
   date: string
   locationUk: string
   locationEn: string
   time: string
   image: string
   registrationUrl: string
+  eventPhotosUrl: string
 }
 
 type EventLectureFormState = {
@@ -59,14 +59,14 @@ const EMPTY_EVENT: EventFormState = {
   titleEn: '',
   descriptionUk: '',
   descriptionEn: '',
-  cityUk: '',
-  cityEn: '',
+  cityId: '',
   date: '',
   locationUk: '',
   locationEn: '',
   time: '',
   image: '',
   registrationUrl: '',
+  eventPhotosUrl: '',
 }
 
 let lectureTempCounter = 0
@@ -113,14 +113,14 @@ function normalizeEventDraftForm(value: unknown): EventFormState | null {
     titleEn: stringValue(value.titleEn),
     descriptionUk: stringValue(value.descriptionUk),
     descriptionEn: stringValue(value.descriptionEn),
-    cityUk: stringValue(value.cityUk),
-    cityEn: stringValue(value.cityEn),
+    cityId: stringValue(value.cityId),
     date: stringValue(value.date),
     locationUk: stringValue(value.locationUk),
     locationEn: stringValue(value.locationEn),
     time: stringValue(value.time),
     image: stringValue(value.image),
     registrationUrl: stringValue(value.registrationUrl),
+    eventPhotosUrl: stringValue(value.eventPhotosUrl),
   }
 }
 
@@ -283,21 +283,20 @@ export default function AddEditEventPage() {
       .then((data: EventFormState & { error?: string }) => {
       if (!isMounted) return
       if (data && !data.error) {
-        const cityOption = findCityOption(data.cityUk) ?? findCityOption(data.cityEn)
         if (!shouldPersistDraftRef.current) {
           setForm({
             titleUk: data.titleUk ?? '',
             titleEn: data.titleEn ?? '',
             descriptionUk: data.descriptionUk ?? '',
             descriptionEn: data.descriptionEn ?? '',
-            cityUk: cityOption?.uk ?? data.cityUk ?? '',
-            cityEn: cityOption?.en ?? data.cityEn ?? '',
+            cityId: (data as { cityId?: string }).cityId ?? '',
             date: normalizeDateInput(data.date),
             locationUk: data.locationUk ?? '',
             locationEn: data.locationEn ?? '',
             time: normalizeTimeInput(data.time),
             image: data.image ?? '',
             registrationUrl: data.registrationUrl ?? '',
+            eventPhotosUrl: String((data as { eventPhotosUrl?: string | null }).eventPhotosUrl ?? ''),
           })
           setLectures(
             Array.isArray((data as { lectures?: Array<Record<string, unknown>> }).lectures)
@@ -351,14 +350,9 @@ export default function AddEditEventPage() {
 
   function setCity(value: string) {
     markDraftDirty()
-    const city = findCityOption(value)
-    setForm((current) => ({
-      ...current,
-      cityUk: city?.uk ?? '',
-      cityEn: city?.en ?? '',
-    }))
-    if (errors.cityUk) {
-      setErrors((current) => ({ ...current, cityUk: undefined }))
+    setForm((current) => ({ ...current, cityId: value }))
+    if (errors.cityId) {
+      setErrors((current) => ({ ...current, cityId: undefined }))
     }
   }
 
@@ -395,7 +389,7 @@ export default function AddEditEventPage() {
   function validate(): FormErrors {
     const e: FormErrors = {}
     if (!form.titleUk.trim()) e.titleUk = t('auth.login.errorRequired')
-    if (!form.cityUk.trim()) e.cityUk = t('auth.login.errorRequired')
+    if (!form.cityId.trim()) e.cityId = t('auth.login.errorRequired')
     if (!form.date.trim()) e.date = t('auth.login.errorRequired')
     if (!form.locationUk.trim()) e.locationUk = t('auth.login.errorRequired')
     if (!form.time.trim()) e.time = t('auth.login.errorRequired')
@@ -518,14 +512,14 @@ export default function AddEditEventPage() {
       titleEn: form.titleEn.trim(),
       descriptionUk: form.descriptionUk.trim(),
       descriptionEn: form.descriptionEn.trim(),
-      cityUk: form.cityUk.trim(),
-      cityEn: form.cityEn.trim(),
+      cityId: form.cityId,
       date: normalizeDateInput(form.date),
       locationUk: form.locationUk.trim(),
       locationEn: form.locationEn.trim(),
       time: normalizeTimeInput(form.time),
       image: form.image.trim(),
       registrationUrl: form.registrationUrl.trim() || null,
+      eventPhotosUrl: form.eventPhotosUrl.trim() || null,
       lectures: lectures.map((lecture, index) => ({
         slot: Number(lecture.slot || index + 1),
         titleUk: lecture.titleUk.trim(),
@@ -533,7 +527,6 @@ export default function AddEditEventPage() {
         authorUk: lecture.authorUk.trim(),
         authorEn: lecture.authorEn.trim(),
         category: lecture.category.trim(),
-        categoryColor: getLectureCategoryColor(lecture.category.trim()),
         summaryUk: lecture.summaryUk.trim(),
         summaryEn: lecture.summaryEn.trim(),
         image: lecture.image.trim(),
@@ -556,7 +549,7 @@ export default function AddEditEventPage() {
       !lecture.category ||
       !lecture.summaryUk ||
       !lecture.image ||
-      !lecture.categoryColor,
+      !getLectureCategoryColor(lecture.category),
     )
     if (invalidLecture) {
       setLectureErrors(validateLectures())
@@ -585,7 +578,8 @@ export default function AddEditEventPage() {
   }
 
   const previewTitle = form.titleUk.trim() || form.titleEn.trim() || t('addEvent.titleUkLabel')
-  const previewCity = form.cityUk.trim() || form.cityEn.trim() || t('addEvent.cityLabel')
+  const previewCityOption = findCityOption(form.cityId)
+  const previewCity = (previewCityOption ? getCityLabel(previewCityOption, i18n.language) : '') || t('addEvent.cityLabel')
   const previewLocation = form.locationUk.trim() || form.locationEn.trim() || t('addEvent.locationLabel')
   const previewDescription = form.descriptionUk.trim() || form.descriptionEn.trim() || t('addEvent.descriptionUkLabel')
   const previewDate = form.date ? formatEventDate(form.date, true) : t('addEvent.dateLabel')
@@ -630,9 +624,9 @@ export default function AddEditEventPage() {
               </FormField>
             </div>
 
-            <FormField label={t('addEvent.cityLabel')} error={errors.cityUk} required>
+            <FormField label={t('addEvent.cityLabel')} error={errors.cityId} required>
               <select
-                value={findCityOption(form.cityUk)?.id ?? ''}
+                value={form.cityId}
                 onChange={(e) => setCity(e.target.value)}
                 autoComplete="address-level2"
                 required
@@ -679,6 +673,10 @@ export default function AddEditEventPage() {
 
             <FormField label={t('addEvent.registrationUrlLabel')}>
               <input type="text" value={form.registrationUrl} onChange={e => setField('registrationUrl', e.target.value)} placeholder="https://forms.google.com/..." />
+            </FormField>
+
+            <FormField label={t('addEvent.eventPhotosUrlLabel')}>
+              <input type="url" value={form.eventPhotosUrl} onChange={e => setField('eventPhotosUrl', e.target.value)} placeholder="https://" />
             </FormField>
 
             <div className="flex flex-col gap-4 pt-6 border-t border-black">

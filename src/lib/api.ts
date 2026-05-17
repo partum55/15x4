@@ -14,17 +14,12 @@ export type Lecture = {
   summary: string
   summaryUk: string
   summaryEn: string
-  duration?: string
   videoUrl?: string
   presentationUrl?: string
   authorBio?: string
   authorBioUk?: string
   authorBioEn?: string
-  eventCity?: string
-  eventDate?: string
-  eventPhotosUrl?: string
   sources?: { name: string; url: string }[] | null
-  socialLinks?: { type: string; url: string }[] | null
   isPublic: boolean
   userId?: string
   createdAt: string
@@ -69,6 +64,7 @@ export type Event = {
   time: string
   image: string
   registrationUrl?: string
+  eventPhotosUrl?: string
   isPublic: boolean
   userId?: string
   createdAt: string
