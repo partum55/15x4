@@ -1,40 +1,9 @@
 export default function ArrowIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 17 17"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      {/* Diagonal top line of arrowhead */}
-      <line
-        x1="0"
-        y1="17"
-        x2="10"
-        y2="7"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-      {/* Horizontal arrow shaft */}
-      <line
-        x1="7"
-        y1="1"
-        x2="17"
-        y2="1"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-      {/* Vertical right side of arrowhead */}
-      <line
-        x1="16"
-        y1="0"
-        x2="16"
-        y2="10"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
+    <svg width="19" height="19" viewBox="0 0 19 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16.2635 4.48046L17.3242 3.4198L15.2029 1.29848L14.1422 2.35914L15.2029 3.4198L16.2635 4.48046ZM15.2029 3.4198L14.1422 2.35914L8.4132e-05 16.5013L1.06074 17.5619L2.1214 18.6226L16.2635 4.48046L15.2029 3.4198Z"/>
+      <path d="M8.06079 0L6.56079 0V3L8.06079 3V1.5V0ZM8.06079 1.5V3L18.0608 3V1.5V0L8.06079 0V1.5Z"/>
+      <path d="M15.5608 10.5V12H18.5608V10.5H17.0608H15.5608ZM17.0608 10.5H18.5608V0.5H17.0608H15.5608L15.5608 10.5H17.0608Z"/>
     </svg>
   )
 }
