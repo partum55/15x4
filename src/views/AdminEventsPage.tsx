@@ -199,7 +199,7 @@ export default function AdminEventsPage() {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+            className="ui-select"
           >
             <option value="">{t('admin.events.allStatuses', { defaultValue: 'усі статуси' })}</option>
             <option value="public">{t('admin.events.statusPublic', { defaultValue: 'публічні' })}</option>
@@ -208,7 +208,7 @@ export default function AdminEventsPage() {
           <select
             value={sortBy}
             onChange={(event) => setSortBy(event.target.value)}
-            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+            className="ui-select"
           >
             <option value="">{t('admin.events.newest', { defaultValue: 'спочатку найближчі' })}</option>
             <option value="oldest">{t('admin.events.oldest', { defaultValue: 'спочатку найдавніші' })}</option>

@@ -118,7 +118,7 @@ export default function UpcomingEvents() {
                     setSelectedCity(e.target.value)
                     setCitySelectionTouched(true)
                   }}
-                  className="bg-transparent border-none outline-none text-[clamp(13px,1.3vw,20px)] font-normal text-black cursor-pointer uppercase tracking-[-0.02em] appearance-none pr-1"
+                  className="ui-select ui-select--inline"
                 >
                   <option value="">{t('upcomingEvents.allCities')}</option>
                   {availableCities.map(({ value, label }) => (

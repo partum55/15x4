@@ -103,9 +103,14 @@ export default function EventDetailPage() {
                   </Link>
 
                   <div className="flex flex-col gap-5">
-                    <h1 className="text-[clamp(34px,5.6vw,96px)] font-normal uppercase leading-[0.95] tracking-[-0.04em]">
-                      <span className="text-red">{'//'}</span> {event.city}
-                    </h1>
+                    <div className="flex flex-col gap-2">
+                      <h1 className="text-[clamp(34px,5.6vw,96px)] font-normal uppercase leading-[0.95] tracking-[-0.04em] text-orange">
+                        {event.city}
+                      </h1>
+                      <p className="text-[clamp(18px,1.8vw,28px)] font-normal uppercase leading-[1.05] tracking-[-0.03em] text-black">
+                        [{formatEventDate(event.date, true)}]
+                      </p>
+                    </div>
                     <p className="max-w-[690px] text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.12] tracking-[-0.04em]">
                       {event.title}
                     </p>
@@ -184,11 +189,10 @@ export default function EventDetailPage() {
                     <span className="text-red">{'//'}</span> {t('eventDetail.talks')}
                   </h2>
                   {lectures.length > 0 ? (
-                    <div>
+                    <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
                       {lectures.map((lecture) => (
-                        <LectureCard key={lecture.id} lecture={lecture} variant="detail" />
+                        <LectureCard key={lecture.id} lecture={lecture} variant="compact" />
                       ))}
-                      <div className="h-px w-full bg-black" />
                     </div>
                   ) : (
                     <p className="border-t border-black py-8 text-[clamp(15px,1.4vw,20px)] opacity-60">
@@ -210,7 +214,7 @@ export default function EventDetailPage() {
             <section className="content-shell pb-[clamp(32px,4.2vw,64px)]">
               <div className="flex items-center justify-between gap-6 border-t border-black pt-6 max-[767px]:flex-col max-[767px]:items-stretch">
                 <p className="text-[clamp(18px,1.6vw,24px)] uppercase tracking-[-0.04em]">
-                  {event.city} [{formatEventDate(event.date, true)}]
+                  [{formatEventDate(event.date, true)}]
                 </p>
                 <div className="flex gap-6 max-[767px]:flex-col max-[767px]:gap-4">
                   <Link

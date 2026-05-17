@@ -101,3 +101,41 @@ export function mapLectureRow(row: ContentRow, locale: Locale) {
     socialLinks: safeParse(row.socialLinks),
   }
 }
+
+export function parseLectureSources(value: string) {
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [rawName, rawUrl] = line.includes('|')
+        ? line.split('|', 2).map((part) => part.trim())
+        : ['', line]
+
+      const urlCandidate = rawUrl || rawName
+      const hasUrl = isValidHttpUrl(urlCandidate)
+
+      return {
+        name: rawName || urlCandidate,
+        url: hasUrl ? urlCandidate : '',
+      }
+    })
+}
+
+export function formatLectureSources(
+  sources: Array<{ name?: string | null; url?: string | null }> | null | undefined,
+) {
+  return (sources ?? [])
+    .map((source) => {
+      const name = String(source.name ?? '').trim()
+      const url = String(source.url ?? '').trim()
+
+      if (name && url && name !== url) {
+        return `${name} | ${url}`
+      }
+
+      return url || name
+    })
+    .filter(Boolean)
+    .join('\n')
+}

@@ -9,6 +9,7 @@ import FormField from '../components/FormField'
 import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
 import { buildRegisterHref, normalizeRedirectTarget, resolvePostAuthRedirect } from '@/lib/auth'
+import { getAuthErrorTranslationKey } from '@/lib/auth-errors'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -43,7 +44,7 @@ export default function LoginPage() {
     const result = await signIn(email.trim(), password)
     setSubmitting(false)
     if (result.error) {
-      setErrors({ form: t('auth.login.errorInvalid') })
+      setErrors({ form: t(getAuthErrorTranslationKey('login', result.error)) })
       return
     }
 

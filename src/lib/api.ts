@@ -16,6 +16,7 @@ export type Lecture = {
   summaryEn: string
   duration?: string
   videoUrl?: string
+  presentationUrl?: string
   authorBio?: string
   authorBioUk?: string
   authorBioEn?: string
@@ -46,6 +47,8 @@ export type EventLecture = {
   summary: string
   summaryUk: string
   summaryEn: string
+  presentationUrl?: string
+  sources?: { name: string; url: string }[] | null
 }
 
 export type Event = {

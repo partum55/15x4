@@ -77,7 +77,7 @@ export default function AboutPage() {
       <Navbar />
 
       <Skeleton name="page-about-us" loading={skeletonLoading} className="min-h-[760px]">
-        <div className="content-shell border-x border-black">
+        <div className="content-shell">
         {/* Page Header */}
         <div className="px-[clamp(16px,3.2vw,48px)] py-6">
           <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none uppercase">
@@ -98,7 +98,12 @@ export default function AboutPage() {
               <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black leading-[1.4]">
                 <RichText text={t('about.whoWeAre.description')} />
               </p>
-              <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black uppercase tracking-[-0.04em]">{t('about.whoWeAre.missionLabel')}</p>
+              <div className="flex items-baseline gap-3 pt-2 max-[767px]:flex-wrap">
+                <span className="text-[clamp(24px,2.4vw,36px)] font-normal text-red tracking-[-0.04em] uppercase">{'//'}</span>
+                <h2 className="text-[clamp(24px,2.4vw,36px)] font-normal text-black tracking-[-0.04em] uppercase">
+                  {t('about.whoWeAre.missionLabel')}
+                </h2>
+              </div>
               <p className="text-[clamp(16px,1.6vw,24px)] font-normal text-black leading-[1.4]">{t('about.whoWeAre.mission')}</p>
             </div>
             <Image

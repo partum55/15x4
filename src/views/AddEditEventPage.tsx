@@ -16,6 +16,7 @@ import {
   normalizeLectureCategory,
 } from '../constants/lectureCategories'
 import { CITY_OPTIONS, findCityOption, getCityLabel } from '../constants/cities'
+import { formatLectureSources, parseLectureSources } from '@/lib/content-api'
 
 type EventFormState = {
   titleUk: string
@@ -46,6 +47,8 @@ type EventLectureFormState = {
   authorBioUk: string,
   authorBioEn: string,
   videoUrl: string,
+  presentationUrl: string,
+  sourcesText: string,
 }
 
 type FormErrors = Partial<Record<keyof EventFormState, string>>
@@ -82,6 +85,8 @@ function emptyLecture(slot: number): EventLectureFormState {
     authorBioUk: '',
     authorBioEn: '',
     videoUrl: '',
+    presentationUrl: '',
+    sourcesText: '',
   }
 }
 
@@ -135,6 +140,12 @@ export default function AddEditEventPage() {
                 authorBioUk: String(lecture.authorBioUk ?? ''),
                 authorBioEn: String(lecture.authorBioEn ?? ''),
                 videoUrl: String(lecture.videoUrl ?? ''),
+                presentationUrl: String(lecture.presentationUrl ?? ''),
+                sourcesText: formatLectureSources(
+                  Array.isArray(lecture.sources)
+                    ? (lecture.sources as Array<{ name?: string | null; url?: string | null }>)
+                    : null,
+                ),
               }))
             : [],
         )
@@ -334,6 +345,8 @@ export default function AddEditEventPage() {
         authorBioUk: lecture.authorBioUk.trim(),
         authorBioEn: lecture.authorBioEn.trim(),
         videoUrl: lecture.videoUrl.trim() || '',
+        presentationUrl: lecture.presentationUrl.trim() || '',
+        sources: parseLectureSources(lecture.sourcesText),
       })),
     }
 
@@ -540,6 +553,9 @@ export default function AddEditEventPage() {
                   <FormField label={t('addLecture.videoUrlLabel')}>
                     <input type="text" value={lecture.videoUrl} onChange={(e) => setLectureField(index, 'videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
                   </FormField>
+                  <FormField label={t('addLecture.presentationUrlLabel')}>
+                    <input type="url" value={lecture.presentationUrl} onChange={(e) => setLectureField(index, 'presentationUrl', e.target.value)} placeholder="https://" />
+                  </FormField>
 
                   <div className="grid grid-cols-2 gap-4 max-[767px]:grid-cols-1">
                     <FormField label={t('addLecture.authorBioUkLabel')}>
@@ -549,6 +565,15 @@ export default function AddEditEventPage() {
                       <textarea rows={3} value={lecture.authorBioEn} onChange={(e) => setLectureField(index, 'authorBioEn', e.target.value)} />
                     </FormField>
                   </div>
+
+                  <FormField label={t('addLecture.sourcesLabel')}>
+                    <textarea
+                      rows={4}
+                      value={lecture.sourcesText}
+                      onChange={(e) => setLectureField(index, 'sourcesText', e.target.value)}
+                      placeholder={t('addLecture.sourcesPlaceholder')}
+                    />
+                  </FormField>
                 </div>
               ))}
             </div>

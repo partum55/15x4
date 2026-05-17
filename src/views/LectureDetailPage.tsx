@@ -123,7 +123,9 @@ export default function LectureDetailPage() {
                   alt={lecture.title}
                   width={1200}
                   height={900}
-                  unoptimized
+                  priority
+                  quality={95}
+                  sizes="(max-width: 1023px) 100vw, 58vw"
                   className="w-full aspect-[4/3] object-cover block max-[1023px]:aspect-[16/9]"
                 />
                 {hasVideoError && (
@@ -162,7 +164,7 @@ export default function LectureDetailPage() {
 
         <div className="w-full h-px bg-black my-[clamp(32px,4vw,56px)]" />
 
-        {/* About author + sources */}
+        {/* About author + materials */}
         <div className="grid grid-cols-2 gap-[clamp(32px,6vw,96px)] max-[1023px]:grid-cols-1 max-[1023px]:gap-[clamp(32px,4vw,48px)]">
           <section>
             <h2 className="text-[clamp(16px,1.8vw,26px)] font-normal uppercase mb-[clamp(20px,2.4vw,36px)] tracking-[0.02em]">
@@ -193,38 +195,63 @@ export default function LectureDetailPage() {
             </div>
           </section>
 
-          {lecture.sources && lecture.sources.length > 0 && (
+          {(lecture.presentationUrl || (lecture.sources && lecture.sources.length > 0)) && (
             <section>
               <h2 className="text-[clamp(16px,1.8vw,26px)] font-normal uppercase mb-[clamp(20px,2.4vw,36px)] tracking-[0.02em]">
-                <span className="text-red">{'//'}</span> {t('lectureDetail.additionalSources')}
+                <span className="text-red">{'//'}</span> {t('lectureDetail.additionalMaterials')}
               </h2>
-              <ol className="list-none flex flex-col gap-3 p-0" style={{ counterReset: 'sources' }}>
-                {lecture.sources.map((s, i) => (
-                  <li
-                    key={i}
-                    className="text-[clamp(13px,1.3vw,19px)] leading-[1.4] flex gap-2"
-                    style={{ counterIncrement: 'sources' }}
-                  >
-                    <span className="flex-shrink-0">{i + 1}.</span>
-                    {s.url ? (
-                      <>
-                        {s.name.split('–')[0]}
-                        {s.name.includes('–') && '– '}
-                        <a
-                          href={s.url}
-                          className="text-orange no-underline hover:underline"
-                          target="_blank"
-                          rel="noreferrer"
+              <div className="flex flex-col gap-8">
+                {lecture.presentationUrl && (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[clamp(12px,1.1vw,16px)] uppercase tracking-[0.04em] text-black/55">
+                      {t('lectureDetail.presentation')}
+                    </p>
+                    <a
+                      href={lecture.presentationUrl}
+                      className="text-[clamp(13px,1.3vw,19px)] text-orange no-underline hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {lecture.presentationUrl.replace(/^https?:\/\//, '')}
+                    </a>
+                  </div>
+                )}
+
+                {lecture.sources && lecture.sources.length > 0 && (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[clamp(12px,1.1vw,16px)] uppercase tracking-[0.04em] text-black/55">
+                      {t('lectureDetail.additionalSources')}
+                    </p>
+                    <ol className="list-none flex flex-col gap-3 p-0" style={{ counterReset: 'sources' }}>
+                      {lecture.sources.map((s, i) => (
+                        <li
+                          key={i}
+                          className="text-[clamp(13px,1.3vw,19px)] leading-[1.4] flex gap-2"
+                          style={{ counterIncrement: 'sources' }}
                         >
-                          {s.url.replace(/^https?:\/\//, '')}
-                        </a>
-                      </>
-                    ) : (
-                      s.name
-                    )}
-                  </li>
-                ))}
-              </ol>
+                          <span className="flex-shrink-0">{i + 1}.</span>
+                          {s.url ? (
+                            <>
+                              {s.name.split('–')[0]}
+                              {s.name.includes('–') && '– '}
+                              <a
+                                href={s.url}
+                                className="text-orange no-underline hover:underline"
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {s.url.replace(/^https?:\/\//, '')}
+                              </a>
+                            </>
+                          ) : (
+                            s.name
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
             </section>
           )}
         </div>
@@ -270,7 +297,7 @@ export default function LectureDetailPage() {
                           alt={r.title}
                           width={900}
                           height={600}
-                          unoptimized
+                          sizes="(max-width: 1023px) 50vw, 25vw"
                           className="w-full aspect-[3/2] object-cover block transition-opacity duration-200 hover:opacity-85"
                         />
                         <span

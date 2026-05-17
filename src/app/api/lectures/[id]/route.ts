@@ -6,6 +6,7 @@ import {
   isValidHttpUrl,
   isValidOptionalHttpUrl,
   mapLectureRow,
+  parseLectureSources,
   resolveLocale,
   validCategoryPair,
 } from '@/lib/content-api'
@@ -73,6 +74,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       summaryEn,
       duration,
       videoUrl,
+      presentationUrl,
       authorBioUk,
       authorBioEn,
       sources,
@@ -120,9 +122,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       summaryEn: summaryEn !== undefined ? String(summaryEn).trim() : lecture.summaryEn,
       duration: duration !== undefined ? (duration ? String(duration).trim() : null) : lecture.duration,
       videoUrl: videoUrl !== undefined ? (videoUrl ? String(videoUrl).trim() : null) : lecture.videoUrl,
+      presentationUrl:
+        presentationUrl !== undefined ? (presentationUrl ? String(presentationUrl).trim() : null) : lecture.presentationUrl,
       authorBioUk: authorBioUk !== undefined ? (authorBioUk ? String(authorBioUk).trim() : null) : lecture.authorBioUk,
       authorBioEn: authorBioEn !== undefined ? (authorBioEn ? String(authorBioEn).trim() : null) : lecture.authorBioEn,
-      sources: sources !== undefined ? (sources ? JSON.stringify(sources) : null) : lecture.sources,
+      sources:
+        sources !== undefined
+          ? (sources
+              ? JSON.stringify(Array.isArray(sources) ? sources : parseLectureSources(String(sources)))
+              : null)
+          : lecture.sources,
       socialLinks: socialLinks !== undefined ? (socialLinks ? JSON.stringify(socialLinks) : null) : lecture.socialLinks,
       eventCity: eventCity !== undefined ? (eventCity ? String(eventCity).trim() : null) : lecture.eventCity,
       eventDate: eventDate !== undefined ? (eventDate ? String(eventDate).trim() : null) : lecture.eventDate,
@@ -146,6 +155,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     if (!isValidOptionalHttpUrl(data.videoUrl)) {
       return NextResponse.json({ error: 'videoUrl must be a valid http/https URL' }, { status: 400 })
+    }
+    if (!isValidOptionalHttpUrl(data.presentationUrl)) {
+      return NextResponse.json({ error: 'presentationUrl must be a valid http/https URL' }, { status: 400 })
     }
     if (!isValidOptionalHttpUrl(data.eventPhotosUrl)) {
       return NextResponse.json({ error: 'eventPhotosUrl must be a valid http/https URL' }, { status: 400 })
