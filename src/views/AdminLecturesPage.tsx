@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '@/components/Navbar'
-import AdminNav from '@/components/admin/AdminNav'
+import AdminLayout from '@/components/admin/AdminLayout'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORY_COLOR_VAR } from '@/constants/colors'
@@ -30,7 +28,6 @@ type Lecture = {
 
 export default function AdminLecturesPage() {
   const { t, i18n } = useTranslation()
-  const router = useRouter()
   const { user, loading } = useAuth()
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loadingLectures, setLoadingLectures] = useState(true)
@@ -44,12 +41,6 @@ export default function AdminLecturesPage() {
   const [page, setPage] = useState(1)
   const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
   const [approvingLectureIds, setApprovingLectureIds] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    if (!loading && (!user || user?.profile?.role !== 'admin')) {
-      router.push('/')
-    }
-  }, [user, loading, router])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -152,20 +143,8 @@ export default function AdminLecturesPage() {
     }
   }
 
-  if (loading || !user || user?.profile?.role !== 'admin') {
-    return null
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar variant="light" />
-      <main className="px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
-        <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
-          {t('admin.lectures.title')}
-        </h1>
-
-        <AdminNav />
-
+    <AdminLayout title={t('admin.lectures.title')}>
         <div className="grid grid-cols-[minmax(220px,1fr)_repeat(3,minmax(160px,220px))] gap-3 mb-8 max-[1023px]:grid-cols-2 max-[640px]:grid-cols-1">
           <input
             type="text"
@@ -329,7 +308,6 @@ export default function AdminLecturesPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AdminLayout>
   )
 }

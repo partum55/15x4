@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '@/components/Navbar'
-import AdminNav from '@/components/admin/AdminNav'
+import AdminLayout from '@/components/admin/AdminLayout'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import ReauthModal from '@/components/admin/ReauthModal'
 import { useAuth } from '@/context/AuthContext'
@@ -22,7 +20,6 @@ type User = {
 
 export default function AdminUsersPage() {
   const { t, i18n } = useTranslation()
-  const router = useRouter()
   const { user, loading, signIn } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
@@ -35,17 +32,11 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1)
   const [pendingRoleUserIds, setPendingRoleUserIds] = useState<Set<string>>(new Set())
   const [deletingUserIds, setDeletingUserIds] = useState<Set<string>>(new Set())
-  const [reauthContext, setReauthContext] = useState<{ 
-    type: 'role' | 'delete', 
-    userId: string, 
-    role?: ProfileRole 
+  const [reauthContext, setReauthContext] = useState<{
+    type: 'role' | 'delete',
+    userId: string,
+    role?: ProfileRole
   } | null>(null)
-
-  useEffect(() => {
-    if (!loading && (!user || user?.profile?.role !== 'admin')) {
-      router.push('/')
-    }
-  }, [user, loading, router])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -196,28 +187,14 @@ export default function AdminUsersPage() {
     }
   }
 
-  if (loading || !user || user?.profile?.role !== 'admin') {
-    return null
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar variant="light" />
-      <main className="px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
-        
+    <AdminLayout title={t('admin.users.title')}>
         {reauthContext && (
-          <ReauthModal 
+          <ReauthModal
             onConfirm={handleReauth}
             onCancel={() => setReauthContext(null)}
           />
         )}
-        
-        <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
-          {t('admin.users.title')}
-        </h1>
-
-        <AdminNav />
-
         <div className="grid grid-cols-[minmax(220px,1fr)_repeat(2,minmax(150px,220px))] gap-3 mb-8 max-[860px]:grid-cols-2 max-[640px]:grid-cols-1">
           <input
             type="text"
@@ -291,7 +268,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex gap-2 justify-end items-center flex-wrap">
-                        {u.id !== user.id && (
+                        {u.id !== user?.id && (
                           <div className="relative">
                             <select
                               value={u.role}
@@ -308,7 +285,7 @@ export default function AdminUsersPage() {
                             </div>
                           </div>
                         )}
-                        {u.id !== user.id && (
+                        {u.id !== user?.id && (
                           <button
                             type="button"
                             onClick={() => handleDelete(u.id)}
@@ -350,7 +327,6 @@ export default function AdminUsersPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AdminLayout>
   )
 }

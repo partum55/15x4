@@ -56,6 +56,7 @@ export type Event = {
   cityUk: string
   cityEn: string
   date: string
+  description: string
   descriptionUk: string
   descriptionEn: string
   location: string
@@ -118,89 +119,162 @@ export type UserListParams = {
   sort?: string
 }
 
-const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
-const parseJson = async (res: Response) => {
-  const text = await res.text()
-  if (!text) return null
-
-  try {
-    return JSON.parse(text)
-  } catch {
-    if (!res.ok) return { error: `Request failed (${res.status})`, status: res.status }
-    throw new Error('Invalid JSON response')
-  }
+type ApiConfig = {
+  baseUrl?: string
+  fetcher?: typeof fetch
+  getLocale?: () => 'uk' | 'en' | null
 }
-const requestJson = async (url: string, init?: RequestInit) => {
-  const res = await fetch(url, init)
-  const data = await parseJson(res)
 
-  if (!res.ok) {
-    if (data && typeof data === 'object' && 'error' in data) return data
-    return { error: `Request failed (${res.status})`, status: res.status }
-  }
-
-  return data
-}
-const currentLocale = () => {
+const defaultGetLocale = (): 'uk' | 'en' | null => {
   if (typeof window === 'undefined') return null
   const stored = window.localStorage.getItem('i18nextLng')
   return stored?.startsWith('en') ? 'en' : stored?.startsWith('uk') ? 'uk' : null
 }
-const withQuery = (url: string, params?: Record<string, string | number | undefined>) => {
-  const searchParams = new URLSearchParams()
-  const locale = currentLocale()
-  if (locale) searchParams.set('locale', locale)
-  Object.entries(params ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') searchParams.set(key, String(value))
-  })
-  const query = searchParams.toString()
-  return query ? `${url}?${query}` : url
+
+const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+
+class ContentApi {
+  private readonly baseUrl: string
+  private readonly fetcher: typeof fetch
+  private readonly getLocale: () => 'uk' | 'en' | null
+
+  readonly admin: AdminApi
+
+  constructor(cfg: ApiConfig = {}) {
+    this.baseUrl = cfg.baseUrl ?? ''
+    this.fetcher = cfg.fetcher ?? ((typeof window !== 'undefined' ? window.fetch.bind(window) : fetch))
+    this.getLocale = cfg.getLocale ?? defaultGetLocale
+    this.admin = new AdminApi(this)
+  }
+
+  private async parseJson(res: Response) {
+    const text = await res.text()
+    if (!text) return null
+    try {
+      return JSON.parse(text)
+    } catch {
+      if (!res.ok) return { error: `Request failed (${res.status})`, status: res.status }
+      throw new Error('Invalid JSON response')
+    }
+  }
+
+  async requestJson(url: string, init?: RequestInit) {
+    const res = await this.fetcher(`${this.baseUrl}${url}`, init)
+    const data = await this.parseJson(res)
+    if (!res.ok) {
+      if (data && typeof data === 'object' && 'error' in data) return data
+      return { error: `Request failed (${res.status})`, status: res.status }
+    }
+    return data
+  }
+
+  withQuery(url: string, params?: Record<string, string | number | undefined>) {
+    const searchParams = new URLSearchParams()
+    const locale = this.getLocale()
+    if (locale) searchParams.set('locale', locale)
+    Object.entries(params ?? {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') searchParams.set(key, String(value))
+    })
+    const query = searchParams.toString()
+    return query ? `${url}?${query}` : url
+  }
+
+  private post(url: string, body?: object) {
+    return this.requestJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  }
+
+  private put(url: string, body: object) {
+    return this.requestJson(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  }
+
+  private patch(url: string, body: object) {
+    return this.requestJson(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  }
+
+  private del(url: string) {
+    return this.requestJson(url, { method: 'DELETE' })
+  }
+
+  postRaw(url: string, body?: object) { return this.post(url, body) }
+  putRaw(url: string, body: object) { return this.put(url, body) }
+  patchRaw(url: string, body: object) { return this.patch(url, body) }
+  delRaw(url: string) { return this.del(url) }
+
+  updateProfile(body: { name?: string; city?: string }) { return this.patch('/api/profile', body) }
+
+  async getLectures(params?: LectureListParams) {
+    const data = await this.requestJson(this.withQuery('/api/lectures', params))
+    return asArray<Lecture>(data)
+  }
+  async getLecturesPage(params?: LectureListParams) {
+    return (await this.requestJson(this.withQuery('/api/lectures', params))) as PaginatedResponse<Lecture>
+  }
+  getLecture(id: string) { return this.requestJson(this.withQuery(`/api/lectures/${id}`)) }
+  createLecture(body: object) { return this.post('/api/lectures', body) }
+  updateLecture(id: string, body: object) { return this.put(`/api/lectures/${id}`, body) }
+  deleteLecture(id: string) { return this.del(`/api/lectures/${id}`) }
+
+  async getEvents(params?: EventListParams) {
+    const data = await this.requestJson(this.withQuery('/api/events', params))
+    return asArray<Event>(data)
+  }
+  async getEventsPage(params?: EventListParams) {
+    return (await this.requestJson(this.withQuery('/api/events', params))) as EventsPageResponse
+  }
+  async getMyEvents() {
+    const data = await this.requestJson(this.withQuery('/api/events', { scope: 'mine' }))
+    return asArray<Event>(data)
+  }
+  getEvent(id: string) { return this.requestJson(this.withQuery(`/api/events/${id}`)) }
+  createEvent(body: object) { return this.post('/api/events', body) }
+  updateEvent(id: string, body: object) { return this.put(`/api/events/${id}`, body) }
+  deleteEvent(id: string) { return this.del(`/api/events/${id}`) }
+  async getMyLectures() {
+    const data = await this.requestJson(this.withQuery('/api/lectures', { scope: 'mine' }))
+    return asArray<Lecture>(data)
+  }
+
+  translateText(body: { text: string; sourceLanguage: 'uk' | 'en'; targetLanguage: 'uk' | 'en' }) {
+    return this.post('/api/ai/translate', body)
+  }
 }
-const post = (url: string, body?: object) =>
-  requestJson(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
-const put = (url: string, body: object) =>
-  requestJson(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-const patch = (url: string, body: object) =>
-  requestJson(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-const del = (url: string) =>
-  requestJson(url, { method: 'DELETE' })
 
-export const api = {
-  updateProfile: (body: { name?: string; city?: string }) => patch('/api/profile', body),
+class AdminApi {
+  constructor(private readonly client: ContentApi) {}
 
-  getLectures: (params?: LectureListParams) => requestJson(withQuery('/api/lectures', params)).then((data) => asArray<Lecture>(data)),
-  getLecturesPage: (params?: LectureListParams) =>
-    requestJson(withQuery('/api/lectures', params)).then((data) => data as PaginatedResponse<Lecture>),
-  getLecture: (id: string) => requestJson(withQuery(`/api/lectures/${id}`)),
-  createLecture: (body: object) => post('/api/lectures', body),
-  updateLecture: (id: string, body: object) => put(`/api/lectures/${id}`, body),
-  deleteLecture: (id: string) => del(`/api/lectures/${id}`),
-
-  getEvents: (params?: EventListParams) => requestJson(withQuery('/api/events', params)).then((data) => asArray<Event>(data)),
-  getEventsPage: (params?: EventListParams) =>
-    requestJson(withQuery('/api/events', params)).then((data) => data as EventsPageResponse),
-  getMyEvents: () => requestJson(withQuery('/api/events', { scope: 'mine' })).then((data) => asArray<Event>(data)),
-  getEvent: (id: string) => requestJson(withQuery(`/api/events/${id}`)),
-  createEvent: (body: object) => post('/api/events', body),
-  updateEvent: (id: string, body: object) => put(`/api/events/${id}`, body),
-  deleteEvent: (id: string) => del(`/api/events/${id}`),
-  getMyLectures: () => requestJson(withQuery('/api/lectures', { scope: 'mine' })).then((data) => asArray<Lecture>(data)),
-
-  translateText: (body: { text: string; sourceLanguage: 'uk' | 'en'; targetLanguage: 'uk' | 'en' }) =>
-    post('/api/ai/translate', body),
-
-  admin: {
-    getUsers: (params?: UserListParams) => requestJson(withQuery('/api/admin/users', params)),
-    updateUser: (id: string, body: { role?: string }) => patch(`/api/admin/users/${id}`, body),
-    deleteUser: (id: string) => del(`/api/admin/users/${id}`),
-    getLectures: (params?: LectureListParams & { status?: string }) => requestJson(withQuery('/api/admin/lectures', params)),
-    updateLectureApproval: (id: string, isPublic: boolean) =>
-      patch(`/api/admin/lectures/${id}/approval`, { isPublic }),
-    deleteLecture: (id: string) => del(`/api/admin/lectures/${id}`),
-    getEvents: (params?: EventListParams) => requestJson(withQuery('/api/admin/events', params)),
-    updateEventApproval: (id: string, isPublic: boolean) =>
-      patch(`/api/admin/events/${id}`, { isPublic }),
-    deleteEvent: (id: string) => del(`/api/admin/events/${id}`),
-    getStats: () => requestJson('/api/admin/stats'),
-  },
+  getUsers(params?: UserListParams) {
+    return this.client.requestJson(this.client.withQuery('/api/admin/users', params))
+  }
+  updateUser(id: string, body: { role?: string }) { return this.client.patchRaw(`/api/admin/users/${id}`, body) }
+  deleteUser(id: string) { return this.client.delRaw(`/api/admin/users/${id}`) }
+  getLectures(params?: LectureListParams & { status?: string }) {
+    return this.client.requestJson(this.client.withQuery('/api/admin/lectures', params))
+  }
+  updateLectureApproval(id: string, isPublic: boolean) {
+    return this.client.patchRaw(`/api/admin/lectures/${id}/approval`, { isPublic })
+  }
+  deleteLecture(id: string) { return this.client.delRaw(`/api/admin/lectures/${id}`) }
+  getEvents(params?: EventListParams) {
+    return this.client.requestJson(this.client.withQuery('/api/admin/events', params))
+  }
+  updateEventApproval(id: string, isPublic: boolean) {
+    return this.client.patchRaw(`/api/admin/events/${id}`, { isPublic })
+  }
+  deleteEvent(id: string) { return this.client.delRaw(`/api/admin/events/${id}`) }
+  getStats() { return this.client.requestJson('/api/admin/stats') }
 }
+
+export { ContentApi }
+export const api = new ContentApi()

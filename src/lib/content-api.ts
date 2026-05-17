@@ -88,6 +88,7 @@ export function mapEventRow(row: ContentRow, locale: Locale) {
     title: pickLocalized(row.titleEn, row.titleUk, locale),
     city: pickLocalized(cityEn, cityUk, locale),
     location: pickLocalized(row.locationEn, row.locationUk, locale),
+    description: pickLocalized(row.descriptionEn, row.descriptionUk, locale),
   }
 }
 

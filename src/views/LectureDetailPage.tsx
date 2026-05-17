@@ -4,110 +4,75 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Skeleton } from 'boneyard-js/react'
 import type { Lecture, EventLecture } from '@/lib/api'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
+import AppLayout from '../components/AppLayout'
+import SharedLoadingBlock from '../components/ui/LoadingBlock'
 import { api } from '../lib/api'
 import { CATEGORY_BORDER_CLASS as badgeBorderClass } from '../constants/colors'
-import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
+import { useLocalizedFetch } from '../hooks/useLocalizedFetch'
 import { resolveLectureVideo } from '../lib/lecture-video'
 import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 function LoadingBlock({ className = '' }: { className?: string }) {
-  return <span className={`block animate-pulse bg-black/10 ${className}`} />
+  return <SharedLoadingBlock as="span" className={className} />
 }
+
+type LectureFetchResult = { lecture: Lecture | null; related: EventLecture[] }
 
 export default function LectureDetailPage() {
   const { t, i18n } = useTranslation()
   const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
-  const previousLocaleRef = useRef(locale)
-  const hasLoadedRef = useRef(false)
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const id = params?.id
   const bonesMode = searchParams.get('bones') === '1'
-  const [lecture, setLecture] = useState<Lecture | null>(null)
-  const [related, setRelated] = useState<EventLecture[]>([])
-  const [loading, setLoading] = useState(!bonesMode)
-  const [textRefreshing, setTextRefreshing] = useState(false)
-  const skeletonLoading = useMinimumSkeleton(bonesMode || loading)
-  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
   const [videoErrorLectureId, setVideoErrorLectureId] = useState<string | null>(null)
+
+  const { data, loading, textRefreshing, hasLoaded } = useLocalizedFetch<LectureFetchResult>(
+    async () => {
+      if (!id) return { lecture: null, related: [] }
+      const lectureData = await api.getLecture(id)
+      if (!lectureData || 'error' in lectureData) {
+        return { lecture: null, related: [] }
+      }
+      const lectureValue = lectureData as Lecture
+      let related: EventLecture[] = []
+      try {
+        const eventData = await api.getEvent(lectureValue.eventId)
+        if (eventData && !('error' in eventData) && eventData.lectures) {
+          related = eventData.lectures
+        }
+      } catch {
+        related = []
+      }
+      return { lecture: lectureValue, related }
+    },
+    [id],
+    { enabled: !bonesMode && Boolean(id) },
+  )
+
+  const lecture = data?.lecture ?? null
+  const related = data?.related ?? []
+  const skeletonLoading = bonesMode || loading
+  const textSkeletonLoading = textRefreshing
   const lectureCategoryLabel = lecture
     ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
     : ''
   const resolvedVideo = lecture ? resolveLectureVideo(lecture.videoUrl) : null
   const hasVideoError = lecture ? videoErrorLectureId === lecture.id : false
 
-  useEffect(() => {
-    if (!id) return
-    if (bonesMode) return
-
-    let isMounted = true
-    const isLocaleRefresh = hasLoadedRef.current && previousLocaleRef.current !== locale
-    previousLocaleRef.current = locale
-    const pendingTimer = window.setTimeout(() => {
-      if (!isMounted) return
-      if (isLocaleRefresh) setTextRefreshing(true)
-      else setLoading(true)
-    }, 0)
-
-    api.getLecture(id)
-      .then(async (lectureData) => {
-        if (!isMounted) return
-
-        if (lectureData && !('error' in lectureData)) {
-          setLecture(lectureData as Lecture)
-
-          try {
-            const eventData = await api.getEvent((lectureData as Lecture).eventId)
-            if (isMounted && eventData && !('error' in eventData) && eventData.lectures) {
-              setRelated(eventData.lectures)
-            }
-          } catch {
-            // related stays empty
-          }
-        } else {
-          setLecture(null)
-          setRelated([])
-        }
-      })
-      .catch(() => {
-        if (!isMounted) return
-        if (!isLocaleRefresh) {
-          setLecture(null)
-          setRelated([])
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          hasLoadedRef.current = true
-          setLoading(false)
-          setTextRefreshing(false)
-        }
-      })
-
-    return () => {
-      isMounted = false
-      window.clearTimeout(pendingTimer)
-    }
-  }, [id, bonesMode, locale])
-
-  if (!bonesMode && !loading && !lecture) {
+  if (!bonesMode && hasLoaded && !lecture) {
     return (
-      <div className="page min-h-screen">
-        <Navbar />
+      <AppLayout hideJoin>
         <main className="content-shell border-t border-black py-16 text-2xl">{t('lectureDetail.notFound')}</main>
-        <Footer />
-      </div>
+      </AppLayout>
     )
   }
 
   return (
-    <div className="page min-h-screen">
-      <Navbar />
+    <AppLayout hideJoin>
 
       <Skeleton name="page-lecture-detail" loading={skeletonLoading} className="min-h-[720px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
         {lecture && (
@@ -306,8 +271,8 @@ export default function LectureDetailPage() {
                   <div className="grid grid-cols-4 gap-0 border-y border-black max-[1023px]:grid-cols-2">
                     {related.map((r) => {
                       const isCurrent = r.id === id
-                      const title = locale === 'en' ? (r.titleEn || r.titleUk || r.title) : (r.titleUk || r.titleEn || r.title)
-                      const author = locale === 'en' ? (r.authorEn || r.authorUk || r.author) : (r.authorUk || r.authorEn || r.author)
+                      const title = r.title
+                      const author = r.author
 
                       const cardContent = (
                         <>
@@ -381,9 +346,7 @@ export default function LectureDetailPage() {
             </div>
           </main>
         )}
-
-        <Footer />
       </Skeleton>
-    </div>
+    </AppLayout>
   )
 }

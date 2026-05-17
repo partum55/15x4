@@ -2,9 +2,7 @@
 
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
-import JoinSection from '../components/JoinSection'
-import Footer from '../components/Footer'
+import AppLayout from '../components/AppLayout'
 import { CATEGORY_BG_CLASS as categoryBgClass, CATEGORY_BORDER_CLASS as categoryBorderClass } from '../constants/colors'
 
 const introImage = '/images/about-intro.jpg'
@@ -58,9 +56,7 @@ export default function AboutPage() {
   ]
 
   return (
-    <div className="page">
-      <Navbar />
-
+    <AppLayout>
       <div className="min-h-[760px]">
         <div className="content-shell border-x border-black">
         {/* Page Header */}
@@ -124,9 +120,7 @@ export default function AboutPage() {
         </section>
 
         </div>
-        <JoinSection />
-        <Footer />
       </div>
-    </div>
+    </AppLayout>
   )
 }
