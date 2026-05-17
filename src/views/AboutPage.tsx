@@ -1,14 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { useTranslation } from 'react-i18next'
-import { Skeleton } from 'boneyard-js/react'
+import { useTranslation, Trans } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'
 import { CATEGORY_BG_CLASS as categoryBgClass, CATEGORY_BORDER_CLASS as categoryBorderClass } from '../constants/colors'
-import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
 
 const introImage = '/images/about-intro.jpg'
 
@@ -52,18 +49,6 @@ function CategoryCard({ title, description, color }: CategoryProps) {
 
 export default function AboutPage() {
   const { t } = useTranslation()
-  const [loading, setLoading] = useState(true)
-  const skeletonLoading = useMinimumSkeleton(loading)
-
-  useEffect(() => {
-    const timerId = window.setTimeout(() => {
-      setLoading(false)
-    }, 220)
-
-    return () => {
-      window.clearTimeout(timerId)
-    }
-  }, [])
 
   const categories: CategoryProps[] = [
     { title: t('about.categories.technical.title'), description: t('about.categories.technical.description'), color: 'blue' },
@@ -76,8 +61,8 @@ export default function AboutPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-about-us" loading={skeletonLoading} className="min-h-[760px]">
-        <div className="content-shell">
+      <div className="min-h-[760px]">
+        <div className="content-shell border-x border-black">
         {/* Page Header */}
         <div className="px-[clamp(16px,3.2vw,48px)] py-6">
           <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none uppercase">
@@ -142,7 +127,7 @@ export default function AboutPage() {
         </div>
         <JoinSection />
         <Footer />
-      </Skeleton>
+      </div>
     </div>
   )
 }

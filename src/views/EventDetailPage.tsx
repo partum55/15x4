@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect } from 'react'
-import { Skeleton } from 'boneyard-js/react'
 import type { Event } from '@/lib/api'
 import ArrowIcon from '../components/ArrowIcon'
 import Navbar from '../components/Navbar'
@@ -14,7 +13,6 @@ import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime, isEventPast } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
-import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 function eventDescription(event: Event, language: string) {
   if (language.startsWith('en')) {
@@ -22,6 +20,10 @@ function eventDescription(event: Event, language: string) {
   }
 
   return event.descriptionUk || event.descriptionEn || ''
+}
+
+function LoadingBlock({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse bg-black/10 ${className}`} />
 }
 
 export default function EventDetailPage() {
@@ -92,9 +94,8 @@ export default function EventDetailPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-event-detail" loading={skeletonLoading} className="min-h-[720px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
-        {event && (
-          <main>
+      <div className="min-h-[720px]">
+        <main>
             <section className="content-shell grid grid-cols-[1fr_minmax(320px,49%)] gap-9 border-b border-black py-[clamp(28px,4.2vw,64px)] max-[900px]:grid-cols-1">
               <div className="flex min-h-[clamp(360px,38vw,548px)] flex-col justify-between gap-10 max-[900px]:min-h-0">
                 <div className="flex flex-col gap-8">
@@ -103,38 +104,63 @@ export default function EventDetailPage() {
                   </Link>
 
                   <div className="flex flex-col gap-5">
-                    <div className="flex flex-col gap-2">
-                      <h1 className="text-[clamp(34px,5.6vw,96px)] font-normal uppercase leading-[0.95] tracking-[-0.04em] text-orange">
-                        {event.city}
-                      </h1>
-                      <p className="text-[clamp(18px,1.8vw,28px)] font-normal uppercase leading-[1.05] tracking-[-0.03em] text-black">
-                        [{formatEventDate(event.date, true)}]
-                      </p>
-                    </div>
-                    <p className="max-w-[690px] text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.12] tracking-[-0.04em]">
-                      {event.title}
-                    </p>
+                    {skeletonLoading ? (
+                      <div className="flex max-w-[690px] flex-col gap-3">
+                        <LoadingBlock className="h-[clamp(34px,5.6vw,96px)] w-[min(68vw,440px)]" />
+                        <LoadingBlock className="h-7 w-40" />
+                        <LoadingBlock className="h-10 w-full" />
+                        <LoadingBlock className="h-10 w-4/5" />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-2">
+                          <h1 className="text-[clamp(34px,5.6vw,96px)] font-normal uppercase leading-[0.95] tracking-[-0.04em] text-orange">
+                            {event?.city}
+                          </h1>
+                          <p className="text-[clamp(18px,1.8vw,28px)] font-normal uppercase leading-[1.05] tracking-[-0.03em] text-black">
+                            [{event ? formatEventDate(event.date, true) : ''}]
+                          </p>
+                        </div>
+                        <p className="max-w-[690px] text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.12] tracking-[-0.04em]">
+                          {event?.title}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid max-w-[690px] grid-cols-3 gap-6 border-t border-black pt-6 max-[767px]:grid-cols-1">
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.date')}</p>
-                    <p className="text-[clamp(18px,1.6vw,24px)]">{formatEventDate(event.date, true)}</p>
+                    {skeletonLoading ? (
+                      <LoadingBlock className="h-7 w-28" />
+                    ) : (
+                      <p className="text-[clamp(18px,1.6vw,24px)]">{event ? formatEventDate(event.date, true) : ''}</p>
+                    )}
                   </div>
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.time')}</p>
-                    <p className="text-[clamp(18px,1.6vw,24px)]">{formatEventTime(event.time)}</p>
+                    {skeletonLoading ? (
+                      <LoadingBlock className="h-7 w-20" />
+                    ) : (
+                      <p className="text-[clamp(18px,1.6vw,24px)]">{event ? formatEventTime(event.time) : ''}</p>
+                    )}
                   </div>
                   <div>
                     <p className="mb-2 text-[13px] uppercase opacity-55">{t('eventDetail.talks')}</p>
-                    <p className="text-[clamp(18px,1.6vw,24px)]">{lectures.length}</p>
+                    {skeletonLoading ? (
+                      <LoadingBlock className="h-7 w-12" />
+                    ) : (
+                      <p className="text-[clamp(18px,1.6vw,24px)]">{lectures.length}</p>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col gap-6">
-                {event.image ? (
+                {skeletonLoading ? (
+                  <LoadingBlock className="aspect-[1.12/1] w-full" />
+                ) : event?.image ? (
                   <Image
                     src={event.image}
                     alt={`${event.city} ${formatEventDate(event.date, true)}`}
@@ -148,8 +174,17 @@ export default function EventDetailPage() {
                 )}
 
                 <div className="grid grid-cols-[1fr_auto] gap-6 max-[767px]:grid-cols-1">
-                  <p className="text-[clamp(15px,1.4vw,20px)] leading-[1.35]">{event.location}</p>
-                  {registrationAvailable && registerHref ? (
+                  {skeletonLoading ? (
+                    <div className="flex flex-col gap-3">
+                      <LoadingBlock className="h-6 w-full" />
+                      <LoadingBlock className="h-6 w-4/5" />
+                    </div>
+                  ) : (
+                    <p className="text-[clamp(15px,1.4vw,20px)] leading-[1.35]">{event?.location}</p>
+                  )}
+                  {skeletonLoading ? (
+                    <LoadingBlock className="h-[69px] min-w-[220px] max-[767px]:w-full" />
+                  ) : registrationAvailable && registerHref ? (
                     <a
                       href={registerHref}
                       target="_blank"
@@ -173,13 +208,20 @@ export default function EventDetailPage() {
               </div>
             </section>
 
-            {(description || lectures.length > 0) && (
+            {(skeletonLoading || description || lectures.length > 0) && (
               <section className="content-shell grid grid-cols-[minmax(220px,327px)_1fr] gap-9 py-[clamp(32px,4.2vw,64px)] max-[900px]:grid-cols-1">
                 <div className="flex flex-col gap-5">
                   <h2 className="text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.15]">
                     <span className="text-red">{'//'}</span> {t('eventDetail.about')}
                   </h2>
-                  {description && (
+                  {skeletonLoading ? (
+                    <div className="flex flex-col gap-3">
+                      <LoadingBlock className="h-6 w-full" />
+                      <LoadingBlock className="h-6 w-11/12" />
+                      <LoadingBlock className="h-6 w-4/5" />
+                      <LoadingBlock className="h-6 w-2/3" />
+                    </div>
+                  ) : description && (
                     <p className="text-[clamp(15px,1.4vw,20px)] leading-[1.35]">{description}</p>
                   )}
                 </div>
@@ -188,7 +230,14 @@ export default function EventDetailPage() {
                   <h2 className="mb-3 text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.15]">
                     <span className="text-red">{'//'}</span> {t('eventDetail.talks')}
                   </h2>
-                  {lectures.length > 0 ? (
+                  {skeletonLoading ? (
+                    <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
+                      <LectureCard loading variant="compact" />
+                      <LectureCard loading variant="compact" />
+                      <LectureCard loading variant="compact" />
+                      <LectureCard loading variant="compact" />
+                    </div>
+                  ) : lectures.length > 0 ? (
                     <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
                       {lectures.map((lecture) => (
                         <LectureCard key={lecture.id} lecture={lecture} variant="compact" />
@@ -203,7 +252,7 @@ export default function EventDetailPage() {
               </section>
             )}
 
-            {!description && lectures.length === 0 && (
+            {!skeletonLoading && !description && lectures.length === 0 && (
               <section className="content-shell py-[clamp(32px,4.2vw,64px)]">
                 <div className="border-t border-black py-8">
                   <p className="text-[clamp(15px,1.4vw,20px)] opacity-60">{t('eventDetail.noTalks')}</p>
@@ -213,9 +262,13 @@ export default function EventDetailPage() {
 
             <section className="content-shell pb-[clamp(32px,4.2vw,64px)]">
               <div className="flex items-center justify-between gap-6 border-t border-black pt-6 max-[767px]:flex-col max-[767px]:items-stretch">
-                <p className="text-[clamp(18px,1.6vw,24px)] uppercase tracking-[-0.04em]">
-                  [{formatEventDate(event.date, true)}]
-                </p>
+                {skeletonLoading ? (
+                  <LoadingBlock className="h-7 w-72 max-w-full" />
+                ) : (
+                  <p className="text-[clamp(18px,1.6vw,24px)] uppercase tracking-[-0.04em]">
+                    [{event ? formatEventDate(event.date, true) : ''}]
+                  </p>
+                )}
                 <div className="flex gap-6 max-[767px]:flex-col max-[767px]:gap-4">
                   <Link
                     href="/events"
@@ -223,7 +276,9 @@ export default function EventDetailPage() {
                   >
                     {t('eventDetail.back')}
                   </Link>
-                  {registrationAvailable && registerHref ? (
+                  {skeletonLoading ? (
+                    <LoadingBlock className="h-[69px] min-w-[220px] max-[767px]:w-full" />
+                  ) : registrationAvailable && registerHref ? (
                     <a
                       href={registerHref}
                       target="_blank"
@@ -243,10 +298,9 @@ export default function EventDetailPage() {
               </div>
             </section>
           </main>
-        )}
 
         <Footer />
-      </Skeleton>
+      </div>
     </div>
   )
 }

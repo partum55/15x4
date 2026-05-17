@@ -1,81 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import { Skeleton } from 'boneyard-js/react'
 import type { Event } from '@/lib/api'
 import Navbar from '../components/Navbar'
-import ArrowIcon from '../components/ArrowIcon'
 import FilterDropdown from '../components/FilterDropdown'
 import JoinSection from '../components/JoinSection'
 import Footer from '../components/Footer'
-import LectureCard from '../components/LectureCard'
+import EventSection from '../components/EventSection'
 import { api } from '../lib/api'
-import { formatEventDate, formatEventTime, isEventPast } from '../lib/date-time'
+import { formatEventTime } from '../lib/date-time'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
-import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 const EVENTS_PAGE_SIZE = 10
 
-type EventSectionProps = {
-  event: Event
-  detailsLabel: string
-  registerLabel: string
-}
-
-function EventSection({ event, detailsLabel, registerLabel }: EventSectionProps) {
-  const lectures = event.lectures ?? []
-  const registerHref = event.registrationUrl?.trim()
-  const registrationAvailable = Boolean(registerHref) && !isEventPast(event.date, event.time)
-
-  const actionClassName = "flex h-[69px] w-[clamp(220px,22.7vw,327px)] items-center justify-center gap-[10px] px-6 py-5 font-sans text-[clamp(14px,1.6vw,24px)] no-underline max-[767px]:w-full"
-  const registerClassName = `${actionClassName} bg-black text-white transition-opacity duration-200 hover:opacity-85`
-  const registerContent = (
-    <>
-      <span>{registerLabel}</span>
-      <ArrowIcon />
-    </>
-  )
-
-  return (
-    <section className="border-t border-black">
-      <div className="flex items-start justify-between gap-6 py-6 max-[767px]:flex-col max-[767px]:gap-5">
-        <div className="flex w-[clamp(220px,22.7vw,327px)] flex-col gap-6 max-[767px]:w-full">
-          <div className="flex items-center justify-between gap-6">
-            <span className="text-[clamp(16px,1.6vw,24px)] font-normal uppercase tracking-[-0.04em]">
-              {event.city} [{formatEventDate(event.date, true)}]
-            </span>
-            <span className="text-[clamp(14px,1.3vw,20px)] font-normal">{formatEventTime(event.time)}</span>
-          </div>
-          <p className="text-[clamp(13px,1.3vw,20px)] font-normal leading-[1.35]">{event.location}</p>
-        </div>
-
-        <div className="flex items-center gap-9 max-[1199px]:gap-6 max-[767px]:w-full max-[767px]:flex-col max-[767px]:gap-4">
-          {registrationAvailable && registerHref && (
-            <a href={registerHref} target="_blank" rel="noopener noreferrer" className={registerClassName}>
-              {registerContent}
-            </a>
-          )}
-          <Link
-            href={`/events/${event.id}`}
-            className={`${actionClassName} border border-red bg-transparent text-black transition-colors duration-200 hover:bg-red hover:text-white`}
-          >
-            <span>{detailsLabel}</span>
-            <ArrowIcon />
-          </Link>
-        </div>
-      </div>
-
-      {lectures.length > 0 && (
-        <div className="grid grid-cols-2 gap-x-9 gap-y-6 pb-9 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
-          {lectures.slice(0, 4).map((lecture) => (
-            <LectureCard key={lecture.id} lecture={lecture} variant="compact" />
-          ))}
-        </div>
-      )}
-    </section>
-  )
+function LoadingBlock({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse bg-black/10 ${className}`} />
 }
 
 export default function EventsPage() {
@@ -176,7 +116,7 @@ export default function EventsPage() {
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-events" loading={skeletonLoading} className="min-h-[620px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
+      <div className="min-h-[620px]">
         <div className="content-shell grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-6 py-6 max-[1199px]:gap-4 max-[900px]:grid-cols-1 max-[900px]:gap-4">
           <div className="grid grid-cols-[clamp(220px,22.7vw,327px)_minmax(0,1fr)] items-end gap-6 max-[1199px]:gap-4 max-[900px]:grid-cols-1">
             <h1 className="col-start-2 px-[clamp(16px,2vw,28px)] text-[clamp(28px,3.2vw,48px)] font-normal leading-none text-black max-[900px]:col-start-auto max-[900px]:px-0">
@@ -191,7 +131,13 @@ export default function EventsPage() {
         </div>
 
         <main className="content-shell">
-          {events.length > 0 ? (
+          {skeletonLoading ? (
+            <>
+              <EventSection loading />
+              <EventSection loading />
+              <EventSection loading />
+            </>
+          ) : events.length > 0 ? (
             events.map((event) => (
               <EventSection
                 key={event.id}
@@ -208,7 +154,11 @@ export default function EventsPage() {
           <div className="h-px w-full bg-black" />
         </main>
 
-        {(hasMore || total > events.length) && (
+        {skeletonLoading ? (
+          <div className="content-shell flex justify-center py-10">
+            <LoadingBlock className="h-[48px] w-36 border border-black bg-transparent" />
+          </div>
+        ) : (hasMore || total > events.length) && (
           <div className="content-shell py-10 flex justify-center">
             <button
               type="button"
@@ -223,7 +173,7 @@ export default function EventsPage() {
 
         <JoinSection />
         <Footer />
-      </Skeleton>
+      </div>
     </div>
   )
 }

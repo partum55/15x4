@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Skeleton } from 'boneyard-js/react'
 import type { Lecture } from '@/lib/api'
 import Navbar from '../components/Navbar'
 import FilterDropdown from '../components/FilterDropdown'
@@ -12,7 +11,6 @@ import LectureCard from '../components/LectureCard'
 import { api } from '../lib/api'
 import { LECTURE_CATEGORIES } from '../constants/lectureCategories'
 import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
-import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
 
 const LECTURES_PAGE_SIZE = 20
 
@@ -219,11 +217,38 @@ export default function LecturesPage() {
     return renderTwoColumnRows(lectures, 'filtered')
   }
 
+  const renderLoadingGrid = () => (
+    <>
+      <div className="flex items-stretch border-b border-black max-[767px]:flex-col">
+        <LectureCard loading variant="horizontal" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="horizontal" />
+      </div>
+      <div className="flex items-stretch border-b border-black max-[767px]:flex-col">
+        <LectureCard loading variant="compact" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="compact" />
+      </div>
+      <div className="flex items-stretch border-b border-black max-[767px]:flex-col">
+        <LectureCard loading variant="horizontal" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="horizontal" />
+      </div>
+      <div className="flex items-stretch border-b border-black max-[767px]:flex-col">
+        <LectureCard loading variant="vertical" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="featured" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="vertical" />
+      </div>
+    </>
+  )
+
   return (
     <div className="page">
       <Navbar />
 
-      <Skeleton name="page-lectures" loading={skeletonLoading} className="min-h-[620px]" snapshotConfig={TEXT_BONE_SNAPSHOT}>
+      <div className="min-h-[620px]">
         <div className="content-shell flex items-end justify-between py-6 gap-6 flex-wrap max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-4">
           <h1 className="text-[clamp(28px,3.2vw,48px)] font-normal text-black leading-none">
             <span className="text-red">{'//'}</span> {t('lectures.pageTitle')}
@@ -245,10 +270,14 @@ export default function LecturesPage() {
         </div>
 
         <main className="content-shell border-t border-black">
-          {hasActiveFilters ? renderFilteredGrid() : renderDefaultGrid()}
+          {skeletonLoading ? renderLoadingGrid() : hasActiveFilters ? renderFilteredGrid() : renderDefaultGrid()}
         </main>
 
-        {(hasMore || total > lectures.length) && (
+        {skeletonLoading ? (
+          <div className="content-shell py-10 flex justify-center">
+            <div className="h-[48px] w-36 animate-pulse border border-black bg-black/10" />
+          </div>
+        ) : (hasMore || total > lectures.length) && (
           <div className="content-shell py-10 flex justify-center">
             <button
               type="button"
@@ -263,7 +292,7 @@ export default function LecturesPage() {
 
         <JoinSection />
         <Footer />
-      </Skeleton>
+      </div>
     </div>
   )
 }

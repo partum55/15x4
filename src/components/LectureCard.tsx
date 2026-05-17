@@ -27,9 +27,10 @@ export type LectureCardItem = {
 }
 
 type LectureCardProps = {
-  lecture: LectureCardItem
+  lecture?: LectureCardItem
   variant?: LectureCardVariant
   className?: string
+  loading?: boolean
 }
 
 function joinClassNames(...classes: Array<string | false | undefined>) {
@@ -150,11 +151,92 @@ function MediaBlock({
 export default function LectureCard({ lecture, variant = 'horizontal', className }: LectureCardProps) {
   const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
+  const isCompact = variant === 'compact' || variant === 'swatch'
+
+  if (!lecture) {
+    if (variant === 'detail') {
+      return (
+        <div className={joinClassNames('group grid min-w-0 grid-cols-[minmax(160px,327px)_1fr] gap-9 border-t border-black py-6 text-black no-underline transition-colors duration-200 max-[900px]:grid-cols-1 max-[900px]:gap-4', className)}>
+          <div className="relative h-[clamp(160px,20vw,260px)] w-full overflow-hidden bg-black/10">
+            <span className="absolute left-3 top-3 h-8 w-24 animate-pulse bg-white/80" />
+          </div>
+          <div className="flex min-w-0 flex-col gap-5 px-[clamp(16px,2vw,28px)] py-3">
+            <div className="flex flex-col gap-2">
+              <span className="h-7 w-4/5 animate-pulse bg-black/10" />
+              <span className="h-5 w-3/5 animate-pulse bg-black/10" />
+            </div>
+            <div className="flex flex-col gap-3">
+              <span className="h-5 w-full animate-pulse bg-black/10" />
+              <span className="h-5 w-11/12 animate-pulse bg-black/10" />
+              <span className="h-5 w-2/3 animate-pulse bg-black/10" />
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (variant === 'featured') {
+      return (
+        <div className={joinClassNames('group flex min-w-0 flex-[2] flex-col gap-6 py-6 text-inherit no-underline transition-colors duration-200', className)}>
+          <div className="flex h-[86px] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
+            <span className="h-7 w-4/5 animate-pulse bg-black/10" />
+            <span className="h-5 w-3/5 animate-pulse bg-black/10" />
+          </div>
+          <div className="relative h-[clamp(220px,22.5vw,324px)] w-full overflow-hidden bg-black/10">
+            <span className="absolute left-3 top-3 h-9 w-28 animate-pulse bg-white/80" />
+          </div>
+        </div>
+      )
+    }
+
+    if (variant === 'vertical') {
+      return (
+        <div className={joinClassNames('group flex min-w-0 flex-1 flex-col gap-6 py-6 text-inherit no-underline transition-colors duration-200 max-[767px]:w-full', className)}>
+          <div className="relative h-[clamp(100px,9vw,130px)] w-full overflow-hidden bg-black/10">
+            <span className="absolute left-3 top-3 h-9 w-28 animate-pulse bg-white/80" />
+          </div>
+          <div className="flex h-[86px] flex-col gap-2 overflow-hidden px-[clamp(16px,2vw,28px)]">
+            <span className="h-7 w-4/5 animate-pulse bg-black/10" />
+            <span className="h-5 w-3/5 animate-pulse bg-black/10" />
+          </div>
+          <div className="flex flex-col gap-3 px-[clamp(16px,2vw,28px)]">
+            <span className="h-5 w-full animate-pulse bg-black/10" />
+            <span className="h-5 w-4/5 animate-pulse bg-black/10" />
+            <span className="h-5 w-2/3 animate-pulse bg-black/10" />
+          </div>
+        </div>
+      )
+    }
+
+    const mediaClassName = isCompact
+      ? 'h-[clamp(136px,10vw,152px)]'
+      : 'h-full min-h-[clamp(220px,22.3vw,321px)]'
+
+    return (
+      <div
+        className={joinClassNames(
+          'group flex min-w-0 flex-1 gap-9 text-inherit no-underline transition-colors duration-200 max-[1199px]:gap-6 max-[767px]:flex-col max-[767px]:gap-4',
+          variant === 'event' ? 'w-full' : variant === 'compact' ? '' : 'py-6',
+          className,
+        )}
+      >
+        <div className={`relative ${mediaClassName} w-[clamp(200px,22vw,327px)] shrink-0 overflow-hidden bg-black/10 max-[767px]:h-[200px] max-[767px]:w-full`}>
+          <span className="absolute left-3 top-3 h-9 w-28 animate-pulse bg-white/80" />
+        </div>
+        <div className={joinClassNames(
+          'flex min-w-0 flex-1 flex-col px-[clamp(16px,2vw,28px)] py-6 transition-colors duration-200',
+          isCompact ? 'h-[clamp(136px,10vw,152px)] justify-center gap-4 overflow-hidden max-[767px]:h-auto max-[767px]:min-h-[136px] max-[767px]:py-5' : 'gap-6 max-[767px]:py-5',
+        )}>
+          <span className="h-7 w-4/5 animate-pulse bg-black/10" />
+          <span className="h-5 w-3/5 animate-pulse bg-black/10" />
+        </div>
+      </div>
+    )
+  }
 
   const color = CATEGORY_COLOR_VAR[lecture.categoryColor] || 'var(--color-red)'
   const categoryLabel = t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
   const hasSummary = Boolean(lecture.summary?.trim())
-  const isCompact = variant === 'compact' || variant === 'swatch'
   const isHoverFilled = hovered && variant !== 'swatch'
   const style = {
     '--lecture-card-color': color,
