@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import FormField from '@/components/FormField'
 import PasswordInput from '@/components/PasswordInput'
-import { useAuth } from '@/context/AuthContext'
 
 interface ReauthModalProps {
   onConfirm: (password: string) => Promise<void>
@@ -26,8 +25,9 @@ export default function ReauthModal({ onConfirm, onCancel, title }: ReauthModalP
     setError('')
     try {
       await onConfirm(password)
-    } catch (err: any) {
-      setError(err.message || t('auth.login.errorInvalidPassword'))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(message || t('auth.login.errorInvalidPassword'))
     } finally {
       setSubmitting(false)
     }

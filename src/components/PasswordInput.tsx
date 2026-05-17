@@ -8,6 +8,7 @@ type PasswordInputProps = {
   onChange: (value: string) => void
   autoComplete?: string
   placeholder?: string
+  autoFocus?: boolean
 }
 
 export default function PasswordInput({
@@ -15,6 +16,7 @@ export default function PasswordInput({
   onChange,
   autoComplete,
   placeholder,
+  autoFocus,
 }: PasswordInputProps) {
   const { t } = useTranslation()
   const [isVisible, setIsVisible] = useState(false)
@@ -27,6 +29,7 @@ export default function PasswordInput({
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        autoFocus={autoFocus}
         className="pr-20"
       />
       <button
