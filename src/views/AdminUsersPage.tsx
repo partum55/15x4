@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
+import AdminNav from '@/components/admin/AdminNav'
+import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
+import ReauthModal from '@/components/admin/ReauthModal'
 import { useAuth } from '@/context/AuthContext'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { PROFILE_ROLES, type ProfileRole } from '@/lib/roles'
@@ -18,30 +21,10 @@ type User = {
   createdAt: string
 }
 
-function TableSkeleton() {
-  return (
-    <div className="overflow-x-auto" aria-hidden="true">
-      <table className="w-full border-collapse">
-        <tbody>
-          {Array.from({ length: 6 }).map((_, rowIndex) => (
-            <tr key={rowIndex} className="border-b border-black/20">
-              {Array.from({ length: 5 }).map((__, columnIndex) => (
-                <td key={columnIndex} className="p-3">
-                  <span className={`block h-5 animate-pulse bg-black/10 ${columnIndex === 1 ? 'w-48' : columnIndex === 4 ? 'ml-auto w-40' : 'w-28'}`} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
 export default function AdminUsersPage() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, signIn } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [usersError, setUsersError] = useState('')
@@ -53,6 +36,11 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1)
   const [pendingRoleUserIds, setPendingRoleUserIds] = useState<Set<string>>(new Set())
   const [deletingUserIds, setDeletingUserIds] = useState<Set<string>>(new Set())
+  const [reauthContext, setReauthContext] = useState<{ 
+    type: 'role' | 'delete', 
+    userId: string, 
+    role?: ProfileRole 
+  } | null>(null)
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -126,18 +114,28 @@ export default function AdminUsersPage() {
 
   async function handleSetRole(userId: string, role: ProfileRole) {
     if (pendingRoleUserIds.has(userId) || deletingUserIds.has(userId)) return
+    
+    // Require re-authentication for granting admin rights or changing own role
+    if (role === 'admin' || userId === user?.id) {
+      setReauthContext({ type: 'role', userId, role })
+      return
+    }
+
+    await performSetRole(userId, role)
+  }
+
+  async function performSetRole(userId: string, role: ProfileRole) {
     setPendingRoleUserIds(prev => {
       const next = new Set(prev)
       next.add(userId)
       return next
     })
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role }),
-      })
-      if (!res.ok) return
+      const data = await api.admin.updateUser(userId, { role })
+      if (data.error) {
+        alert(data.error)
+        return
+      }
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
     } finally {
       setPendingRoleUserIds(prev => {
@@ -151,14 +149,23 @@ export default function AdminUsersPage() {
   async function handleDelete(userId: string) {
     if (deletingUserIds.has(userId) || pendingRoleUserIds.has(userId)) return
     if (!confirm(t('admin.users.confirmDelete'))) return
+    
+    // Require re-authentication for user deletion
+    setReauthContext({ type: 'delete', userId })
+  }
+
+  async function performDelete(userId: string) {
     setDeletingUserIds(prev => {
       const next = new Set(prev)
       next.add(userId)
       return next
     })
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
-      if (!res.ok) return
+      const data = await api.admin.deleteUser(userId)
+      if (data.error) {
+        alert(data.error)
+        return
+      }
       setUsers(prev => prev.filter(u => u.id !== userId))
       setTotal(prev => Math.max(0, prev - 1))
       if (users.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
@@ -171,6 +178,25 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleReauth(password: string) {
+    if (!user?.email || !reauthContext) return
+    
+    // Verify password by attempting to sign in
+    const result = await signIn(user.email, password)
+    if (result.error) {
+      throw new Error(t('auth.login.errorInvalidPassword'))
+    }
+
+    const { type, userId, role } = reauthContext
+    setReauthContext(null)
+
+    if (type === 'role' && role) {
+      await performSetRole(userId, role)
+    } else if (type === 'delete') {
+      await performDelete(userId)
+    }
+  }
+
   if (loading || !user || user?.profile?.role !== 'admin') {
     return null
   }
@@ -179,23 +205,19 @@ export default function AdminUsersPage() {
     <div className="min-h-screen bg-white">
       <Navbar variant="light" />
       <main className="px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
+        
+        {reauthContext && (
+          <ReauthModal 
+            onConfirm={handleReauth}
+            onCancel={() => setReauthContext(null)}
+          />
+        )}
+        
         <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
           {t('admin.users.title')}
         </h1>
 
-        {/* Navigation */}
-        <nav className="flex gap-4 mb-12 border-b border-black pb-4">
-          <Link href="/admin" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.dashboard')}
-          </Link>
-          <span className="text-[clamp(14px,1.3vw,20px)] font-bold text-red">{t('admin.nav.users')}</span>
-          <Link href="/admin/lectures" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.lectures')}
-          </Link>
-          <Link href="/admin/events" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.events')}
-          </Link>
-        </nav>
+        <AdminNav />
 
         <div className="grid grid-cols-[minmax(220px,1fr)_repeat(2,minmax(150px,220px))] gap-3 mb-8 max-[860px]:grid-cols-2 max-[640px]:grid-cols-1">
           <input
@@ -234,7 +256,7 @@ export default function AdminUsersPage() {
         )}
 
         {loadingUsers ? (
-          <TableSkeleton />
+          <AdminTableSkeleton cols={5} />
         ) : usersError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{usersError}</p>
         ) : paginatedUsers.length === 0 ? (
@@ -257,10 +279,10 @@ export default function AdminUsersPage() {
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{u.name}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{u.email}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
-                      <span className={`px-2 py-1 text-[clamp(11px,1vw,14px)] ${
+                      <span className={`px-2 py-1 text-[clamp(11px,1vw,14px)] uppercase tracking-wider font-bold ${
                         u.role === 'admin' ? 'bg-red text-white' :
                         u.role === 'lector' ? 'bg-blue text-white' :
-                        'bg-black/10'
+                        'bg-black/10 text-black/60'
                       }`}>
                         {u.role}
                       </span>
@@ -269,20 +291,23 @@ export default function AdminUsersPage() {
                       {new Date(u.createdAt).toLocaleDateString(i18n.language.startsWith('en') ? 'en' : 'uk')}
                     </td>
                     <td className="p-3 text-right">
-                      <div className="flex gap-2 justify-end flex-wrap">
+                      <div className="flex gap-2 justify-end items-center flex-wrap">
                         {u.id !== user.id && (
-                          PROFILE_ROLES.filter(role => role !== u.role).map(role => (
-                            <button
-                              key={role}
-                              type="button"
-                              onClick={() => handleSetRole(u.id, role)}
+                          <div className="relative">
+                            <select
+                              value={u.role}
                               disabled={pendingRoleUserIds.has(u.id) || deletingUserIds.has(u.id)}
-                              aria-busy={pendingRoleUserIds.has(u.id)}
-                              className="px-3 py-1 bg-blue text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
+                              onChange={(e) => handleSetRole(u.id, e.target.value as ProfileRole)}
+                              className="appearance-none bg-white border border-black/20 px-3 py-1 pr-8 text-[clamp(11px,1vw,14px)] cursor-pointer hover:border-black outline-none disabled:opacity-50"
                             >
-                              {pendingRoleUserIds.has(u.id) ? '...' : t(`admin.users.makeRole.${role}`)}
-                            </button>
-                          ))
+                              {PROFILE_ROLES.map(role => (
+                                <option key={role} value={role}>{role}</option>
+                              ))}
+                            </select>
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                              <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 1L4 4L7 1" stroke="black" strokeWidth="1.5"/></svg>
+                            </div>
+                          </div>
                         )}
                         {u.id !== user.id && (
                           <button

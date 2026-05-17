@@ -262,7 +262,9 @@
   "common": {
     "loading": "loading...",
     "translate": "translate",
-    "translationError": "translation failed. check the translation API key or try again later"
+    "translationError": "translation failed. check the translation API key or try again later",
+    "cancel": "cancel",
+    "confirm": "confirm"
   },
   "addLecture": {
     "titleNew": "// ADD LECTURE",
@@ -363,6 +365,9 @@
       },
       "delete": "delete",
       "confirmDelete": "delete this user?",
+      "confirmMakeAdmin": "Are you sure you want to assign administrator rights to this user?",
+      "reauthTitle": "Confirm password",
+      "reauthDescription": "To perform this action, you must confirm your administrator password.",
       "empty": "no users found",
       "search": "search by name or email",
       "allRoles": "all roles",

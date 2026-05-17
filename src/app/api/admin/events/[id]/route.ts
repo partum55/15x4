@@ -21,7 +21,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireAdminSession()
     if (!session) {
@@ -29,10 +29,11 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
     }
 
     const { id } = await params
+    const { isPublic } = await req.json()
 
     const { data: event, error: eventError } = await supabaseAdmin
       .from('Event')
-      .update({ isPublic: true })
+      .update({ isPublic: !!isPublic })
       .eq('id', id)
       .select('id')
       .single()
@@ -43,7 +44,7 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
 
     const { error: lecturesError } = await supabaseAdmin
       .from('Lecture')
-      .update({ isPublic: true })
+      .update({ isPublic: !!isPublic })
       .eq('eventId', id)
 
     if (lecturesError) {

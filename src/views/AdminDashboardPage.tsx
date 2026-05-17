@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
+import AdminNav from '@/components/admin/AdminNav'
 import { useAuth } from '@/context/AuthContext'
+import { api } from '@/lib/api'
 
 type Stats = {
   users: number
@@ -29,8 +31,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (loading || !user || user?.profile?.role !== 'admin') return
-    fetch('/api/admin/stats')
-      .then(res => res.json())
+    api.admin.getStats()
       .then(data => {
         if (!data.error) setStats(data)
         else setStatsError(true)
@@ -50,45 +51,33 @@ export default function AdminDashboard() {
           {t('admin.title')}
         </h1>
 
-        {/* Navigation */}
-        <nav className="flex gap-4 mb-12 border-b border-black pb-4">
-          <span className="text-[clamp(14px,1.3vw,20px)] font-bold text-red">{t('admin.nav.dashboard')}</span>
-          <Link href="/admin/users" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.users')}
-          </Link>
-          <Link href="/admin/lectures" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.lectures')}
-          </Link>
-          <Link href="/admin/events" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.events')}
-          </Link>
-        </nav>
+        <AdminNav />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-6 max-[1023px]:grid-cols-2 max-[639px]:grid-cols-1">
-          <Link href="/admin/users" className="border border-black p-8 no-underline text-inherit hover:bg-black hover:text-white transition-colors">
+          <Link href="/admin/users" className="border border-black p-8 no-underline text-inherit hover:bg-black hover:text-white transition-colors group">
             <p className="text-[clamp(32px,3.5vw,56px)] font-bold mb-2">
               {statsError ? '—' : stats ? stats.users : <span className="block h-[1em] w-24 animate-pulse bg-black/10" />}
             </p>
             <p className="text-[clamp(14px,1.3vw,20px)] uppercase">{t('admin.stats.users')}</p>
           </Link>
 
-          <Link href="/admin/lectures" className="border border-black p-8 no-underline text-inherit hover:bg-black hover:text-white transition-colors">
+          <Link href="/admin/lectures" className="border border-black p-8 no-underline text-inherit hover:bg-black hover:text-white transition-colors group">
             <p className="text-[clamp(32px,3.5vw,56px)] font-bold mb-2">
               {statsError ? '—' : stats ? stats.lectures : <span className="block h-[1em] w-24 animate-pulse bg-black/10" />}
             </p>
             <p className="text-[clamp(14px,1.3vw,20px)] uppercase">{t('admin.stats.lectures')}</p>
           </Link>
 
-          <Link href="/admin/events" className="border border-black p-8 no-underline text-inherit hover:bg-black hover:text-white transition-colors">
+          <Link href="/admin/events" className="border border-black p-8 no-underline text-inherit hover:bg-black hover:text-white transition-colors group">
             <p className="text-[clamp(32px,3.5vw,56px)] font-bold mb-2">
               {statsError ? '—' : stats ? stats.events : <span className="block h-[1em] w-24 animate-pulse bg-black/10" />}
             </p>
             <p className="text-[clamp(14px,1.3vw,20px)] uppercase">{t('admin.stats.events')}</p>
           </Link>
 
-          <Link href="/admin/users" className="border border-orange p-8 no-underline text-inherit hover:bg-orange hover:text-white transition-colors">
-            <p className="text-[clamp(32px,3.5vw,56px)] font-bold mb-2 text-orange">
+          <Link href="/admin/users" className="border border-orange p-8 no-underline text-inherit hover:bg-orange hover:text-white transition-colors group">
+            <p className="text-[clamp(32px,3.5vw,56px)] font-bold mb-2 text-orange group-hover:text-white">
               {statsError ? '—' : stats ? stats.lectors : <span className="block h-[1em] w-24 animate-pulse bg-orange/20" />}
             </p>
             <p className="text-[clamp(14px,1.3vw,20px)] uppercase">{t('admin.stats.lectors')}</p>
@@ -98,3 +87,4 @@ export default function AdminDashboard() {
     </div>
   )
 }
+

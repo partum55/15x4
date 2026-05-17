@@ -28,6 +28,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
 
+    // Protection: Don't allow demoting yourself from admin
+    if (id === session.userId && role !== 'admin') {
+      return NextResponse.json({ error: 'Cannot demote yourself from admin' }, { status: 400 })
+    }
+
+    // Protection: Don't allow demoting the last admin
+    if (role !== 'admin') {
+      const { data: currentProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', id)
+        .single()
+
+      if (currentProfile?.role === 'admin') {
+        const { count } = await supabaseAdmin
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'admin')
+
+        if (count && count <= 1) {
+          return NextResponse.json({ error: 'Cannot demote the last administrator' }, { status: 400 })
+        }
+      }
+    }
+
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .update({ role })
@@ -63,6 +88,24 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     // Don't allow deleting yourself
     if (id === session.userId) {
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
+    }
+
+    // Protection: Don't allow deleting the last admin
+    const { data: currentProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', id)
+      .single()
+
+    if (currentProfile?.role === 'admin') {
+      const { count } = await supabaseAdmin
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'admin')
+
+      if (count && count <= 1) {
+        return NextResponse.json({ error: 'Cannot delete the last administrator' }, { status: 400 })
+      }
     }
 
     // Delete from auth (will cascade to profiles due to FK)

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
+import AdminNav from '@/components/admin/AdminNav'
+import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORY_COLOR_VAR } from '@/constants/colors'
 import { LECTURE_CATEGORIES } from '@/constants/lectureCategories'
@@ -24,26 +26,6 @@ type Lecture = {
   isPublic: boolean
   createdAt: string
   user: { id: string; name: string; email: string } | null
-}
-
-function TableSkeleton() {
-  return (
-    <div className="overflow-x-auto" aria-hidden="true">
-      <table className="w-full border-collapse">
-        <tbody>
-          {Array.from({ length: 6 }).map((_, rowIndex) => (
-            <tr key={rowIndex} className="border-b border-black/20">
-              {Array.from({ length: 6 }).map((__, columnIndex) => (
-                <td key={columnIndex} className="p-3">
-                  <span className={`block h-5 animate-pulse bg-black/10 ${columnIndex === 0 ? 'w-56' : columnIndex === 5 ? 'ml-auto w-36' : 'w-24'}`} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
 }
 
 export default function AdminLecturesPage() {
@@ -135,12 +117,8 @@ export default function AdminLecturesPage() {
       return next
     })
     try {
-      const res = await fetch(`/api/admin/lectures/${lectureId}/approval`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublic }),
-      })
-      if (!res.ok) return
+      const data = await api.admin.updateLectureApproval(lectureId, isPublic)
+      if (data.error) return
       setLectures(prev => prev.map(l => l.id === lectureId ? { ...l, isPublic } : l))
     } finally {
       setApprovingLectureIds(prev => {
@@ -160,8 +138,8 @@ export default function AdminLecturesPage() {
       return next
     })
     try {
-      const res = await fetch(`/api/admin/lectures/${lectureId}`, { method: 'DELETE' })
-      if (!res.ok) return
+      const data = await api.admin.deleteLecture(lectureId)
+      if (data.error) return
       setLectures(prev => prev.filter(l => l.id !== lectureId))
       setTotal(prev => Math.max(0, prev - 1))
       if (lectures.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
@@ -186,19 +164,7 @@ export default function AdminLecturesPage() {
           {t('admin.lectures.title')}
         </h1>
 
-        {/* Navigation */}
-        <nav className="flex gap-4 mb-12 border-b border-black pb-4">
-          <Link href="/admin" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.dashboard')}
-          </Link>
-          <Link href="/admin/users" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.users')}
-          </Link>
-          <span className="text-[clamp(14px,1.3vw,20px)] font-bold text-red">{t('admin.nav.lectures')}</span>
-          <Link href="/admin/events" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.events')}
-          </Link>
-        </nav>
+        <AdminNav />
 
         <div className="grid grid-cols-[minmax(220px,1fr)_repeat(3,minmax(160px,220px))] gap-3 mb-8 max-[1023px]:grid-cols-2 max-[640px]:grid-cols-1">
           <input
@@ -257,7 +223,7 @@ export default function AdminLecturesPage() {
         )}
 
         {loadingLectures ? (
-          <TableSkeleton />
+          <AdminTableSkeleton cols={6} />
         ) : lecturesError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{lecturesError}</p>
         ) : lectures.length === 0 ? (
@@ -293,7 +259,11 @@ export default function AdminLecturesPage() {
                       </span>
                     </td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
-                      {l.isPublic ? '✓' : '—'}
+                      <span className={`px-2 py-0.5 text-[clamp(10px,0.9vw,13px)] uppercase tracking-wider font-bold ${
+                        l.isPublic ? 'bg-green text-white' : 'bg-black/10 text-black/40'
+                      }`}>
+                        {l.isPublic ? t('admin.lectures.statusPublic') : t('admin.lectures.statusDraft')}
+                      </span>
                     </td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
                       {l.user?.name || '—'}
@@ -302,32 +272,23 @@ export default function AdminLecturesPage() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/account/lectures/${l.id}/edit`}
-                          className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:opacity-70"
+                          className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:bg-black hover:text-white"
                         >
                           {t('admin.lectures.edit')}
                         </Link>
-                        {!l.isPublic && (
-                          <button
-                            type="button"
-                            onClick={() => handleApprove(l.id, true)}
-                            disabled={approvingLectureIds.has(l.id)}
-                            aria-busy={approvingLectureIds.has(l.id)}
-                            className="px-3 py-1 bg-black text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
-                          >
-                            {approvingLectureIds.has(l.id) ? `${t('admin.lectures.approve')}...` : t('admin.lectures.approve')}
-                          </button>
-                        )}
-                        {l.isPublic && (
-                          <button
-                            type="button"
-                            onClick={() => handleApprove(l.id, false)}
-                            disabled={approvingLectureIds.has(l.id)}
-                            aria-busy={approvingLectureIds.has(l.id)}
-                            className="px-3 py-1 border border-black bg-white text-black border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
-                          >
-                            {approvingLectureIds.has(l.id) ? `${t('admin.lectures.unpublish')}...` : t('admin.lectures.unpublish')}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleApprove(l.id, !l.isPublic)}
+                          disabled={approvingLectureIds.has(l.id)}
+                          aria-busy={approvingLectureIds.has(l.id)}
+                          className={`px-3 py-1 border text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse ${
+                            l.isPublic 
+                              ? 'bg-white border-black text-black' 
+                              : 'bg-black border-black text-white'
+                          }`}
+                        >
+                          {approvingLectureIds.has(l.id) ? '...' : (l.isPublic ? t('admin.lectures.unpublish') : t('admin.lectures.approve'))}
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(l.id)}

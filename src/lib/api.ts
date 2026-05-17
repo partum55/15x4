@@ -194,9 +194,12 @@ export const api = {
     updateUser: (id: string, body: { role?: string }) => patch(`/api/admin/users/${id}`, body),
     deleteUser: (id: string) => del(`/api/admin/users/${id}`),
     getLectures: (params?: LectureListParams & { status?: string }) => requestJson(withQuery('/api/admin/lectures', params)),
+    updateLectureApproval: (id: string, isPublic: boolean) =>
+      patch(`/api/admin/lectures/${id}/approval`, { isPublic }),
     deleteLecture: (id: string) => del(`/api/admin/lectures/${id}`),
     getEvents: (params?: EventListParams) => requestJson(withQuery('/api/admin/events', params)),
-    approveEvent: (id: string) => patch(`/api/admin/events/${id}`, {}),
+    updateEventApproval: (id: string, isPublic: boolean) =>
+      patch(`/api/admin/events/${id}`, { isPublic }),
     deleteEvent: (id: string) => del(`/api/admin/events/${id}`),
     getStats: () => requestJson('/api/admin/stats'),
   },

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
+import AdminNav from '@/components/admin/AdminNav'
+import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import { useAuth } from '@/context/AuthContext'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { api } from '@/lib/api'
@@ -28,26 +30,6 @@ type Event = {
   createdAt: string
   user: { id: string; name: string; email: string } | null
   _count: { lectures: number }
-}
-
-function TableSkeleton() {
-  return (
-    <div className="overflow-x-auto" aria-hidden="true">
-      <table className="w-full border-collapse">
-        <tbody>
-          {Array.from({ length: 6 }).map((_, rowIndex) => (
-            <tr key={rowIndex} className="border-b border-black/20">
-              {Array.from({ length: 7 }).map((__, columnIndex) => (
-                <td key={columnIndex} className="p-3">
-                  <span className={`block h-5 animate-pulse bg-black/10 ${columnIndex === 0 ? 'w-56' : columnIndex === 6 ? 'ml-auto w-32' : 'w-24'}`} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
 }
 
 export default function AdminEventsPage() {
@@ -147,8 +129,8 @@ export default function AdminEventsPage() {
       return next
     })
     try {
-      const res = await fetch(`/api/admin/events/${eventId}`, { method: 'DELETE' })
-      if (!res.ok) return
+      const data = await api.admin.deleteEvent(eventId)
+      if (data.error) return
       setEvents(prev => prev.filter(e => e.id !== eventId))
       setTotal(prev => Math.max(0, prev - 1))
       if (events.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
@@ -161,7 +143,7 @@ export default function AdminEventsPage() {
     }
   }
 
-  async function handleApprove(eventId: string) {
+  async function handleApprove(eventId: string, isPublic: boolean) {
     if (approvingEventIds.has(eventId)) return
     setApprovingEventIds(prev => {
       const next = new Set(prev)
@@ -169,9 +151,9 @@ export default function AdminEventsPage() {
       return next
     })
     try {
-      const res = await fetch(`/api/admin/events/${eventId}`, { method: 'PATCH' })
-      if (!res.ok) return
-      setEvents(prev => prev.map(event => (event.id === eventId ? { ...event, isPublic: true } : event)))
+      const data = await api.admin.updateEventApproval(eventId, isPublic)
+      if (data.error) return
+      setEvents(prev => prev.map(event => (event.id === eventId ? { ...event, isPublic } : event)))
     } finally {
       setApprovingEventIds(prev => {
         const next = new Set(prev)
@@ -193,19 +175,7 @@ export default function AdminEventsPage() {
           {t('admin.events.title')}
         </h1>
 
-        {/* Navigation */}
-        <nav className="flex gap-4 mb-12 border-b border-black pb-4">
-          <Link href="/admin" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.dashboard')}
-          </Link>
-          <Link href="/admin/users" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.users')}
-          </Link>
-          <Link href="/admin/lectures" className="text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
-            {t('admin.nav.lectures')}
-          </Link>
-          <span className="text-[clamp(14px,1.3vw,20px)] font-bold text-red">{t('admin.nav.events')}</span>
-        </nav>
+        <AdminNav />
 
         <div className="grid grid-cols-[minmax(220px,1fr)_repeat(2,minmax(150px,220px))] gap-3 mb-8 max-[860px]:grid-cols-2 max-[640px]:grid-cols-1">
           <input
@@ -244,7 +214,7 @@ export default function AdminEventsPage() {
         )}
 
         {loadingEvents ? (
-          <TableSkeleton />
+          <AdminTableSkeleton cols={7} />
         ) : eventsError ? (
           <p className="text-[clamp(14px,1.3vw,20px)] opacity-60">{eventsError}</p>
         ) : paginatedEvents.length === 0 ? (
@@ -275,7 +245,11 @@ export default function AdminEventsPage() {
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{eventLocation(e)}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">{e._count.lectures}</td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
-                      {e.isPublic ? '✓' : '—'}
+                      <span className={`px-2 py-0.5 text-[clamp(10px,0.9vw,13px)] uppercase tracking-wider font-bold ${
+                        e.isPublic ? 'bg-green text-white' : 'bg-black/10 text-black/40'
+                      }`}>
+                        {e.isPublic ? t('admin.events.statusPublic', { defaultValue: 'Public' }) : t('admin.events.statusDraft', { defaultValue: 'Draft' })}
+                      </span>
                     </td>
                     <td className="p-3 text-[clamp(13px,1.2vw,18px)]">
                       {e.user?.name || '—'}
@@ -284,21 +258,23 @@ export default function AdminEventsPage() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/account/events/${e.id}/edit`}
-                          className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:opacity-70"
+                          className="px-3 py-1 border border-black bg-white text-black no-underline text-[clamp(11px,1vw,14px)] transition-opacity duration-150 hover:bg-black hover:text-white"
                         >
                           {t('admin.events.edit')}
                         </Link>
-                        {!e.isPublic && (
-                          <button
-                            type="button"
-                            onClick={() => handleApprove(e.id)}
-                            disabled={approvingEventIds.has(e.id)}
-                            aria-busy={approvingEventIds.has(e.id)}
-                            className="px-3 py-1 bg-black text-white border-none text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse"
-                          >
-                            {approvingEventIds.has(e.id) ? `${t('admin.events.approve')}...` : t('admin.events.approve')}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleApprove(e.id, !e.isPublic)}
+                          disabled={approvingEventIds.has(e.id)}
+                          aria-busy={approvingEventIds.has(e.id)}
+                          className={`px-3 py-1 border text-[clamp(11px,1vw,14px)] cursor-pointer hover:opacity-80 disabled:cursor-wait disabled:opacity-60 disabled:animate-pulse ${
+                            e.isPublic 
+                              ? 'bg-white border-black text-black' 
+                              : 'bg-black border-black text-white'
+                          }`}
+                        >
+                          {approvingEventIds.has(e.id) ? '...' : (e.isPublic ? t('admin.lectures.unpublish') : t('admin.events.approve'))}
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(e.id)}
