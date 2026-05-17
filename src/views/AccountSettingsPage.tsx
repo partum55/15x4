@@ -2,21 +2,19 @@
 
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import AppLayout from '../components/AppLayout'
 import FormField from '../components/FormField'
 import PasswordInput from '../components/PasswordInput'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
-import { createClient } from '../lib/supabase/client'
 import { evaluatePasswordStrength } from '../lib/password-strength'
 import { CITY_OPTIONS, findCityOption, getCityLabel } from '../constants/cities'
 
 export default function AccountSettingsPage() {
   const { i18n, t } = useTranslation()
   const { user } = useCurrentUser()
-  const { refresh } = useAuth()
-  const supabase = createClient()
+  const { refresh, updatePassword } = useAuth()
 
   const [name, setName] = useState('')
   const [city, setCity] = useState('')
@@ -81,10 +79,10 @@ export default function AccountSettingsPage() {
         await refresh()
       }
 
-      // Update password via Supabase Auth
+      // Update password via Auth context
       if (password) {
-        const { error: pwError } = await supabase.auth.updateUser({ password })
-        if (pwError) {
+        const result = await updatePassword(password)
+        if (result.error) {
           setError(t('account.settings.errorPasswordUpdate'))
           return
         }
@@ -112,9 +110,8 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navbar variant="light" />
-      <main className="flex-1 flex items-start justify-center px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
+    <AppLayout hideJoin hideFooter withPageShell={false}>
+      <main className="flex-1 flex items-start justify-center px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)] min-h-[calc(100vh-92px)]">
         <div className="w-full max-w-[480px]">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">{t('account.settings.title')}</h1>
 
@@ -213,6 +210,6 @@ export default function AccountSettingsPage() {
           </form>
         </div>
       </main>
-    </div>
+    </AppLayout>
   )
 }

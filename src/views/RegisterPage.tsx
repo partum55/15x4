@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import AppLayout from '../components/AppLayout'
 import FormField from '../components/FormField'
 import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
@@ -90,9 +90,8 @@ export default function RegisterPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <Navbar variant="light" />
-        <main className="flex-1 flex items-center justify-center px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
+      <AppLayout hideJoin hideFooter withPageShell={false}>
+        <main className="flex-1 flex items-center justify-center px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)] min-h-[calc(100vh-92px)]">
           <div className="w-full max-w-[480px] text-center">
             <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal uppercase text-black mb-6">
               {t('auth.register.checkEmail')}
@@ -102,14 +101,13 @@ export default function RegisterPage() {
             </p>
           </div>
         </main>
-      </div>
+      </AppLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navbar variant="light" />
-      <main className="flex-1 grid grid-cols-[minmax(0,0.9fr)_minmax(360px,560px)] border-t border-black max-[900px]:grid-cols-1">
+    <AppLayout hideJoin hideFooter withPageShell={false}>
+      <main className="flex-1 grid grid-cols-[minmax(0,0.9fr)_minmax(360px,560px)] border-t border-black max-[900px]:grid-cols-1 min-h-[calc(100vh-92px)]">
         <section
           className="relative flex min-h-[calc(100dvh-92px)] flex-col justify-between overflow-hidden bg-black bg-cover bg-center px-[clamp(20px,5vw,72px)] py-[clamp(48px,7vw,96px)] text-white max-[900px]:min-h-[360px] max-[900px]:gap-14"
           style={{ backgroundImage: 'url(/images/header-image.png)' }}
@@ -226,6 +224,6 @@ export default function RegisterPage() {
         </div>
         </section>
       </main>
-    </div>
+    </AppLayout>
   )
 }

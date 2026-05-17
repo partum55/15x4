@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import AppLayout from '../components/AppLayout'
 import ArrowIcon from '../components/ArrowIcon'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime } from '../lib/date-time'
@@ -65,9 +65,8 @@ export default function MyEventsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navbar variant="light" />
-      <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)]">
+    <AppLayout hideJoin hideFooter withPageShell={false}>
+      <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)] min-h-[calc(100vh-92px)]">
         <div className="flex items-center justify-between mb-6 gap-4">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black">{t('myEvents.title')}</h1>
           <Link
@@ -134,6 +133,6 @@ export default function MyEventsPage() {
           </ul>
         )}
       </main>
-    </div>
+    </AppLayout>
   )
 }

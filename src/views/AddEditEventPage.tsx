@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import AppLayout from '../components/AppLayout'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
+import LoadingBlock from '../components/ui/LoadingBlock'
 import { api } from '../lib/api'
 import { CATEGORY_COLOR_VAR } from '../constants/colors'
 import { formatEventDate, formatEventTime, normalizeDateInput, normalizeTimeInput } from '../lib/date-time'
@@ -193,10 +194,6 @@ function clearEventDraft(key: string) {
   } catch {
     // Ignore storage failures.
   }
-}
-
-function LoadingBlock({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-black/10 ${className}`} />
 }
 
 function FormSkeleton() {
@@ -586,9 +583,8 @@ export default function AddEditEventPage() {
   const previewTime = form.time ? formatEventTime(form.time) : t('addEvent.timeLabel')
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navbar variant="light" />
-      <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)]">
+    <AppLayout hideJoin hideFooter withPageShell={false}>
+      <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)] min-h-[calc(100vh-92px)]">
         <div className="w-full">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">
             {isEdit ? t('addEvent.titleEdit') : t('addEvent.titleNew')}
@@ -840,6 +836,6 @@ export default function AddEditEventPage() {
           )}
         </div>
       </main>
-    </div>
+    </AppLayout>
   )
 }

@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '@/components/Navbar'
-import AdminNav from '@/components/admin/AdminNav'
+import AdminLayout from '@/components/admin/AdminLayout'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import { useAuth } from '@/context/AuthContext'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
@@ -34,7 +32,6 @@ type Event = {
 
 export default function AdminEventsPage() {
   const { t, i18n } = useTranslation()
-  const router = useRouter()
   const { user, loading } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
@@ -47,12 +44,6 @@ export default function AdminEventsPage() {
   const [page, setPage] = useState(1)
   const [approvingEventIds, setApprovingEventIds] = useState<Set<string>>(new Set())
   const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    if (!loading && (!user || user?.profile?.role !== 'admin')) {
-      router.push('/')
-    }
-  }, [user, loading, router])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -112,9 +103,8 @@ export default function AdminEventsPage() {
 
   const pagination = buildPaginationState(total, page, PAGE_SIZE)
   const paginatedEvents = events
-  const selectedLanguage = i18n.language.startsWith('en') ? 'en' : 'uk'
-  const eventTitle = (row: Event) => selectedLanguage === 'en' ? row.titleEn || row.titleUk : row.titleUk || row.titleEn
-  const eventLocation = (row: Event) => selectedLanguage === 'en' ? row.locationEn || row.locationUk : row.locationUk || row.locationEn
+  const eventTitle = (row: Event) => row.title
+  const eventLocation = (row: Event) => row.location
 
   useEffect(() => {
     if (page !== pagination.currentPage) setPage(pagination.currentPage)
@@ -163,20 +153,8 @@ export default function AdminEventsPage() {
     }
   }
 
-  if (loading || !user || user?.profile?.role !== 'admin') {
-    return null
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar variant="light" />
-      <main className="px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
-        <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
-          {t('admin.events.title')}
-        </h1>
-
-        <AdminNav />
-
+    <AdminLayout title={t('admin.events.title')}>
         <div className="grid grid-cols-[minmax(220px,1fr)_repeat(2,minmax(150px,220px))] gap-3 mb-8 max-[860px]:grid-cols-2 max-[640px]:grid-cols-1">
           <input
             type="text"
@@ -315,7 +293,6 @@ export default function AdminEventsPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AdminLayout>
   )
 }
