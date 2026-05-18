@@ -19,11 +19,40 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Update lecture's isPublic status
+    if (isPublic) {
+      const { data: lectureData, error: lectureFetchError } = await supabaseAdmin
+        .from('Lecture')
+        .select('eventId')
+        .eq('id', id)
+        .single()
+
+      if (lectureFetchError || !lectureData) {
+        return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
+      }
+
+      const { data: eventData, error: eventFetchError } = await supabaseAdmin
+        .from('Event')
+        .select('isPublic')
+        .eq('id', lectureData.eventId)
+        .single()
+
+      if (eventFetchError || !eventData) {
+        return NextResponse.json({ error: 'Parent event not found' }, { status: 404 })
+      }
+
+      if (!eventData.isPublic) {
+        return NextResponse.json({ 
+          error: 'CANNOT_PUBLISH_LECTURE_WITHOUT_EVENT',
+          message: 'Cannot publish a lecture when its parent event is a draft.' 
+        }, { status: 400 })
+      }
+    }
+
     const { data: lecture, error } = await supabaseAdmin
       .from('Lecture')
       .update({ isPublic })
       .eq('id', id)
-      .select()
+      .select('*, eventId')
       .single()
 
     if (error || !lecture) {
@@ -31,8 +60,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
+    let remainingPublicCount = 0
+    if (!isPublic) {
+      const { count } = await supabaseAdmin
+        .from('Lecture')
+        .select('*', { count: 'exact', head: true })
+        .eq('eventId', lecture.eventId)
+        .eq('isPublic', true)
+      remainingPublicCount = count || 0
+    }
+
     return NextResponse.json({
       ...lecture,
+      remainingPublicCount,
       message: isPublic ? 'Lecture approved and published' : 'Lecture unpublished',
     })
   } catch (error) {

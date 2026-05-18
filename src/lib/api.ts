@@ -95,6 +95,7 @@ export type LectureListParams = {
   offset?: number
   search?: string
   category?: string
+  status?: string
   sort?: string
   scope?: string
 }

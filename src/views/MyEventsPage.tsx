@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
+import ConfirmModal from '../components/ConfirmModal'
+import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime } from '../lib/date-time'
 import { useCurrentUser } from '../hooks/useCurrentUser'
@@ -16,11 +18,27 @@ export default function MyEventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
   const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
+  const [deleteContext, setDeleteContext] = useState<{ id: string, title: string } | null>(null)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage(1)
+      setDebouncedSearchQuery(searchQuery.trim())
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
     if (userLoading) return
     if (!user?.id) {
       setEvents([])
+      setTotal(0)
       setLoadingEvents(false)
       return
     }
@@ -28,12 +46,23 @@ export default function MyEventsPage() {
     let isMounted = true
     setLoadingEvents(true)
     api
-      .getMyEvents()
+      .getEventsPage({ 
+        scope: 'mine',
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+        search: debouncedSearchQuery,
+        status: statusFilter
+      })
       .then((data) => {
-        if (isMounted) setEvents(data)
+        if (!isMounted) return
+        setEvents(data.items || [])
+        setTotal(data.total || 0)
       })
       .catch(() => {
-        if (isMounted) setEvents([])
+        if (isMounted) {
+          setEvents([])
+          setTotal(0)
+        }
       })
       .finally(() => {
         if (isMounted) setLoadingEvents(false)
@@ -42,11 +71,20 @@ export default function MyEventsPage() {
     return () => {
       isMounted = false
     }
-  }, [user?.id, userLoading])
+  }, [user?.id, userLoading, page, debouncedSearchQuery, statusFilter])
+
+  const pagination = buildPaginationState(total, page, PAGE_SIZE)
 
   async function handleDelete(id: string) {
     if (deletingEventIds.has(id)) return
-    if (!window.confirm(t('myEvents.deleteConfirm'))) return
+    
+    const event = events.find(e => e.id === id)
+    if (!event) return
+
+    setDeleteContext({ id, title: event.titleUk || event.titleEn || '' })
+  }
+
+  async function performDelete(id: string) {
     setDeletingEventIds(prev => {
       const next = new Set(prev)
       next.add(id)
@@ -55,6 +93,7 @@ export default function MyEventsPage() {
     try {
       await api.deleteEvent(id)
       setEvents(prev => prev.filter(e => e.id !== id))
+      setTotal(prev => Math.max(0, prev - 1))
     } finally {
       setDeletingEventIds(prev => {
         const next = new Set(prev)
@@ -68,6 +107,20 @@ export default function MyEventsPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar variant="light" />
       <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)]">
+
+        {deleteContext && (
+          <ConfirmModal
+            title={t('myEvents.deleteConfirm')}
+            description={deleteContext.title}
+            onConfirm={() => {
+              const id = deleteContext.id
+              setDeleteContext(null)
+              void performDelete(id)
+            }}
+            onCancel={() => setDeleteContext(null)}
+          />
+        )}
+
         <div className="flex items-center justify-between mb-6 gap-4">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black">{t('myEvents.title')}</h1>
           <Link
@@ -80,6 +133,28 @@ export default function MyEventsPage() {
         </div>
 
         <div className="w-full h-px bg-black" />
+
+        <div className="grid grid-cols-[1fr_200px] gap-3 my-8 max-[640px]:grid-cols-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('admin.events.search')}
+            className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setPage(1)
+              setStatusFilter(e.target.value)
+            }}
+            className="ui-select"
+          >
+            <option value="">{t('admin.events.allStatuses')}</option>
+            <option value="public">{t('admin.events.statusPublic')}</option>
+            <option value="draft">{t('admin.events.statusDraft')}</option>
+          </select>
+        </div>
 
         {loadingEvents ? (
           <ul className="list-none">
@@ -98,40 +173,71 @@ export default function MyEventsPage() {
             ))}
           </ul>
         ) : events.length === 0 ? (
-          <p className="py-8 text-[clamp(14px,1.3vw,20px)] text-black opacity-50">{t('myEvents.empty')}</p>
+          <p className="py-8 text-[clamp(14px,1.3vw,20px)] text-black opacity-50 uppercase">{t('myEvents.empty')}</p>
         ) : (
-          <ul className="list-none">
-            {events.map(event => (
-              <li key={event.id} className="flex items-center justify-between gap-6 py-5 border-b border-black max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-3">
-                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                  <p className="text-[clamp(14px,1.4vw,20px)] font-normal uppercase tracking-[-0.03em] text-black whitespace-nowrap overflow-hidden text-ellipsis">{event.city}</p>
-                  <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
-                    {formatEventDate(event.date, true)} · {formatEventTime(event.time)} · {event.location}
-                  </p>
-                  <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
-                    {t('myEvents.lectureCount', { count: event.lectures?.length ?? 0 })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <Link
-                    href={`/account/events/${event.id}/edit`}
-                    className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-black underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100"
-                  >
-                    {t('myEvents.editBtn')}
-                  </Link>
-                  <button
-                    type="button"
-                    className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100 disabled:cursor-wait disabled:opacity-45 disabled:animate-pulse"
-                    onClick={() => handleDelete(event.id)}
-                    disabled={deletingEventIds.has(event.id)}
-                    aria-busy={deletingEventIds.has(event.id)}
-                  >
-                    {deletingEventIds.has(event.id) ? `${t('myEvents.deleteBtn')}...` : t('myEvents.deleteBtn')}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="list-none">
+              {events.map(event => (
+                <li key={event.id} className="flex items-center justify-between gap-6 py-5 border-b border-black max-[767px]:flex-col max-[767px]:items-start max-[767px]:gap-3">
+                  <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                    <div className="flex items-center gap-3">
+                      <p className="text-[clamp(14px,1.4vw,20px)] font-normal uppercase tracking-[-0.03em] text-black whitespace-nowrap overflow-hidden text-ellipsis">{event.city}</p>
+                      <span className={`px-2 py-0.5 text-[10px] uppercase font-bold ${event.isPublic ? 'bg-green text-white' : 'bg-black/10 text-black/40'}`}>
+                        {event.isPublic ? 'Public' : 'Draft'}
+                      </span>
+                    </div>
+                    <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
+                      {formatEventDate(event.date, true)} · {formatEventTime(event.time)} · {event.location}
+                    </p>
+                    <p className="text-[clamp(12px,1.1vw,16px)] text-black opacity-60">
+                      {t('myEvents.lectureCount', { count: event.lectures?.length ?? 0 })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <Link
+                      href={`/account/events/${event.id}/edit`}
+                      className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-black underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100"
+                    >
+                      {t('myEvents.editBtn')}
+                    </Link>
+                    <button
+                      type="button"
+                      className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100 disabled:cursor-wait disabled:opacity-45 disabled:animate-pulse"
+                      onClick={() => handleDelete(event.id)}
+                      disabled={deletingEventIds.has(event.id)}
+                      aria-busy={deletingEventIds.has(event.id)}
+                    >
+                      {deletingEventIds.has(event.id) ? `${t('myEvents.deleteBtn')}...` : t('myEvents.deleteBtn')}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between gap-4 py-8 max-[640px]:flex-col max-[640px]:items-stretch">
+                <button
+                  type="button"
+                  onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                  disabled={pagination.currentPage === 1}
+                  className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {t('admin.pagination.prev')}
+                </button>
+                <span className="text-center text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
+                  {pagination.currentPage} / {pagination.totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  className="px-6 py-3 border border-black bg-white text-black text-[clamp(12px,1.1vw,16px)] uppercase hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {t('admin.pagination.next')}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

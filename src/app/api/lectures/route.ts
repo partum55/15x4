@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     const offset = parsePositiveInt(searchParams.get('offset'), 0, 100000)
     const search = sanitizeSearch(searchParams.get('search'))
     const category = searchParams.get('category')?.trim()
+    const status = searchParams.get('status')?.trim()
     const sort = searchParams.get('sort')
     const supabase = await createClient()
     const {
@@ -36,6 +37,8 @@ export async function GET(req: NextRequest) {
     if (scope === 'mine') {
       if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       query = query.eq('userId', user.id)
+      if (status === 'public') query = query.eq('isPublic', true)
+      if (status === 'draft') query = query.eq('isPublic', false)
     } else {
       query = query.eq('isPublic', true)
     }

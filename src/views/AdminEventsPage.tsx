@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import AdminNav from '@/components/admin/AdminNav'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
+import ConfirmModal from '@/components/ConfirmModal'
 import { useAuth } from '@/context/AuthContext'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { api } from '@/lib/api'
@@ -47,6 +48,7 @@ export default function AdminEventsPage() {
   const [page, setPage] = useState(1)
   const [approvingEventIds, setApprovingEventIds] = useState<Set<string>>(new Set())
   const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
+  const [deleteContext, setDeleteContext] = useState<{ id: string, title: string } | null>(null)
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -122,7 +124,14 @@ export default function AdminEventsPage() {
 
   async function handleDelete(eventId: string) {
     if (deletingEventIds.has(eventId)) return
-    if (!confirm(t('admin.events.confirmDelete'))) return
+    
+    const target = events.find(e => e.id === eventId)
+    if (!target) return
+
+    setDeleteContext({ id: eventId, title: eventTitle(target) })
+  }
+
+  async function performDelete(eventId: string) {
     setDeletingEventIds(prev => {
       const next = new Set(prev)
       next.add(eventId)
@@ -130,7 +139,10 @@ export default function AdminEventsPage() {
     })
     try {
       const data = await api.admin.deleteEvent(eventId)
-      if (data.error) return
+      if (data.error) {
+        alert(data.error)
+        return
+      }
       setEvents(prev => prev.filter(e => e.id !== eventId))
       setTotal(prev => Math.max(0, prev - 1))
       if (events.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
@@ -171,6 +183,20 @@ export default function AdminEventsPage() {
     <div className="min-h-screen bg-white">
       <Navbar variant="light" />
       <main className="px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
+
+        {deleteContext && (
+          <ConfirmModal
+            title={t('admin.events.confirmDelete', { title: deleteContext.title })}
+            description={t('admin.events.confirmDeleteDescription', { title: deleteContext.title })}
+            onConfirm={() => {
+              const id = deleteContext.id
+              setDeleteContext(null)
+              void performDelete(id)
+            }}
+            onCancel={() => setDeleteContext(null)}
+          />
+        )}
+
         <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
           {t('admin.events.title')}
         </h1>

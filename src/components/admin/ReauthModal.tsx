@@ -9,9 +9,10 @@ interface ReauthModalProps {
   onConfirm: (password: string) => Promise<void>
   onCancel: () => void
   title?: string
+  description?: string
 }
 
-export default function ReauthModal({ onConfirm, onCancel, title }: ReauthModalProps) {
+export default function ReauthModal({ onConfirm, onCancel, title, description }: ReauthModalProps) {
   const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -20,14 +21,13 @@ export default function ReauthModal({ onConfirm, onCancel, title }: ReauthModalP
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (submitting || !password) return
-    
+
     setSubmitting(true)
     setError('')
     try {
       await onConfirm(password)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message || t('auth.login.errorInvalidPassword'))
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('auth.login.errorInvalidPassword'))
     } finally {
       setSubmitting(false)
     }
@@ -37,10 +37,10 @@ export default function ReauthModal({ onConfirm, onCancel, title }: ReauthModalP
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white border border-black w-full max-w-md p-8 animate-in fade-in zoom-in duration-200">
         <h2 className="text-[clamp(20px,2vw,28px)] font-normal uppercase mb-4">
-          {title || t('admin.users.reauthTitle', { defaultValue: 'Підтвердіть пароль' })}
+          {title || t('admin.users.reauthTitle')}
         </h2>
-        <p className="text-[clamp(13px,1.2vw,18px)] text-black/60 mb-8">
-          {t('admin.users.reauthDescription', { defaultValue: 'Для виконання цієї дії необхідно підтвердити ваш пароль адміністратора.' })}
+        <p className="text-[clamp(13px,1.2vw,18px)] text-black/60 mb-8 whitespace-pre-line">
+          {description || t('admin.users.reauthDescription')}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">

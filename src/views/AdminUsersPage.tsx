@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar'
 import AdminNav from '@/components/admin/AdminNav'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import ReauthModal from '@/components/admin/ReauthModal'
+import ConfirmModal from '@/components/ConfirmModal'
 import { useAuth } from '@/context/AuthContext'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
 import { PROFILE_ROLES, type ProfileRole } from '@/lib/roles'
@@ -36,9 +37,14 @@ export default function AdminUsersPage() {
   const [pendingRoleUserIds, setPendingRoleUserIds] = useState<Set<string>>(new Set())
   const [deletingUserIds, setDeletingUserIds] = useState<Set<string>>(new Set())
   const [reauthContext, setReauthContext] = useState<{ 
-    type: 'role' | 'delete', 
+    type: 'role', 
     userId: string, 
-    role?: ProfileRole 
+    role: ProfileRole,
+    name: string
+  } | null>(null)
+  const [deleteContext, setDeleteContext] = useState<{
+    userId: string,
+    name: string
   } | null>(null)
 
   useEffect(() => {
@@ -114,9 +120,12 @@ export default function AdminUsersPage() {
   async function handleSetRole(userId: string, role: ProfileRole) {
     if (pendingRoleUserIds.has(userId) || deletingUserIds.has(userId)) return
     
-    // Require re-authentication for granting admin rights or changing own role
+    const targetUser = users.find(u => u.id === userId)
+    if (!targetUser) return
+
+    // Require re-authentication ONLY for granting admin rights or changing own role
     if (role === 'admin' || userId === user?.id) {
-      setReauthContext({ type: 'role', userId, role })
+      setReauthContext({ type: 'role', userId, role, name: targetUser.name })
       return
     }
 
@@ -147,10 +156,11 @@ export default function AdminUsersPage() {
 
   async function handleDelete(userId: string) {
     if (deletingUserIds.has(userId) || pendingRoleUserIds.has(userId)) return
-    if (!confirm(t('admin.users.confirmDelete'))) return
     
-    // Require re-authentication for user deletion
-    setReauthContext({ type: 'delete', userId })
+    const targetUser = users.find(u => u.id === userId)
+    if (!targetUser) return
+
+    setDeleteContext({ userId, name: targetUser.name })
   }
 
   async function performDelete(userId: string) {
@@ -186,14 +196,9 @@ export default function AdminUsersPage() {
       throw new Error(t('auth.login.errorInvalidPassword'))
     }
 
-    const { type, userId, role } = reauthContext
+    const { userId, role } = reauthContext
     setReauthContext(null)
-
-    if (type === 'role' && role) {
-      await performSetRole(userId, role)
-    } else if (type === 'delete') {
-      await performDelete(userId)
-    }
+    await performSetRole(userId, role)
   }
 
   if (loading || !user || user?.profile?.role !== 'admin') {
@@ -209,6 +214,21 @@ export default function AdminUsersPage() {
           <ReauthModal 
             onConfirm={handleReauth}
             onCancel={() => setReauthContext(null)}
+            title={t('admin.users.confirmMakeAdmin', { name: reauthContext.name })}
+            description={t('admin.users.confirmMakeAdminDescription', { name: reauthContext.name })}
+          />
+        )}
+
+        {deleteContext && (
+          <ConfirmModal
+            title={t('admin.users.confirmDelete', { name: deleteContext.name })}
+            description={t('admin.users.confirmDeleteDescription', { name: deleteContext.name })}
+            onConfirm={() => {
+              const id = deleteContext.userId
+              setDeleteContext(null)
+              void performDelete(id)
+            }}
+            onCancel={() => setDeleteContext(null)}
           />
         )}
         

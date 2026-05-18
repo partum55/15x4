@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/Navbar'
 import AdminNav from '@/components/admin/AdminNav'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
+import ConfirmModal from '@/components/ConfirmModal'
 import { useAuth } from '@/context/AuthContext'
 import { CATEGORY_COLOR_VAR } from '@/constants/colors'
 import { LECTURE_CATEGORIES } from '@/constants/lectureCategories'
@@ -15,6 +16,7 @@ import { api } from '@/lib/api'
 
 type Lecture = {
   id: string
+  eventId: string
   title: string
   author: string
   titleUk: string
@@ -44,6 +46,14 @@ export default function AdminLecturesPage() {
   const [page, setPage] = useState(1)
   const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
   const [approvingLectureIds, setApprovingLectureIds] = useState<Set<string>>(new Set())
+  const [deleteContext, setDeleteContext] = useState<{ id: string, title: string } | null>(null)
+  const [publishEventContext, setPublishEventContext] = useState<{ 
+    lectureId: string, 
+    eventId: string 
+  } | null>(null)
+  const [unpublishEventContext, setUnpublishEventContext] = useState<{
+    eventId: string
+  } | null>(null)
 
   useEffect(() => {
     if (!loading && (!user || user?.profile?.role !== 'admin')) {
@@ -111,6 +121,7 @@ export default function AdminLecturesPage() {
 
   async function handleApprove(lectureId: string, isPublic: boolean) {
     if (approvingLectureIds.has(lectureId)) return
+    
     setApprovingLectureIds(prev => {
       const next = new Set(prev)
       next.add(lectureId)
@@ -118,8 +129,81 @@ export default function AdminLecturesPage() {
     })
     try {
       const data = await api.admin.updateLectureApproval(lectureId, isPublic)
-      if (data.error) return
+      
+      if (data.error === 'CANNOT_PUBLISH_LECTURE_WITHOUT_EVENT') {
+        const lecture = lectures.find(l => l.id === lectureId)
+        if (lecture) {
+          setPublishEventContext({ 
+            lectureId, 
+            eventId: lecture.eventId
+          })
+        }
+        return
+      }
+
+      if (data.error) {
+        alert(data.error)
+        return
+      }
+
+      if (!isPublic && data.remainingPublicCount === 0) {
+        setUnpublishEventContext({ eventId: data.eventId })
+      }
+
       setLectures(prev => prev.map(l => l.id === lectureId ? { ...l, isPublic } : l))
+    } finally {
+      setApprovingLectureIds(prev => {
+        const next = new Set(prev)
+        next.delete(lectureId)
+        return next
+      })
+    }
+  }
+
+  async function handleUnpublishEvent() {
+    if (!unpublishEventContext) return
+    const { eventId } = unpublishEventContext
+    setUnpublishEventContext(null)
+
+    try {
+      await api.admin.updateEventApproval(eventId, false)
+      setLectures(prev => prev.map(l => {
+        if (l.eventId === eventId) {
+          return { ...l, isPublic: false }
+        }
+        return l
+      }))
+    } catch (err) {
+      console.error('Failed to unpublish event:', err)
+    }
+  }
+
+  async function handlePublishEventAndLecture() {
+    if (!publishEventContext) return
+    const { lectureId, eventId } = publishEventContext
+    setPublishEventContext(null)
+
+    setApprovingLectureIds(prev => {
+      const next = new Set(prev)
+      next.add(lectureId)
+      return next
+    })
+
+    try {
+      const eventData = await api.admin.updateEventApproval(eventId, true)
+      if (eventData.error) {
+        alert(eventData.error)
+        return
+      }
+      
+      // Update local state: since event API publishes all lectures of that event,
+      // we update all lectures matching eventId
+      setLectures(prev => prev.map(l => {
+        if (l.eventId === eventId) {
+          return { ...l, isPublic: true }
+        }
+        return l
+      }))
     } finally {
       setApprovingLectureIds(prev => {
         const next = new Set(prev)
@@ -131,7 +215,14 @@ export default function AdminLecturesPage() {
 
   async function handleDelete(lectureId: string) {
     if (deletingLectureIds.has(lectureId)) return
-    if (!confirm(t('admin.lectures.confirmDelete'))) return
+    
+    const target = lectures.find(l => l.id === lectureId)
+    if (!target) return
+
+    setDeleteContext({ id: lectureId, title: target.title })
+  }
+
+  async function performDelete(lectureId: string) {
     setDeletingLectureIds(prev => {
       const next = new Set(prev)
       next.add(lectureId)
@@ -139,7 +230,10 @@ export default function AdminLecturesPage() {
     })
     try {
       const data = await api.admin.deleteLecture(lectureId)
-      if (data.error) return
+      if (data.error) {
+        alert(data.error)
+        return
+      }
       setLectures(prev => prev.filter(l => l.id !== lectureId))
       setTotal(prev => Math.max(0, prev - 1))
       if (lectures.length === 1 && page > 1) setPage(prev => Math.max(1, prev - 1))
@@ -160,6 +254,40 @@ export default function AdminLecturesPage() {
     <div className="min-h-screen bg-white">
       <Navbar variant="light" />
       <main className="px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
+
+        {deleteContext && (
+          <ConfirmModal
+            title={t('admin.lectures.confirmDelete', { title: deleteContext.title })}
+            description={t('admin.lectures.confirmDeleteDescription', { title: deleteContext.title })}
+            onConfirm={() => {
+              const id = deleteContext.id
+              setDeleteContext(null)
+              void performDelete(id)
+            }}
+            onCancel={() => setDeleteContext(null)}
+          />
+        )}
+
+        {publishEventContext && (
+          <ConfirmModal
+            title={t('admin.lectures.confirmPublishEvent')}
+            description={t('admin.lectures.confirmPublishEventDescription')}
+            onConfirm={handlePublishEventAndLecture}
+            onCancel={() => setPublishEventContext(null)}
+            isDestructive={false}
+          />
+        )}
+
+        {unpublishEventContext && (
+          <ConfirmModal
+            title={t('admin.lectures.confirmUnpublishEvent')}
+            description={t('admin.lectures.confirmUnpublishEventDescription')}
+            onConfirm={handleUnpublishEvent}
+            onCancel={() => setUnpublishEventContext(null)}
+            isDestructive={false}
+          />
+        )}
+
         <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
           {t('admin.lectures.title')}
         </h1>

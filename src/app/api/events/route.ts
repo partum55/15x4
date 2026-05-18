@@ -14,6 +14,7 @@ import {
   mapLectureRow,
   parsePositiveInt,
   resolveLocale,
+  sanitizeSearch,
 } from '@/lib/content-api'
 
 function facetKey(value: unknown) {
@@ -78,6 +79,8 @@ export async function GET(req: NextRequest) {
     const offset = parsePositiveInt(searchParams.get('offset'), 0, 100000)
     const city = searchParams.get('city')?.trim()
     const time = searchParams.get('time')?.trim()
+    const status = searchParams.get('status')?.trim()
+    const search = sanitizeSearch(searchParams.get('search'))
     const sort = searchParams.get('sort')
     const supabase = await createClient()
     const {
@@ -93,8 +96,17 @@ export async function GET(req: NextRequest) {
 
     if (scope === 'mine') {
       query = query.eq('userId', userId)
+      if (status === 'public') query = query.eq('isPublic', true)
+      if (status === 'draft') query = query.eq('isPublic', false)
     } else {
       query = query.eq('isPublic', true)
+    }
+
+    if (search) {
+      const pattern = `%${search}%`
+      query = query.or(
+        `titleUk.ilike.${pattern},titleEn.ilike.${pattern},locationUk.ilike.${pattern},locationEn.ilike.${pattern},cityUk.ilike.${pattern},cityEn.ilike.${pattern}`,
+      )
     }
 
     let facetsQuery = supabase.from('Event').select('city, cities(nameUk, nameEn), time')
