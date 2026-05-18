@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '@/components/Navbar'
-import AdminNav from '@/components/admin/AdminNav'
+import AdminLayout from '@/components/admin/AdminLayout'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import ReauthModal from '@/components/admin/ReauthModal'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -23,7 +21,6 @@ type User = {
 
 export default function AdminUsersPage() {
   const { t, i18n } = useTranslation()
-  const router = useRouter()
   const { user, loading, signIn } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
@@ -46,12 +43,6 @@ export default function AdminUsersPage() {
     userId: string,
     name: string
   } | null>(null)
-
-  useEffect(() => {
-    if (!loading && (!user || user?.profile?.role !== 'admin')) {
-      router.push('/')
-    }
-  }, [user, loading, router])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -206,12 +197,9 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar variant="light" />
-      <main className="px-[clamp(16px,3.2vw,48px)] py-[clamp(32px,4.2vw,64px)]">
-        
+    <AdminLayout title={t('admin.users.title')}>
         {reauthContext && (
-          <ReauthModal 
+          <ReauthModal
             onConfirm={handleReauth}
             onCancel={() => setReauthContext(null)}
             title={t('admin.users.confirmMakeAdmin', { name: reauthContext.name })}
@@ -311,7 +299,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex gap-2 justify-end items-center flex-wrap">
-                        {u.id !== user.id && (
+                        {u.id !== user?.id && (
                           <div className="relative">
                             <select
                               value={u.role}
@@ -328,7 +316,7 @@ export default function AdminUsersPage() {
                             </div>
                           </div>
                         )}
-                        {u.id !== user.id && (
+                        {u.id !== user?.id && (
                           <button
                             type="button"
                             onClick={() => handleDelete(u.id)}
@@ -370,7 +358,6 @@ export default function AdminUsersPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AdminLayout>
   )
 }

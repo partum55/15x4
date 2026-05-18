@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import AppLayout from '../components/AppLayout'
 import FormField from '../components/FormField'
 import PasswordInput from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
@@ -71,9 +71,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navbar variant="light" />
-      <main className="flex-1 grid grid-cols-[minmax(0,0.9fr)_minmax(360px,520px)] border-t border-black max-[900px]:grid-cols-1">
+    <AppLayout hideJoin hideFooter withPageShell={false}>
+      <main className="flex-1 grid grid-cols-[minmax(0,0.9fr)_minmax(360px,520px)] border-t border-black max-[900px]:grid-cols-1 min-h-[calc(100vh-92px)]">
         <section
           className="relative flex min-h-[calc(100dvh-92px)] flex-col justify-between overflow-hidden bg-black bg-cover bg-center px-[clamp(20px,5vw,72px)] py-[clamp(48px,7vw,96px)] text-white max-[900px]:min-h-[360px] max-[900px]:gap-14"
           style={{ backgroundImage: 'url(/images/header-image.png)' }}
@@ -147,6 +146,6 @@ export default function LoginPage() {
           </div>
         </section>
       </main>
-    </div>
+    </AppLayout>
   )
 }

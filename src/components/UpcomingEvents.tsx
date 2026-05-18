@@ -1,16 +1,17 @@
 'use client'
 
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from 'boneyard-js/react'
-import ArrowIcon from './ArrowIcon'
+import LoadingBlock from './ui/LoadingBlock'
+import EventPhaseAction from './EventPhaseAction'
 import type { Event } from '@/lib/api'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime, getEventPhase, getEventStartTimestamp } from '../lib/date-time'
-import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
+import { useLocalizedFetch } from '../hooks/useLocalizedFetch'
 import { useAuth } from '../context/AuthContext'
 import { findCityOption } from '../constants/cities'
 import { TEXT_BONE_SNAPSHOT } from '@/lib/boneyard'
@@ -32,59 +33,21 @@ function matchesCity(event: Event, city: string) {
   )
 }
 
-function LoadingBlock({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-black/10 ${className}`} />
-}
-
 export default function UpcomingEvents() {
-  const { t, i18n } = useTranslation()
-  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
-  const previousLocaleRef = useRef(locale)
-  const hasLoadedRef = useRef(false)
+  const { t } = useTranslation()
   const { user } = useAuth()
   const router = useRouter()
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
-  const [now, setNow] = useState(0)
   const [selectedCity, setSelectedCity] = useState('')
   const [citySelectionTouched, setCitySelectionTouched] = useState(false)
-  const [textRefreshing, setTextRefreshing] = useState(false)
-  const skeletonLoading = useMinimumSkeleton(loading)
-  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
-
-  useEffect(() => {
-    let isMounted = true
-    const isLocaleRefresh = hasLoadedRef.current && previousLocaleRef.current !== locale
-    previousLocaleRef.current = locale
-    const pendingTimer = window.setTimeout(() => {
-      if (!isMounted) return
-      if (isLocaleRefresh) setTextRefreshing(true)
-      else setLoading(true)
-    }, 0)
-
-    api
-      .getEvents()
-      .then((data) => {
-        if (!isMounted) return
-        setNow(Date.now())
-        setEvents(Array.isArray(data) ? data : [])
-      })
-      .catch(() => {
-        if (!isMounted) return
-        setEvents([])
-      })
-      .finally(() => {
-        if (isMounted) {
-          hasLoadedRef.current = true
-          setLoading(false)
-          setTextRefreshing(false)
-        }
-      })
-    return () => {
-      isMounted = false
-      window.clearTimeout(pendingTimer)
-    }
-  }, [locale])
+  const { data, loading: skeletonLoading, textRefreshing: textSkeletonLoading } = useLocalizedFetch<{ events: Event[]; fetchedAt: number }>(
+    async () => {
+      const list = await api.getEvents()
+      return { events: Array.isArray(list) ? list : [], fetchedAt: Date.now() }
+    },
+  )
+  const events = data?.events ?? []
+  const now = data?.fetchedAt ?? 0
+  const loading = skeletonLoading
 
   const upcomingEvents = useMemo(() => {
     if (!now) return []
@@ -200,40 +163,21 @@ export default function UpcomingEvents() {
                           </>
                         )}
                       </div>
-                      {(() => {
-                        const eventPhase = getEventPhase(event.date, event.time, now)
-                        const registerHref = event.registrationUrl?.trim()
-                        const photosHref = event.eventPhotosUrl?.trim()
-                        const actionClassName = "mt-6 flex h-[69px] w-full items-center justify-center gap-[10px] bg-black px-6 py-5 font-sans text-[clamp(16px,1.6vw,24px)] font-normal text-white no-underline transition-opacity duration-200 hover:opacity-85 max-[767px]:justify-between"
-
-                        if (eventPhase === 'upcoming' && registerHref?.startsWith('http')) {
-                          return (
-                            <a href={registerHref} target="_blank" rel="noopener noreferrer" className={actionClassName}>
-                              <span>{t('upcomingEvents.register')}</span>
-                              <ArrowIcon />
-                            </a>
-                          )
-                        }
-
-                        if (eventPhase === 'live') {
-                          return (
-                            <span className="mt-6 flex h-[69px] w-full cursor-not-allowed items-center justify-center border border-black px-6 py-5 font-sans text-[clamp(16px,1.6vw,24px)] font-normal text-black/50 max-[767px]:justify-between" aria-disabled="true">
-                              <span>{t('upcomingEvents.ongoing')}</span>
-                            </span>
-                          )
-                        }
-
-                        if (eventPhase === 'past' && photosHref?.startsWith('http')) {
-                          return (
-                            <a href={photosHref} target="_blank" rel="noopener noreferrer" className={actionClassName}>
-                              <span>{t('upcomingEvents.photos')}</span>
-                              <ArrowIcon />
-                            </a>
-                          )
-                        }
-
-                        return null
-                      })()}
+                      <div className="mt-6">
+                        <EventPhaseAction
+                          date={event.date}
+                          time={event.time}
+                          registrationUrl={event.registrationUrl}
+                          eventPhotosUrl={event.eventPhotosUrl}
+                          labels={{
+                            register: t('upcomingEvents.register'),
+                            ongoing: t('upcomingEvents.ongoing'),
+                            photos: t('upcomingEvents.photos'),
+                          }}
+                          now={now}
+                          fullWidth
+                        />
+                      </div>
                     </div>
 
                     {/* Col 2: image */}

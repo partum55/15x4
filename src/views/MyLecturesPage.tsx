@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import AppLayout from '../components/AppLayout'
 import ArrowIcon from '../components/ArrowIcon'
 import ConfirmModal from '../components/ConfirmModal'
 import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
@@ -244,6 +244,6 @@ export default function MyLecturesPage() {
           </>
         )}
       </main>
-    </div>
+    </AppLayout>
   )
 }

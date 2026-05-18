@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '@/components/Navbar'
-import AdminNav from '@/components/admin/AdminNav'
+import AdminLayout from '@/components/admin/AdminLayout'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import ConfirmModal from '@/components/ConfirmModal'
 import { useAuth } from '@/context/AuthContext'
@@ -35,7 +33,6 @@ type Event = {
 
 export default function AdminEventsPage() {
   const { t, i18n } = useTranslation()
-  const router = useRouter()
   const { user, loading } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loadingEvents, setLoadingEvents] = useState(true)
@@ -114,9 +111,8 @@ export default function AdminEventsPage() {
 
   const pagination = buildPaginationState(total, page, PAGE_SIZE)
   const paginatedEvents = events
-  const selectedLanguage = i18n.language.startsWith('en') ? 'en' : 'uk'
-  const eventTitle = (row: Event) => selectedLanguage === 'en' ? row.titleEn || row.titleUk : row.titleUk || row.titleEn
-  const eventLocation = (row: Event) => selectedLanguage === 'en' ? row.locationEn || row.locationUk : row.locationUk || row.locationEn
+  const eventTitle = (row: Event) => row.title
+  const eventLocation = (row: Event) => row.location
 
   useEffect(() => {
     if (page !== pagination.currentPage) setPage(pagination.currentPage)
@@ -173,10 +169,6 @@ export default function AdminEventsPage() {
         return next
       })
     }
-  }
-
-  if (loading || !user || user?.profile?.role !== 'admin') {
-    return null
   }
 
   return (
@@ -341,7 +333,6 @@ export default function AdminEventsPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AdminLayout>
   )
 }

@@ -4,101 +4,50 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { useState, useEffect, useRef } from 'react'
 import type { Event } from '@/lib/api'
+import AppLayout from '../components/AppLayout'
 import ArrowIcon from '../components/ArrowIcon'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 import LectureCard from '../components/LectureCard'
+import LoadingBlock from '../components/ui/LoadingBlock'
 import { api } from '../lib/api'
 import { formatEventDate, formatEventTime, getEventPhase } from '../lib/date-time'
-import { useMinimumSkeleton } from '../hooks/useMinimumSkeleton'
-
-function eventDescription(event: Event, language: string) {
-  if (language.startsWith('en')) {
-    return event.descriptionEn || event.descriptionUk || ''
-  }
-
-  return event.descriptionUk || event.descriptionEn || ''
-}
-
-function LoadingBlock({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse bg-black/10 ${className}`} />
-}
+import { useLocalizedFetch } from '../hooks/useLocalizedFetch'
 
 export default function EventDetailPage() {
-  const { t, i18n } = useTranslation()
-  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
-  const previousLocaleRef = useRef(locale)
-  const hasLoadedRef = useRef(false)
+  const { t } = useTranslation()
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const id = params?.id
   const bonesMode = searchParams.get('bones') === '1'
-  const [event, setEvent] = useState<Event | null>(null)
-  const [loading, setLoading] = useState(!bonesMode)
-  const [textRefreshing, setTextRefreshing] = useState(false)
-  const skeletonLoading = useMinimumSkeleton(bonesMode || loading)
-  const textSkeletonLoading = useMinimumSkeleton(textRefreshing, 350)
+
+  const { data: event, loading, textRefreshing, hasLoaded } = useLocalizedFetch<Event | null>(
+    async () => {
+      if (!id) return null
+      const data = await api.getEvent(id) as Event & { error?: string }
+      return data?.error ? null : (data as Event)
+    },
+    [id],
+    { enabled: !bonesMode && Boolean(id) },
+  )
+
+  const skeletonLoading = bonesMode || loading
+  const textSkeletonLoading = textRefreshing
   const contentTextLoading = skeletonLoading || textSkeletonLoading
 
-  useEffect(() => {
-    if (!id) return
-
-    if (bonesMode) return
-
-    let isMounted = true
-    const isLocaleRefresh = hasLoadedRef.current && previousLocaleRef.current !== locale
-    previousLocaleRef.current = locale
-    const pendingTimer = window.setTimeout(() => {
-      if (!isMounted) return
-      if (isLocaleRefresh) setTextRefreshing(true)
-      else setLoading(true)
-    }, 0)
-
-    api.getEvent(id)
-      .then((data: Event & { error?: string }) => {
-        if (!isMounted) return
-        if (!data.error) {
-          setEvent(data)
-        } else {
-          setEvent(null)
-        }
-      })
-      .catch(() => {
-        if (!isMounted) return
-        if (!isLocaleRefresh) setEvent(null)
-      })
-      .finally(() => {
-        if (isMounted) {
-          hasLoadedRef.current = true
-          setLoading(false)
-          setTextRefreshing(false)
-        }
-      })
-
-    return () => {
-      isMounted = false
-      window.clearTimeout(pendingTimer)
-    }
-  }, [id, bonesMode, locale])
-
-  if (!bonesMode && !loading && !event) {
+  if (!bonesMode && hasLoaded && !event) {
     return (
-      <div className="page">
-        <Navbar />
+      <AppLayout hideJoin>
         <main className="content-shell py-16">
           <Link href="/events" className="mb-8 inline-block text-[clamp(14px,1.3vw,20px)] text-black no-underline hover:underline">
             ← {t('eventDetail.back')}
           </Link>
           <p className="text-[clamp(22px,2.4vw,36px)]">{t('eventDetail.notFound')}</p>
         </main>
-        <Footer />
-      </div>
+      </AppLayout>
     )
   }
 
-  const description = event ? eventDescription(event, i18n.language) : ''
+  const description = event?.description ?? ''
   const lectures = event?.lectures ?? []
   const registerHref = event?.registrationUrl?.trim()
   const photosHref = event?.eventPhotosUrl?.trim()
@@ -134,9 +83,7 @@ export default function EventDetailPage() {
   ) : null
 
   return (
-    <div className="page">
-      <Navbar />
-
+    <AppLayout hideJoin>
       <div className="min-h-[720px]">
         <main>
             <section className="content-shell grid grid-cols-[1fr_minmax(320px,49%)] gap-9 border-b border-black py-[clamp(28px,4.2vw,64px)] max-[900px]:grid-cols-1">
@@ -308,9 +255,7 @@ export default function EventDetailPage() {
               </div>
             </section>
           </main>
-
-        <Footer />
       </div>
-    </div>
+    </AppLayout>
   )
 }

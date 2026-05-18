@@ -18,6 +18,7 @@ type AuthContextType = {
   signUp: (email: string, password: string, name: string) => Promise<{ error?: AuthResultError }>
   signOut: () => Promise<void>
   refresh: () => Promise<void>
+  updatePassword: (password: string) => Promise<{ error?: AuthResultError }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -154,8 +155,13 @@ export function AuthProvider({
     setUser(null)
   }, [supabase])
 
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    return error ? { error: toAuthResultError(error) } : {}
+  }, [supabase])
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, signOut, refresh }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, signOut, refresh, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )

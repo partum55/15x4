@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '@/components/Navbar'
-import AdminNav from '@/components/admin/AdminNav'
+import AdminLayout from '@/components/admin/AdminLayout'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import ConfirmModal from '@/components/ConfirmModal'
 import { useAuth } from '@/context/AuthContext'
@@ -32,7 +30,6 @@ type Lecture = {
 
 export default function AdminLecturesPage() {
   const { t, i18n } = useTranslation()
-  const router = useRouter()
   const { user, loading } = useAuth()
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [loadingLectures, setLoadingLectures] = useState(true)
@@ -246,10 +243,6 @@ export default function AdminLecturesPage() {
     }
   }
 
-  if (loading || !user || user?.profile?.role !== 'admin') {
-    return null
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar variant="light" />
@@ -457,7 +450,6 @@ export default function AdminLecturesPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AdminLayout>
   )
 }

@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
+import AppLayout from '../components/AppLayout'
 import FormField from '../components/FormField'
 import ArrowIcon from '../components/ArrowIcon'
+import LoadingBlock from '../components/ui/LoadingBlock'
 import { api, type Lecture } from '../lib/api'
 import { CATEGORY_COLOR_VAR } from '../constants/colors'
 import { LECTURE_CATEGORIES, getLectureCategoryColor, normalizeLectureCategory } from '../constants/lectureCategories'
@@ -126,10 +127,6 @@ function clearLectureDraft(key: string) {
   } catch {
     // Ignore storage failures.
   }
-}
-
-function LoadingBlock({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-black/10 ${className}`} />
 }
 
 function FormSkeleton() {
@@ -426,9 +423,8 @@ export default function AddEditLecturePage() {
   const previewCategoryColor = getLectureCategoryColor(previewCategory)
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navbar variant="light" />
-      <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)]">
+    <AppLayout hideJoin hideFooter withPageShell={false}>
+      <main className="content-shell flex-1 py-[clamp(32px,4.2vw,64px)] min-h-[calc(100vh-92px)]">
         <div className="w-full">
           <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-[clamp(24px,3vw,48px)]">
             {isEdit ? t('addLecture.titleEdit') : t('addLecture.titleNew')}
@@ -614,6 +610,6 @@ export default function AddEditLecturePage() {
           )}
         </div>
       </main>
-    </div>
+    </AppLayout>
   )
 }
