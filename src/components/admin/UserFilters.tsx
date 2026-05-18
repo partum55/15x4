@@ -28,7 +28,7 @@ export default function UserFilters({
         type="text"
         value={searchQuery}
         onChange={(event) => setSearchQuery(event.target.value)}
-        placeholder={t('admin.users.search', { defaultValue: 'пошук за імʼям або поштою' })}
+        placeholder={t('admin.users.search')}
         className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
       />
       <select
@@ -36,7 +36,7 @@ export default function UserFilters({
         onChange={(event) => setRoleFilter(event.target.value)}
         className="ui-select"
       >
-        <option value="">{t('admin.users.allRoles', { defaultValue: 'усі ролі' })}</option>
+        <option value="">{t('admin.users.allRoles')}</option>
         {PROFILE_ROLES.map(role => (
           <option key={role} value={role}>{role}</option>
         ))}
@@ -46,8 +46,8 @@ export default function UserFilters({
         onChange={(event) => setSortBy(event.target.value)}
         className="ui-select"
       >
-        <option value="">{t('admin.users.newest', { defaultValue: 'спочатку новіші' })}</option>
-        <option value="oldest">{t('admin.users.oldest', { defaultValue: 'спочатку старіші' })}</option>
+        <option value="">{t('admin.users.newest')}</option>
+        <option value="oldest">{t('admin.users.oldest')}</option>
         <option value="nameAZ">A-Z</option>
         <option value="nameZA">Z-A</option>
       </select>

@@ -39,7 +39,7 @@ export default function ConfirmModal({
             onClick={onCancel}
             className="flex-1 min-w-[120px] px-6 py-3 border border-black bg-white text-black uppercase text-[clamp(12px,1.1vw,16px)] hover:bg-black/5"
           >
-            {cancelText || t('common.cancel', { defaultValue: 'Скасувати' })}
+            {cancelText || t('common.cancel')}
           </button>
           <button
             type="button"
@@ -48,7 +48,7 @@ export default function ConfirmModal({
               isDestructive ? 'bg-red' : 'bg-black'
             }`}
           >
-            {confirmText || t('common.confirm', { defaultValue: 'Підтвердити' })}
+            {confirmText || t('common.confirm')}
           </button>
         </div>
       </div>

@@ -71,7 +71,7 @@ export default function AdminEventsPage() {
           type="text"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder={t('admin.events.search', { defaultValue: 'пошук за назвою, містом або власником' })}
+          placeholder={t('admin.events.search')}
           className="border border-black bg-white px-4 py-3 font-sans text-[clamp(13px,1.2vw,18px)] outline-none"
         />
         <select
@@ -79,18 +79,18 @@ export default function AdminEventsPage() {
           onChange={(event) => setStatusFilter(event.target.value)}
           className="ui-select"
         >
-          <option value="">{t('admin.events.allStatuses', { defaultValue: 'усі статуси' })}</option>
-          <option value="public">{t('admin.events.statusPublic', { defaultValue: 'публічні' })}</option>
-          <option value="draft">{t('admin.events.statusDraft', { defaultValue: 'чернетки' })}</option>
+          <option value="">{t('admin.events.allStatuses')}</option>
+          <option value="public">{t('admin.events.statusPublic')}</option>
+          <option value="draft">{t('admin.events.statusDraft')}</option>
         </select>
         <select
           value={sortBy}
           onChange={(event) => setSortBy(event.target.value)}
           className="ui-select"
         >
-          <option value="">{t('admin.events.newest', { defaultValue: 'спочатку найближчі' })}</option>
-          <option value="oldest">{t('admin.events.oldest', { defaultValue: 'спочатку найдавніші' })}</option>
-          <option value="created">{t('admin.events.created', { defaultValue: 'спочатку створені нещодавно' })}</option>
+          <option value="">{t('admin.events.newest')}</option>
+          <option value="oldest">{t('admin.events.oldest')}</option>
+          <option value="created">{t('admin.events.created')}</option>
           <option value="titleAZ">{t('lectures.titleAZ')}</option>
           <option value="titleZA">{t('lectures.titleZA')}</option>
         </select>
@@ -98,7 +98,7 @@ export default function AdminEventsPage() {
 
       {!loadingEvents && (
         <p className="mb-4 text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
-          {t('admin.events.showing', { defaultValue: 'показано {{count}} з {{total}}', count: events.length, total })}
+          {t('admin.events.showing', { count: events.length, total })}
         </p>
       )}
 
@@ -137,7 +137,7 @@ export default function AdminEventsPage() {
                     <span className={`px-2 py-0.5 text-[clamp(10px,0.9vw,13px)] uppercase tracking-wider font-bold ${
                       e.isPublic ? 'bg-green text-white' : 'bg-black/10 text-black/40'
                     }`}>
-                      {e.isPublic ? t('admin.events.statusPublic', { defaultValue: 'Public' }) : t('admin.events.statusDraft', { defaultValue: 'Draft' })}
+                      {e.isPublic ? t('admin.events.statusPublic') : t('admin.events.statusDraft')}
                     </span>
                   </td>
                   <td className="p-3 text-[clamp(13px,1.2vw,18px)]">

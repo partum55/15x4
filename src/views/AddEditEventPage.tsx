@@ -725,7 +725,7 @@ export default function AddEditEventPage() {
                       <option value="">{t('addEvent.lectureCategoryPlaceholder')}</option>
                       {LECTURE_CATEGORIES.map((category) => (
                         <option key={category} value={category}>
-                          {t(`lectureCategories.${category}`, { defaultValue: category })}
+                          {t(`lectureCategories.${category}`)}
                         </option>
                       ))}
                     </select>

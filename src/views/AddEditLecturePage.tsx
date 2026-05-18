@@ -511,7 +511,7 @@ export default function AddEditLecturePage() {
                 <option value="">{t('addLecture.categoryPlaceholder')}</option>
                 {LECTURE_CATEGORIES.map((category) => (
                   <option key={category} value={category}>
-                    {t(`lectureCategories.${category}`, { defaultValue: category })}
+                    {t(`lectureCategories.${category}`)}
                   </option>
                 ))}
               </select>
@@ -590,7 +590,7 @@ export default function AddEditLecturePage() {
                       : 'var(--color-black)',
                   }}
                 >
-                  {previewCategory ? t(`lectureCategories.${previewCategory}`, { defaultValue: previewCategory }) : t('addLecture.categoryLabel')}
+                  {previewCategory ? t(`lectureCategories.${previewCategory}`) : t('addLecture.categoryLabel')}
                 </span>
                 <span className="text-[12px] uppercase text-black/50">#{form.slot || '1'}</span>
               </div>

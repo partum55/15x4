@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
 
       {!loadingUsers && (
         <p className="mb-4 text-[clamp(12px,1.1vw,16px)] uppercase text-black/60">
-          {t('admin.users.showing', { defaultValue: 'показано {{count}} з {{total}}', count: users.length, total })}
+          {t('admin.users.showing', { count: users.length, total })}
         </p>
       )}
 

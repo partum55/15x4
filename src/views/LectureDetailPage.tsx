@@ -57,7 +57,7 @@ export default function LectureDetailPage() {
   const skeletonLoading = bonesMode || loading
   const textSkeletonLoading = textRefreshing
   const lectureCategoryLabel = lecture
-    ? t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
+    ? t(`lectureCategories.${lecture.category}`)
     : ''
   const resolvedVideo = lecture ? resolveLectureVideo(lecture.videoUrl) : null
   const hasVideoError = lecture ? videoErrorLectureId === lecture.id : false
@@ -132,7 +132,7 @@ export default function LectureDetailPage() {
                     />
                     {hasVideoError && (
                       <p className="mt-4 border border-black/20 px-4 py-3 text-[clamp(12px,1.2vw,17px)] text-black/60">
-                        {t('lectureDetail.videoUnavailable', { defaultValue: 'Video is unavailable.' })}
+                        {t('lectureDetail.videoUnavailable')}
                       </p>
                     )}
                   </>
@@ -287,7 +287,7 @@ export default function LectureDetailPage() {
                             <span
                               className={`absolute top-2 left-2 text-[clamp(10px,1vw,14px)] px-[10px] py-1 bg-white border leading-none ${badgeBorderClass[r.categoryColor] || 'border-red'}`}
                             >
-                              {t(`lectureCategories.${r.category}`, { defaultValue: r.category })}
+                              {t(`lectureCategories.${r.category}`)}
                             </span>
                           </div>
                           <p className="text-[clamp(11px,1.1vw,15px)] font-normal uppercase tracking-[0.02em] leading-[1.3] mb-1.5 px-3">

@@ -96,7 +96,7 @@ export default function LecturesPage() {
     { value: '', label: t('lectures.allThemes') },
     ...LECTURE_CATEGORIES.map((c) => ({
       value: c,
-      label: t(`lectureCategories.${c}`, { defaultValue: c }),
+      label: t(`lectureCategories.${c}`),
     })),
   ]
 

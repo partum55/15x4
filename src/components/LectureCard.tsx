@@ -258,7 +258,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
   }
 
   const color = CATEGORY_COLOR_VAR[lecture.categoryColor] || 'var(--color-red)'
-  const categoryLabel = t(`lectureCategories.${lecture.category}`, { defaultValue: lecture.category })
+  const categoryLabel = t(`lectureCategories.${lecture.category}`)
   const hasSummary = Boolean(lecture.summary?.trim())
   const isHoverFilled = hovered && variant !== 'swatch'
   const style = {

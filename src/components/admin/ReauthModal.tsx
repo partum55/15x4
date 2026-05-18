@@ -60,14 +60,14 @@ export default function ReauthModal({ onConfirm, onCancel, title, description }:
               disabled={submitting}
               className="flex-1 px-6 py-3 border border-black bg-white text-black uppercase text-[clamp(12px,1.1vw,16px)] hover:bg-black/5"
             >
-              {t('common.cancel', { defaultValue: 'Скасувати' })}
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting || !password}
               className="flex-1 px-6 py-3 bg-black text-white border-none uppercase text-[clamp(12px,1.1vw,16px)] hover:opacity-85 disabled:opacity-50"
             >
-              {submitting ? '...' : t('common.confirm', { defaultValue: 'Підтвердити' })}
+              {submitting ? '...' : t('common.confirm')}
             </button>
           </div>
         </form>
