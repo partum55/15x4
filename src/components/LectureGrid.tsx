@@ -13,7 +13,8 @@ const DEFAULT_PATTERN: LectureRowSpec[] = [
   { variant: 'compact', size: 2 },
   { variant: 'horizontal', size: 2 },
   { variants: ['vertical', 'featured', 'vertical'] },
-  { variant: 'compact', size: 4 },
+  { variant: 'horizontal', size: 1 },
+  { variant: 'compact', size: 2 },
 ]
 
 const FILLER_PATTERN: LectureRowSpec = { variant: 'horizontal', size: 2 }
