@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminSession } from '@/lib/admin'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireAdminSession()
@@ -10,6 +12,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const { id } = await params
+    if (!UUID_PATTERN.test(id)) {
+      return NextResponse.json({ error: 'Invalid lecture id' }, { status: 400 })
+    }
+
     const body = await req.json()
     const { isPublic } = body
 

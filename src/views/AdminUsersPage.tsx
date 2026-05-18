@@ -2,7 +2,6 @@
 
 import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/components/admin/AdminLayout'
-import AdminNav from '@/components/admin/AdminNav'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import ReauthModal from '@/components/admin/ReauthModal'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -68,12 +67,6 @@ export default function AdminUsersPage() {
           onCancel={() => setDeleteContext(null)}
         />
       )}
-
-      <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
-        {t('admin.users.title')}
-      </h1>
-
-      <AdminNav />
 
       <UserFilters
         searchQuery={searchQuery}

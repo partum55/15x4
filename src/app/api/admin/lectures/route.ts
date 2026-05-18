@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
     let query = supabaseAdmin
       .from('Lecture')
-      .select('id, titleUk, titleEn, authorUk, authorEn, category, isPublic, createdAt, userId', { count: 'exact' })
+      .select('id, eventId, titleUk, titleEn, authorUk, authorEn, category, isPublic, createdAt, userId', { count: 'exact' })
 
     if (category) {
       query = query.eq('category', category)

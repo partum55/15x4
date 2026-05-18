@@ -2,7 +2,6 @@
 
 import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/components/admin/AdminLayout'
-import AdminNav from '@/components/admin/AdminNav'
 import AdminTableSkeleton from '@/components/admin/AdminTableSkeleton'
 import ConfirmModal from '@/components/ConfirmModal'
 import { useAdminEvents } from '@/hooks/admin/useAdminEvents'
@@ -59,12 +58,6 @@ export default function AdminEventsPage() {
           onCancel={() => setDeleteContext(null)}
         />
       )}
-
-      <h1 className="text-[clamp(22px,2.4vw,36px)] font-normal tracking-[-0.04em] uppercase text-black mb-8">
-        {t('admin.events.title')}
-      </h1>
-
-      <AdminNav />
 
       <div className="grid grid-cols-[minmax(220px,1fr)_repeat(2,minmax(150px,220px))] gap-3 mb-8 max-[860px]:grid-cols-2 max-[640px]:grid-cols-1">
         <input
