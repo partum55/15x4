@@ -1,107 +1,34 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import AppLayout from '../components/AppLayout'
+import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
 import ConfirmModal from '../components/ConfirmModal'
-import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
-import { api } from '../lib/api'
-import { formatEventDate, formatEventTime } from '../lib/date-time'
-import { useCurrentUser } from '../hooks/useCurrentUser'
-import type { Event } from '@/lib/api'
+import { useMyEvents } from '@/hooks/account/useMyEvents'
+import { buildPaginationState, PAGE_SIZE } from '@/lib/admin-pagination'
+import { formatEventDate, formatEventTime } from '@/lib/date-time'
 
 export default function MyEventsPage() {
   const { t } = useTranslation()
-  const { user, loading: userLoading } = useCurrentUser()
-  const [events, setEvents] = useState<Event[]>([])
-  const [loadingEvents, setLoadingEvents] = useState(true)
-  const [deletingEventIds, setDeletingEventIds] = useState<Set<string>>(new Set())
-  const [deleteContext, setDeleteContext] = useState<{ id: string, title: string } | null>(null)
-
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setPage(1)
-      setDebouncedSearchQuery(searchQuery.trim())
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
-  useEffect(() => {
-    if (userLoading) return
-    if (!user?.id) {
-      setEvents([])
-      setTotal(0)
-      setLoadingEvents(false)
-      return
-    }
-
-    let isMounted = true
-    setLoadingEvents(true)
-    api
-      .getEventsPage({ 
-        scope: 'mine',
-        limit: PAGE_SIZE,
-        offset: (page - 1) * PAGE_SIZE,
-        search: debouncedSearchQuery,
-        status: statusFilter
-      })
-      .then((data) => {
-        if (!isMounted) return
-        setEvents(data.items || [])
-        setTotal(data.total || 0)
-      })
-      .catch(() => {
-        if (isMounted) {
-          setEvents([])
-          setTotal(0)
-        }
-      })
-      .finally(() => {
-        if (isMounted) setLoadingEvents(false)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [user?.id, userLoading, page, debouncedSearchQuery, statusFilter])
+  const {
+    events,
+    loadingEvents,
+    total,
+    page,
+    setPage,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    deletingEventIds,
+    deleteContext,
+    setDeleteContext,
+    handleDeleteRequest,
+    performDelete,
+  } = useMyEvents()
 
   const pagination = buildPaginationState(total, page, PAGE_SIZE)
-
-  async function handleDelete(id: string) {
-    if (deletingEventIds.has(id)) return
-    
-    const event = events.find(e => e.id === id)
-    if (!event) return
-
-    setDeleteContext({ id, title: event.titleUk || event.titleEn || '' })
-  }
-
-  async function performDelete(id: string) {
-    setDeletingEventIds(prev => {
-      const next = new Set(prev)
-      next.add(id)
-      return next
-    })
-    try {
-      await api.deleteEvent(id)
-      setEvents(prev => prev.filter(e => e.id !== id))
-      setTotal(prev => Math.max(0, prev - 1))
-    } finally {
-      setDeletingEventIds(prev => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
-    }
-  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -203,7 +130,7 @@ export default function MyEventsPage() {
                     <button
                       type="button"
                       className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100 disabled:cursor-wait disabled:opacity-45 disabled:animate-pulse"
-                      onClick={() => handleDelete(event.id)}
+                      onClick={() => handleDeleteRequest(event.id)}
                       disabled={deletingEventIds.has(event.id)}
                       aria-busy={deletingEventIds.has(event.id)}
                     >
@@ -240,6 +167,6 @@ export default function MyEventsPage() {
           </>
         )}
       </main>
-    </AppLayout>
+    </div>
   )
 }

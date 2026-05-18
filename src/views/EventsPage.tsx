@@ -70,7 +70,7 @@ export default function EventsPage() {
     { value: 'dateAsc', label: t('events.dateAsc') },
   ]
 
-  const { items: events, loading, refreshing: _refreshing, textRefreshing, loadingMore, hasMore, total } = list.state
+  const { items: events, loading, textRefreshing, loadingMore, hasMore, total } = list.state
 
   return (
     <AppLayout>

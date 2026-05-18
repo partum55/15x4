@@ -1,15 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
-import AppLayout from '../components/AppLayout'
+import Navbar from '../components/Navbar'
 import ArrowIcon from '../components/ArrowIcon'
 import ConfirmModal from '../components/ConfirmModal'
-import { PAGE_SIZE, buildPaginationState } from '@/lib/admin-pagination'
-import { api } from '../lib/api'
-import { useCurrentUser } from '../hooks/useCurrentUser'
-import type { Lecture } from '@/lib/api'
+import { useMyLectures } from '@/hooks/account/useMyLectures'
+import { buildPaginationState, PAGE_SIZE } from '@/lib/admin-pagination'
 
 const colorStyles: Record<string, string> = {
   orange: 'border-orange text-orange',
@@ -20,94 +17,24 @@ const colorStyles: Record<string, string> = {
 
 export default function MyLecturesPage() {
   const { t } = useTranslation()
-  const { user, loading: userLoading } = useCurrentUser()
-  const [lectures, setLectures] = useState<Lecture[]>([])
-  const [loadingLectures, setLoadingLectures] = useState(true)
-  const [deletingLectureIds, setDeletingLectureIds] = useState<Set<string>>(new Set())
-  const [deleteContext, setDeleteContext] = useState<{ id: string, title: string } | null>(null)
-
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setPage(1)
-      setDebouncedSearchQuery(searchQuery.trim())
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
-  useEffect(() => {
-    if (userLoading) return
-    if (!user?.id) {
-      setLectures([])
-      setTotal(0)
-      setLoadingLectures(false)
-      return
-    }
-
-    let isMounted = true
-    setLoadingLectures(true)
-    api
-      .getLecturesPage({ 
-        scope: 'mine',
-        limit: PAGE_SIZE,
-        offset: (page - 1) * PAGE_SIZE,
-        search: debouncedSearchQuery,
-        status: statusFilter
-      })
-      .then((data) => {
-        if (!isMounted) return
-        setLectures(data.items || [])
-        setTotal(data.total || 0)
-      })
-      .catch(() => {
-        if (isMounted) {
-          setLectures([])
-          setTotal(0)
-        }
-      })
-      .finally(() => {
-        if (isMounted) setLoadingLectures(false)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [user?.id, userLoading, page, debouncedSearchQuery, statusFilter])
+  const {
+    lectures,
+    loadingLectures,
+    total,
+    page,
+    setPage,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    deletingLectureIds,
+    deleteContext,
+    setDeleteContext,
+    handleDeleteRequest,
+    performDelete,
+  } = useMyLectures()
 
   const pagination = buildPaginationState(total, page, PAGE_SIZE)
-
-  async function handleDelete(id: string) {
-    if (deletingLectureIds.has(id)) return
-    
-    const lecture = lectures.find(l => l.id === id)
-    if (!lecture) return
-
-    setDeleteContext({ id, title: lecture.titleUk || lecture.titleEn || '' })
-  }
-
-  async function performDelete(id: string) {
-    setDeletingLectureIds(prev => {
-      const next = new Set(prev)
-      next.add(id)
-      return next
-    })
-    try {
-      await api.deleteLecture(id)
-      setLectures(prev => prev.filter(l => l.id !== id))
-      setTotal(prev => Math.max(0, prev - 1))
-    } finally {
-      setDeletingLectureIds(prev => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
-    }
-  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -207,7 +134,7 @@ export default function MyLecturesPage() {
                     <button
                       type="button"
                       className="font-sans text-[clamp(12px,1.1vw,16px)] font-normal text-red underline bg-transparent border-none cursor-pointer p-0 uppercase opacity-70 transition-opacity duration-150 hover:opacity-100 disabled:cursor-wait disabled:opacity-45 disabled:animate-pulse"
-                      onClick={() => handleDelete(lecture.id)}
+                      onClick={() => handleDeleteRequest(lecture.id)}
                       disabled={deletingLectureIds.has(lecture.id)}
                       aria-busy={deletingLectureIds.has(lecture.id)}
                     >
@@ -244,6 +171,6 @@ export default function MyLecturesPage() {
           </>
         )}
       </main>
-    </AppLayout>
+    </div>
   )
 }

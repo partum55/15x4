@@ -22,8 +22,7 @@ function LoadingBlock({ className = '' }: { className?: string }) {
 type LectureFetchResult = { lecture: Lecture | null; related: EventLecture[] }
 
 export default function LectureDetailPage() {
-  const { t, i18n } = useTranslation()
-  const locale = i18n.language.startsWith('en') ? 'en' : 'uk'
+  const { t } = useTranslation()
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const id = params?.id

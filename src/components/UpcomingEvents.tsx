@@ -45,19 +45,19 @@ export default function UpcomingEvents() {
       return { events: Array.isArray(list) ? list : [], fetchedAt: Date.now() }
     },
   )
-  const events = data?.events ?? []
+  const rawEvents = data?.events
   const now = data?.fetchedAt ?? 0
   const loading = skeletonLoading
 
   const upcomingEvents = useMemo(() => {
-    if (!now) return []
-    return events
+    if (!now || !rawEvents) return []
+    return rawEvents
       .filter((event) => {
         const ts = eventTimestamp(event)
         return Number.isFinite(ts) && getEventPhase(event.date, event.time, now) !== 'past'
       })
       .sort((a, b) => eventTimestamp(a) - eventTimestamp(b))
-  }, [events, now])
+  }, [rawEvents, now])
 
   const availableCities = useMemo(() => {
     const seen = new Map<string, string>()
