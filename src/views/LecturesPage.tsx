@@ -57,6 +57,15 @@ function LecturesLoadingGrid() {
         <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
         <LectureCard loading variant="vertical" />
       </div>
+      <div className="flex items-stretch border-b border-black max-[767px]:flex-col">
+        <LectureCard loading variant="compact" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="compact" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="compact" />
+        <div className="w-px bg-black flex-shrink-0 max-[767px]:hidden" />
+        <LectureCard loading variant="compact" />
+      </div>
     </>
   )
 }

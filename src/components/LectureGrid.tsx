@@ -13,10 +13,10 @@ const DEFAULT_PATTERN: LectureRowSpec[] = [
   { variant: 'compact', size: 2 },
   { variant: 'horizontal', size: 2 },
   { variants: ['vertical', 'featured', 'vertical'] },
-  { variant: 'horizontal', size: 1 },
+  { variant: 'compact', size: 4 },
 ]
 
-const FILLER_PATTERN: LectureRowSpec[] = [{ variant: 'horizontal', size: 2 }]
+const FILLER_PATTERN: LectureRowSpec = { variant: 'horizontal', size: 2 }
 
 type Row = { variants: LectureCardVariant[]; items: Lecture[] }
 
@@ -32,15 +32,27 @@ export function buildLectureRows(items: Lecture[], pattern: LectureRowSpec[] = D
   const rows: Row[] = []
   let idx = 0
   let patternIndex = 0
+  const activePattern = pattern.length > 0 ? pattern : [FILLER_PATTERN]
 
-  while (idx < items.length) {
-    const spec = pattern[patternIndex] ?? FILLER_PATTERN[0]
-    const size = rowSpecSize(spec)
+  const pushRow = (spec: LectureRowSpec, size: number) => {
     const slice = items.slice(idx, idx + size)
-    if (slice.length === 0) break
     rows.push({ variants: rowSpecVariants(spec).slice(0, slice.length), items: slice })
     idx += slice.length
-    if (patternIndex < pattern.length - 1) patternIndex++
+  }
+
+  while (idx < items.length) {
+    const spec = activePattern[patternIndex % activePattern.length]
+    const size = rowSpecSize(spec)
+
+    if (items.length - idx < size) {
+      while (idx < items.length) {
+        pushRow(FILLER_PATTERN, Math.min(rowSpecSize(FILLER_PATTERN), items.length - idx))
+      }
+      break
+    }
+
+    pushRow(spec, size)
+    patternIndex += 1
   }
 
   return rows
