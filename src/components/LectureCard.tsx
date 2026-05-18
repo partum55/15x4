@@ -201,7 +201,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
     if (variant === 'featured') {
       return (
         <div className={joinClassNames('group flex min-w-0 flex-[2] flex-col gap-6 py-6 text-inherit no-underline transition-colors duration-200', className)}>
-          <div className="flex h-[86px] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
+          <div className="flex h-[clamp(112px,8vw,136px)] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
             <span className="h-7 w-4/5 animate-pulse bg-black/10" />
             <span className="h-5 w-3/5 animate-pulse bg-black/10" />
           </div>
@@ -275,7 +275,7 @@ export default function LectureCard({ lecture, variant = 'horizontal', className
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div className="relative flex h-[86px] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
+        <div className="relative flex h-[clamp(112px,8vw,136px)] flex-col gap-3 overflow-hidden px-[clamp(16px,2vw,28px)]">
           <p className="text-clamp-2 text-[clamp(16px,1.6vw,24px)] font-normal uppercase leading-[1.2] tracking-[-0.04em]">{lecture.title}</p>
           <p className="text-clamp-1 text-[clamp(14px,1.3vw,20px)] font-normal">{lecture.author}</p>
           {textLoading && <TextLoadingOverlay compact />}
