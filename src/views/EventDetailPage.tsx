@@ -105,14 +105,14 @@ export default function EventDetailPage() {
                       <>
                         <div className="flex flex-col gap-2">
                           <h1 className="text-[clamp(34px,5.6vw,96px)] font-normal uppercase leading-[0.95] tracking-[-0.04em] text-orange">
-                            {event?.city}
+                            {event?.title}
                           </h1>
-                          <p className="text-[clamp(18px,1.8vw,28px)] font-normal uppercase leading-[1.05] tracking-[-0.03em] text-black">
+                          {/* <p className="text-[clamp(18px,1.8vw,28px)] font-normal uppercase leading-[1.05] tracking-[-0.03em] text-black">
                             [{event ? formatEventDate(event.date, true) : ''}]
-                          </p>
+                          </p> */}
                         </div>
                         <p className="max-w-[690px] text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.12] tracking-[-0.04em]">
-                          {event?.title}
+                          {event?.city}
                         </p>
                       </>
                     )}
