@@ -180,47 +180,49 @@ export default function EventDetailPage() {
               </div>
             </section>
 
-            {(skeletonLoading || description || lectures.length > 0) && (
-              <section className="content-shell grid grid-cols-[minmax(220px,327px)_1fr] gap-9 py-[clamp(32px,4.2vw,64px)] max-[900px]:grid-cols-1">
-                <div className="flex flex-col gap-5">
+            {(skeletonLoading || description) && (
+              <section className="content-shell border-b border-black py-[clamp(32px,4.2vw,64px)]">
+                <div className="grid grid-cols-[minmax(220px,327px)_minmax(0,1fr)] gap-9 max-[900px]:grid-cols-1">
                   <h2 className="text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.15]">
                     <span className="text-red">{'//'}</span> {t('eventDetail.about')}
                   </h2>
                   {contentTextLoading ? (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex max-w-[960px] flex-col gap-3">
                       <LoadingBlock className="h-6 w-full" />
                       <LoadingBlock className="h-6 w-11/12" />
                       <LoadingBlock className="h-6 w-4/5" />
                       <LoadingBlock className="h-6 w-2/3" />
                     </div>
                   ) : description && (
-                    <p className="text-[clamp(15px,1.4vw,20px)] leading-[1.35]">{description}</p>
+                    <p className="max-w-[960px] text-[clamp(15px,1.4vw,20px)] leading-[1.35]">{description}</p>
                   )}
                 </div>
+              </section>
+            )}
 
-                <div>
-                  <h2 className="mb-3 text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.15]">
-                    <span className="text-red">{'//'}</span> {t('eventDetail.talks')}
-                  </h2>
-                  {skeletonLoading ? (
-                    <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
-                      <LectureCard loading variant="compact" />
-                      <LectureCard loading variant="compact" />
-                      <LectureCard loading variant="compact" />
-                      <LectureCard loading variant="compact" />
-                    </div>
-                  ) : lectures.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
-                      {lectures.map((lecture) => (
-                        <LectureCard key={lecture.id} lecture={lecture} variant="compact" textLoading={textSkeletonLoading} />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="border-t border-black py-8 text-[clamp(15px,1.4vw,20px)] opacity-60">
-                      {t('eventDetail.noTalks')}
-                    </p>
-                  )}
-                </div>
+            {(skeletonLoading || description || lectures.length > 0) && (
+              <section className="content-shell py-[clamp(32px,4.2vw,64px)]">
+                <h2 className="mb-6 text-[clamp(22px,2.4vw,36px)] font-normal uppercase leading-[1.15]">
+                  <span className="text-red">{'//'}</span> {t('eventDetail.talks')}
+                </h2>
+                {skeletonLoading ? (
+                  <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
+                    <LectureCard loading variant="compact" />
+                    <LectureCard loading variant="compact" />
+                    <LectureCard loading variant="compact" />
+                    <LectureCard loading variant="compact" />
+                  </div>
+                ) : lectures.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-x-9 gap-y-6 max-[1199px]:gap-x-6 max-[767px]:grid-cols-1">
+                    {lectures.map((lecture) => (
+                      <LectureCard key={lecture.id} lecture={lecture} variant="compact" textLoading={textSkeletonLoading} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="border-t border-black py-8 text-[clamp(15px,1.4vw,20px)] opacity-60">
+                    {t('eventDetail.noTalks')}
+                  </p>
+                )}
               </section>
             )}
 

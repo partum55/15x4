@@ -86,9 +86,9 @@ export default function LectureDetailPage() {
             </Link>
 
             {/* Title */}
-            <h1 className="text-[clamp(24px,3.2vw,48px)] font-bold text-center uppercase tracking-[0.03em] mb-[clamp(24px,3vw,48px)] leading-[1.1]">
+            <h1 className="mb-[clamp(24px,3vw,48px)] max-w-[1100px] text-[clamp(34px,5.6vw,96px)] font-normal uppercase leading-[0.95] tracking-[-0.04em] text-orange">
               {textSkeletonLoading ? (
-                <LoadingBlock className="mx-auto h-[1em] w-[min(72vw,680px)]" />
+                <LoadingBlock className="h-[1em] w-[min(72vw,680px)]" />
               ) : lecture.title.toUpperCase()}
             </h1>
 
