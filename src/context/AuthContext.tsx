@@ -1,9 +1,8 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createContext, useContext, useState, useCallback } from 'react'
+import { DEMO_GUEST_COOKIE, DEMO_USER } from '@/lib/demo-user'
 import type { AuthUser } from '@/lib/auth'
-import type { AuthError } from '@supabase/supabase-js'
 
 type AuthResultError = {
   code?: string
@@ -23,26 +22,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-function getSiteOrigin() {
-  if (typeof window !== 'undefined') {
-    return window.location.origin
-  }
-
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-}
-
-function getAuthCallbackURL(next?: string) {
-  const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : '/'
-  return `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent(safeNext)}`
-}
-
-function toAuthResultError(error: AuthError): AuthResultError {
-  return {
-    code: error.code,
-    message: error.message,
-  }
-}
-
 async function fetchCurrentUser() {
   const response = await fetch('/api/profile', {
     method: 'GET',
@@ -61,6 +40,14 @@ async function fetchCurrentUser() {
   return response.json() as Promise<AuthUser>
 }
 
+// Demo branch: no Supabase. "Signing in" (any credentials, or Google) logs in as the mock admin;
+// "signing out" sets a cookie that the server and middleware treat as a guest.
+function setGuest(guest: boolean) {
+  document.cookie = guest
+    ? `${DEMO_GUEST_COOKIE}=1; path=/; max-age=31536000; sameSite=lax`
+    : `${DEMO_GUEST_COOKIE}=; path=/; max-age=0`
+}
+
 export function AuthProvider({
   children,
   initialUser,
@@ -69,99 +56,38 @@ export function AuthProvider({
   initialUser: AuthUser | null
 }) {
   const [user, setUser] = useState<AuthUser | null>(initialUser)
-  const [loading, setLoading] = useState(false)
-  const supabase = createClient()
 
-  const refresh = useCallback(async (showLoader = true) => {
-    if (showLoader) {
-      setLoading(true)
-    }
+  const logIn = useCallback(async () => {
+    setGuest(false)
+    setUser(DEMO_USER)
+    return { user: DEMO_USER }
+  }, [])
 
+  const signInWithGoogle = useCallback(async (next = '/') => {
+    await logIn()
+    window.location.assign(next)
+    return {}
+  }, [logIn])
+
+  const signUp = useCallback(async () => ({}), [])
+
+  const signOut = useCallback(async () => {
+    setGuest(true)
+    setUser(null)
+  }, [])
+
+  const refresh = useCallback(async () => {
     try {
-      const currentUser = await fetchCurrentUser()
-      setUser(currentUser)
+      setUser(await fetchCurrentUser())
     } catch {
       setUser(null)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setLoading(false)
-          return
-        }
-
-        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          void refresh(false)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [supabase, refresh])
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: toAuthResultError(error) }
-    if (data.user) {
-      const userData = await fetchCurrentUser()
-      setUser(userData)
-      setLoading(false)
-      return { user: userData }
-    }
-    setLoading(false)
-    return {}
-  }, [supabase])
-
-  const signInWithGoogle = useCallback(async (next = '/') => {
-    const redirectTo = getAuthCallbackURL(next)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        queryParams: {
-          prompt: 'select_account',
-        },
-      },
-    })
-    if (error) return { error: toAuthResultError(error) }
-    return {}
-  }, [supabase])
-
-  const signUp = useCallback(async (email: string, password: string, name: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-        emailRedirectTo: getAuthCallbackURL('/account/settings'),
-      },
-    })
-    if (error) return { error: toAuthResultError(error) }
-    if (data.session) {
-      const currentUser = await fetchCurrentUser()
-      setUser(currentUser)
-    }
-    return {}
-  }, [supabase])
-
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-  }, [supabase])
-
-  const updatePassword = useCallback(async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password })
-    return error ? { error: toAuthResultError(error) } : {}
-  }, [supabase])
+  const updatePassword = useCallback(async () => ({}), [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, signOut, refresh, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading: false, signIn: logIn, signInWithGoogle, signUp, signOut, refresh, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )

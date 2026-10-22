@@ -1,5 +1,7 @@
 # 15x4
 
+> **Demo branch.** This branch runs without a database: Supabase is replaced by in-memory mock data (`src/lib/demo-data.ts`, `src/lib/demo-api.ts`) and a built-in mock admin (`src/lib/demo-user.ts`). Forms work but nothing is persisted. Any credentials log in; "Log out" shows the guest view. The full version lives on `main`.
+
 15x4 is a full-stack web platform for a public lecture community, where users can browse events and lectures, speakers can manage their own content, and admins can moderate the platform through a dedicated dashboard.
 
 The project was built as a production-style application with a clear separation between public pages, authenticated user functionality, lecturer tools, and admin tools. It includes secure authentication, email confirmation, role-based access control, content CRUD operations, and bilingual support.

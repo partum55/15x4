@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import I18nProvider from '@/components/I18nProvider'
 import { AuthProvider } from '@/context/AuthContext'
 import BoneyardClient from '@/components/BoneyardClient'
+import DemoBadge from '@/components/DemoBadge'
 import ProfileCompletionBanner from '@/components/ProfileCompletionBanner'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     title: '15x4 — Наукові лекції',
     description,
   },
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: false }, // demo: keep out of search
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -47,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider initialUser={initialUser}>
             {children}
             <ProfileCompletionBanner />
+            <DemoBadge />
           </AuthProvider>
         </I18nProvider>
         <Analytics />

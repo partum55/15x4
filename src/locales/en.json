@@ -445,5 +445,9 @@
       "lectures": "lectures",
       "events": "events"
     }
+  },
+  "demo": {
+    "title": "DEMO",
+    "text": "sample data, changes are not saved. Any credentials will log you in."
   }
 }

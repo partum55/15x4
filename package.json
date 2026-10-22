@@ -10,8 +10,6 @@
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.10.2",
-    "@supabase/supabase-js": "^2.104.1",
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^1.0.4",
     "boneyard-js": "^1.6.7",
